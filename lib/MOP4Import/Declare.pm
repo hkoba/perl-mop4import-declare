@@ -1,7 +1,179 @@
+# -*- coding: utf-8 -*-
 package MOP4Import::Declare;
 use strict;
-use warnings;
+use warnings FATAL => qw/all/;
 our $VERSION = '0.01';
+use Carp;
+
+use constant DEBUG => $ENV{DEBUG_MOP};
+
+our %FIELDS; # To kill warning.
+
+sub import {
+  my ($myPack, @decls) = @_;
+
+  my $callpack = caller;
+
+  @decls = $myPack->default_exports unless @decls;
+
+  $myPack->dispatch_declare_in($callpack, @decls);
+}
+
+#
+# This serves as @EXPORT
+#
+sub default_exports {
+  qw/-as_base/;
+}
+
+sub dispatch_declare_in {
+  my ($myPack, $callpack, @decls) = @_;
+
+  foreach my $declSpec (@decls) {
+    if (not ref $declSpec) {
+
+      $myPack->declare_import_in($callpack, $declSpec);
+
+    } elsif (ref $declSpec eq 'ARRAY') {
+
+      $myPack->dispatch_declare_pragma_in($callpack, @$declSpec);
+
+    } elsif (ref $declSpec eq 'CODE') {
+
+      $declSpec->($myPack, $callpack);
+
+    } else {
+      croak "Invalid declaration spec: $declSpec";
+    }
+  }
+}
+
+sub declare_import_in {
+  my ($myPack, $callpack, $declSpec) = @_;
+
+  my ($name, $exported);
+
+  if ($declSpec =~ /^-(\w+)$/) {
+
+    return $myPack->dispatch_declare_pragma_in($callpack, $1);
+
+  } elsif ($declSpec =~ /^\*(\w+)$/) {
+    ($name, $exported) = ($1, globref($myPack, $1));
+  } elsif ($declSpec =~ /^\$(\w+)$/) {
+    ($name, $exported) = ($1, *{globref($myPack, $1)}{SCALAR});
+  } elsif ($declSpec =~ /^\%(\w+)$/) {
+    ($name, $exported) = ($1, *{globref($myPack, $1)}{HASH});
+  } elsif ($declSpec =~ /^\@(\w+)$/) {
+    ($name, $exported) = ($1, *{globref($myPack, $1)}{ARRAY});
+  } elsif ($declSpec =~ /^\&(\w+)$/) {
+    ($name, $exported) = ($1, *{globref($myPack, $1)}{CODE});
+  } elsif ($declSpec =~ /^(\w+)$/) {
+    ($name, $exported) = ($1, globref($myPack, $1));
+  } else {
+    croak "Invalid import spec: $declSpec";
+  }
+
+  *{globref($callpack, $name)} = $exported;
+}
+
+sub dispatch_declare_pragma_in {
+  my ($myPack, $callpack, $pragma, @args) = @_;
+  if (my $sub = $myPack->can("declare_$pragma")) {
+    $sub->($myPack, $callpack, @args);
+  } else {
+    croak "Unknown pragma '$pragma' in $callpack";
+  }
+}
+
+sub declare_base {
+  my ($myPack, $callpack, @base) = @_;
+
+  push @{*{globref($callpack, 'ISA')}}, @base;
+
+  $myPack->declare_fields($callpack);
+}
+
+sub declare_as_base {
+  my ($myPack, $callpack, @fields) = @_;
+
+  push @{*{globref($callpack, 'ISA')}}, $myPack;
+
+  $myPack->declare_fields($callpack, @fields) if @fields;
+
+  _declare_constant_in($callpack, MY => $callpack, 1);
+}
+
+sub _declare_constant_in {
+  my ($callpack, $name, $value, $or_ignore) = @_;
+
+  my $my_sym = globref($callpack, $name);
+  if (*{$my_sym}{CODE}) {
+    return if $or_ignore;
+    croak "constant ${callpack}::$name is already defined";
+  }
+
+  *$my_sym = sub () {$value};
+}
+
+sub declare_fields {
+  my ($mypack, $callpack, @fields) = @_;
+
+  my $extended = fields_hash($callpack);
+
+  # Import all fields from super class
+  foreach my $super_class (@{*{globref($callpack, 'ISA')}{ARRAY}}) {
+    my $super = *{globref($super_class, 'FIELDS')}{HASH};
+    next unless $super;
+    foreach my $name (keys %$super) {
+      next if defined $extended->{$name};
+      print STDERR "Field $callpack.$name is inherited from $super_class.\n"
+	if DEBUG;
+      $extended->{$name} = $super->{$name}; # XXX: clone?
+    }
+  }
+
+  foreach my $spec (@fields) {
+    my ($name, @rest) = ref $spec ? @$spec : $spec;
+    my $has_getter = $name =~ s/^\^//;
+    print STDERR "Field $callpack.$name is declared.\n" if DEBUG;
+    $extended->{$name} = \@rest; # XXX: should have better object.
+    if ($has_getter) {
+      *{globref($callpack, $name)} = sub { $_[0]->{$name} };
+    }
+  }
+
+  $callpack; # XXX:
+}
+
+sub declare_alias {
+  my ($myPack, $callpack, $name, $alias) = @_;
+  *{globref($callpack, $name)} = sub () {$alias};
+}
+
+sub globref {
+  my $pack_or_obj = shift;
+  my $pack = ref $pack_or_obj || $pack_or_obj;
+  my $symname = join("::", $pack, @_);
+  no strict 'refs';
+  \*{$symname};
+}
+
+sub fields_hash {
+  my $sym = fields_symbol(@_);
+  # XXX: return \%{*$sym}; # If we use this, we get "used only once" warning.
+  unless (*{$sym}{HASH}) {
+    *$sym = {};
+  }
+  *{$sym}{HASH};
+}
+
+sub fields_symbol {
+  globref($_[0], 'FIELDS');
+}
+
+sub lexpand {
+  ref $_[0] ? @{$_[0]} : $_[0];
+}
 
 1;
 __END__
@@ -12,7 +184,7 @@ MOP4Import::Declare -
 
 =head1 SYNOPSIS
 
-  use MOP4Import::Declare;
+  use MOP4Import::Declare -as_base;
 
 =head1 DESCRIPTION
 
