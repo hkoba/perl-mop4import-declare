@@ -5,7 +5,7 @@ use Carp;
 
 use MOP4Import::Declare -as_base, qw/lexpand/;
 
-use constant DEBUG => $ENV{DEBUG_MOP};
+use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
 sub import {
   my $mypack = shift;
@@ -14,10 +14,14 @@ sub import {
 }
 
 sub declare_types {
-  my ($mypack, $callpack, @decls) = @_;
+  my ($mypack, $callpack, @pairs) = @_;
 
-  foreach my $decl (@decls) {
-    my ($name, @spec) = @$decl;
+  unless (@pairs % 2 == 0) {
+    croak "Odd number of arguments!";
+  }
+
+  while (my ($name, $speclist) = splice @pairs, 0, 2) {
+    my @spec = @$speclist;
 
     if (my $sub = $callpack->can($name)) {
       unshift @spec, [base => $sub->($callpack)];
@@ -25,14 +29,16 @@ sub declare_types {
 
     my $innerClass = join("::", $callpack, $name);
 
+    print STDERR "declaring type $name as $innerClass\n" if DEBUG;
+
     $mypack->declare_alias($callpack, $name, $innerClass);
 
-    foreach my $spec (@spec) {
-      my ($pragma, @args) = @$spec;
-      print STDERR "declaring $pragma for $innerClass\n" if DEBUG;
-      $mypack->dispatch_declare_pragma_in($innerClass, $pragma, @args);
-    }
+    $mypack->dispatch_declare_in($innerClass, @spec);
   }
+}
+
+sub declare_subtypes {
+  shift->declare_types(@_);
 }
 
 1;

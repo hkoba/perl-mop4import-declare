@@ -1,0 +1,55 @@
+=head1 NAME
+
+MOP4Import - Meta Object Protocol to build extensible exporter
+
+=head1 SYNOPSIS
+
+   # You can use MOP4Import::Declare to define your base object.
+   package MyApp::Object;
+   use MOP4Import::Declare -as_base;
+
+   # To keep protocol simple, MOP4Import::Declare itself
+   # doesn't have 'new'.
+   # If you want it, please try MOP4Import::Base::Configure
+   sub new {...}
+
+   # This will be called from "use" via ['foo'], or simply '-foo'
+   sub declare_foo {
+      my ($myPack, $callpack) = @_;
+      ...
+   }
+
+
+   # Then, you can use your base object in your app, like this:
+   package MyApp;
+   use MyApp::Object -as_base, -foo, [fields => qw/DBH/];
+
+
+   # You can use MOP4Import::Types to define inner structs.
+   # Following defines MyApp::CD and MyApp::Artist, with their fields.
+   use MOP4Import::Types (
+     CD     => [[fields => qw/cdid     title artist year/]],
+     Artist => [[fields => qw/artistid name /]],
+   );
+
+
+   sub get_all_artist_cds {
+     (my MY $self) = @_;
+     my $fetch_artists = $self->{DBH}->prepare($self->sql_maker(..));
+     my $fetch_cds     = $self->{DBH}->prepare($self->sql_maker(..));
+
+     $fetch_artists->execute;
+     my @result;
+     while (my Artist $artist = $fetch_artists->fetchrow_hashref) {
+       push @result, my $released = [$artist];
+       $fetch_cds->execute($artist->{artistid});
+       while (my CD $cd = $fetch_cds->fetchrow_hashref) {
+         push @$released, $cd;
+       }
+     }
+     @result;
+   }
+
+=head1 DESCRIPTION
+
+

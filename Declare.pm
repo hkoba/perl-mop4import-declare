@@ -5,7 +5,7 @@ use warnings FATAL => qw/all/;
 our $VERSION = '0.01';
 use Carp;
 
-use constant DEBUG => $ENV{DEBUG_MOP};
+use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
 our %FIELDS; # To kill warning.
 
@@ -180,11 +180,36 @@ __END__
 
 =head1 NAME
 
-MOP4Import::Declare -
+MOP4Import::Declare - map import args to declare_... method calls.
 
 =head1 SYNOPSIS
 
+  #-------------------
+  # To implement MOP4Import, just use this like:
+
+  package YourModule;
   use MOP4Import::Declare -as_base;
+
+  # and define what you want as "declare_..." method.
+  sub declare_foo {
+    my ($myPack, $callpack) = @_;
+  }
+
+  sub declare_bar {
+    my ($myPack, $callpack, $x, $y, @z) = @_;
+  }
+
+  #-------------------
+  # Then in user's code:
+
+  package MyApp;
+  use YourModule -foo, [bar => 1,2,3,4];
+
+  # Above will be mapped to:
+  #
+  #   YourMoudle->declare_foo('MyApp');
+  #   YourMoudle->declare_bar('MyApp', 1,2,3,4);
+
 
 =head1 DESCRIPTION
 
