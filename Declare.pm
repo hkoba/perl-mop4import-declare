@@ -104,6 +104,12 @@ sub declare_as_base {
   _declare_constant_in($callpack, MY => $callpack, 1);
 }
 
+sub declare_inc {
+  my ($myPack, $callpack) = @_;
+  $callpack =~ s{::}{/}g;
+  $INC{$callpack . '.pm'} = 1;
+}
+
 sub _declare_constant_in {
   my ($callpack, $name, $value, $or_ignore) = @_;
 

@@ -3,20 +3,7 @@ use Test::Kantan;
 
 use rlib qw!../..!;
 
-# Tcl style [catch {code}]
-sub catch (&) {
-  my ($code) = @_;
-  local $@;
-  eval {$code->()};
-  $@;
-};
-
-sub no_error ($) {
-  my ($script) = @_;
-  sub {
-    expect(catch { eval $script })->to_be('');
-  };
-}
+use MOP4Import::t::t_lib qw/no_error expect_script_error/;
 
 describe "MOP4Import::Declare", sub {
   describe "use ... -as_base", sub {
@@ -40,22 +27,21 @@ package Tarot1; sub test { (my MY $foo) = @_; }
 END
 
     it "should define field Tarot1->{pentacle,chariot,tower}", no_error <<'END';
-package Test1; sub test2 {
+package Tarot1; sub test2 {
   (my MY $foo) = @_;
   $foo->{pentacle} + $foo->{chariot} + $foo->{tower};
 }
 END
 
-    it "should detect spell miss for Tarot1->{towerrr}", sub {
-      expect(do {eval <<'END'; $@})
+    it "should detect spell miss for Tarot1->{towerrr}"
+      , expect_script_error <<'END'
 package Tarot1; sub test3 {
   (my MY $foo) = @_;
   $foo->{towerrr}
 }
 END
-	->to_match
-	  (qr/^No such class field "towerrr" in variable \$foo of type Tarot1/);
-    };
+	, to_match =>
+	  qr/^No such class field "towerrr" in variable \$foo of type Tarot1/;
   };
 };
 
