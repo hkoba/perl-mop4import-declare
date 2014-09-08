@@ -1,4 +1,5 @@
 package MOP4Import::Types;
+use 5.010;
 use strict;
 use warnings FATAL => qw/all/;
 use Carp;

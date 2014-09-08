@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 package MOP4Import::Declare;
+use 5.010;
 use strict;
 use warnings FATAL => qw/all/;
 our $VERSION = '0.01';
