@@ -8,6 +8,8 @@ use Carp;
 
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
+use MOP4Import::Util;
+
 our %FIELDS; # To kill warning.
 
 sub import {
@@ -157,30 +159,6 @@ sub declare_alias {
   *{globref($callpack, $name)} = sub () {$alias};
 }
 
-sub globref {
-  my $pack_or_obj = shift;
-  my $pack = ref $pack_or_obj || $pack_or_obj;
-  my $symname = join("::", $pack, @_);
-  no strict 'refs';
-  \*{$symname};
-}
-
-sub fields_hash {
-  my $sym = fields_symbol(@_);
-  # XXX: return \%{*$sym}; # If we use this, we get "used only once" warning.
-  unless (*{$sym}{HASH}) {
-    *$sym = {};
-  }
-  *{$sym}{HASH};
-}
-
-sub fields_symbol {
-  globref($_[0], 'FIELDS');
-}
-
-sub lexpand {
-  ref $_[0] ? @{$_[0]} : $_[0];
-}
 
 1;
 __END__

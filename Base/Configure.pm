@@ -2,6 +2,7 @@ package MOP4Import::Base::Configure; sub MY () {__PACKAGE__}
 use strict;
 use warnings FATAL => qw/all/;
 use Carp;
+use fields ();
 
 use MOP4Import::Declare -as_base;
 
@@ -21,7 +22,7 @@ sub configure {
 
   my @args = @_ == 1 && ref $_[0] eq 'HASH' ? %{$_[0]} : @_;
 
-  my $fields = _fields_hash($self);
+  my $fields = MOP4Import::Declare::fields_hash($self);
 
   my @setter;
   while (my ($key, $value) = splice @args, 0, 2) {
