@@ -3,14 +3,15 @@ use Test::Kantan;
 
 use rlib qw!../..!;
 
-use MOP4Import::t::t_lib qw/no_error expect_script_error/;
+use MOP4Import::t::t_lib qw/no_error expect_script_error catch/;
 
 describe "MOP4Import::Declare", sub {
   describe "use ... -as_base", sub {
 
     it "should have no error", no_error <<'END';
 package Tarot1;
-use MOP4Import::Declare -as_base, [fields => qw/pentacle chariot tower/];
+use MOP4Import::Declare -as_base, [fields => qw/pentacle chariot tower
+                                                _hermit/];
 1;
 END
 
@@ -29,7 +30,7 @@ END
     it "should define field Tarot1->{pentacle,chariot,tower}", no_error <<'END';
 package Tarot1; sub test2 {
   (my MY $foo) = @_;
-  $foo->{pentacle} + $foo->{chariot} + $foo->{tower};
+  $foo->{pentacle} + $foo->{chariot} + $foo->{tower} + $foo->{_hermit};
 }
 END
 
@@ -42,6 +43,19 @@ package Tarot1; sub test3 {
 END
 	, to_match =>
 	  qr/^No such class field "towerrr" in variable \$foo of type Tarot1/;
+
+    it "should create getters automatically", sub {
+      my $obj = bless {pentacle => "coin", chariot => "VII", tower => "XVI"}
+	, 'Tarot1';
+      ok {$obj->pentacle eq "coin"};
+      ok {$obj->chariot eq "VII"};
+      ok {$obj->tower eq "XVI"};
+    };
+
+    it "should not create getters for _private fields", sub {
+      my $obj = bless {}, 'Tarot1';
+      expect(catch {$obj->_hermit})->to_match(qr/^Can't locate object method "_hermit" via package "Tarot1"/);
+    };
   };
 };
 

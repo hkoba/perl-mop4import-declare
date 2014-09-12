@@ -143,10 +143,9 @@ sub declare_fields {
 
   foreach my $spec (@fields) {
     my ($name, @rest) = ref $spec ? @$spec : $spec;
-    my $has_getter = $name =~ s/^\^//;
     print STDERR "Field $callpack.$name is declared.\n" if DEBUG;
     $extended->{$name} = \@rest; # XXX: should have better object.
-    if ($has_getter) {
+    if ($name =~ /^[a-z]/i) {
       *{globref($callpack, $name)} = sub { $_[0]->{$name} };
     }
   }

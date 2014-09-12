@@ -30,14 +30,13 @@ sub configure {
       croak "Undefined option name for class ".ref($self);
     }
     next unless $key =~ m{^[A-Za-z]\w+\z};
-    unless (exists $fields->{$key}) {
-      croak "Unknown option for class ".ref($self).": ".$key;
-    }
 
     if (my $sub = $self->can("onconfigure_$key")) {
       push @setter, [$sub, $value];
-    } else {
+    } elsif (exists $fields->{$key}) {
       $self->{$key} = $value;
+    } else {
+      croak "Unknown option for class ".ref($self).": ".$key;
     }
   }
 
