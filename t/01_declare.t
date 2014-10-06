@@ -12,6 +12,7 @@ describe "MOP4Import::Declare", sub {
 package Tarot1;
 use MOP4Import::Declare -as_base, [fields => qw/pentacle chariot tower
                                                 _hermit/];
+$INC{'Tarot1.pm'} = 1;
 1;
 END
 
@@ -56,6 +57,43 @@ END
       my $obj = bless {}, 'Tarot1';
       expect(catch {$obj->_hermit})->to_match(qr/^Can't locate object method "_hermit" via package "Tarot1"/);
     };
+  };
+
+  describe "use YOUR_CLASS -as_base", sub {
+    it "should have no error", no_error <<'END';
+package Tarot2; use Tarot1 -as_base;
+END
+
+    it "should make Tarot2 as a subclass of Tarot1", sub {
+      ok {Tarot2->isa('Tarot1')};
+    };
+
+    it "should make Tarot2 as a subclass of MOP4Import::Declare", sub {
+      ok {Tarot2->isa('MOP4Import::Declare')};
+    };
+
+    it "should make define MY alias in Tarot2", sub {
+      ok {Tarot2->MY eq 'Tarot2'};
+    };
+
+    it "should inherit fields from Tarot1", no_error <<'END';
+package Tarot2; sub test2 {
+  (my MY $foo) = @_;
+  $foo->{pentacle} + $foo->{chariot} + $foo->{tower} + $foo->{_hermit};
+}
+END
+
+    it "should detect spell miss for Tarot2->{towerrr}"
+      , expect_script_error <<'END'
+package Tarot2; sub test3 {
+  (my MY $foo) = @_;
+  $foo->{towerrr}
+}
+END
+	, to_match =>
+	  qr/^No such class field "towerrr" in variable \$foo of type Tarot2/;
+
+
   };
 };
 

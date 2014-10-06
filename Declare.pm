@@ -101,7 +101,7 @@ sub declare_as_base {
 
   push @{*{globref($callpack, 'ISA')}}, $myPack;
 
-  $myPack->declare_fields($callpack, @fields) if @fields;
+  $myPack->declare_fields($callpack, @fields);
 
   _declare_constant_in($callpack, MY => $callpack, 1);
 }
