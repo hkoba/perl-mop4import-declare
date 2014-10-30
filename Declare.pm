@@ -11,6 +11,8 @@ use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 use MOP4Import::Opts;
 use MOP4Import::Util;
 
+our %FIELDS;
+
 sub import {
   my ($myPack, @decls) = @_;
 
