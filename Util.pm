@@ -2,6 +2,7 @@ package MOP4Import::Util;
 use strict;
 use warnings FATAL => qw/all/;
 use Carp;
+use Data::Dumper;
 
 use Exporter qw/import/;
 
@@ -28,6 +29,12 @@ sub fields_symbol {
 
 sub lexpand {
   ref $_[0] ? @{$_[0]} : $_[0];
+}
+
+sub terse_dump {
+  join ", ", map {
+    Data::Dumper->new([$_])->Terse(1)->Indent(0)->Dump;
+  } @_;
 }
 
 sub function_names {

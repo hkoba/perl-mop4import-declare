@@ -6,6 +6,14 @@ use rlib qw!../..!;
 use MOP4Import::t::t_lib qw/no_error expect_script_error/;
 
 describe "MOP4Import::Types", sub {
+
+  describe "require MOP4Import::Types", sub {
+    it "should loaded correctly", sub {
+      ok { require MOP4Import::Types };
+      # This will help debugging.
+    };
+  };
+
   describe "use ... type => [[fields => ...]]", sub {
 
     it "should have no error", no_error <<'END';
