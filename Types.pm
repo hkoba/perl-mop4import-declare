@@ -25,10 +25,10 @@ sub declare_types {
   while (my ($name, $speclist) = splice @pairs, 0, 2) {
     my @spec = @$speclist;
 
-    if (my $sub = $opts->{destpkg}->can($name)) {
-      unshift @spec, [base => $sub->($opts->{destpkg})];
-    } elsif ($opts->{basepkg}) {
+    if ($opts->{basepkg}) {
       unshift @spec, [base => $opts->{basepkg}];
+    } elsif (my $sub = $opts->{destpkg}->can($name)) {
+      unshift @spec, [base => $sub->($opts->{destpkg})];
     }
 
     my $innerClass = join("::", $opts->{destpkg}, $name);
