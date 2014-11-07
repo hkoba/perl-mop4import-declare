@@ -165,7 +165,11 @@ sub declare_fields {
 sub declare_alias {
   (my $myPack, my Opts $opts, my ($name, $alias)) = @_;
   print STDERR "Declaring alias $name in $opts->{destpkg} as $alias\n" if DEBUG;
-  *{globref($opts->{destpkg}, $name)} = sub () {$alias};
+  my $sym = globref($opts->{destpkg}, $name);
+  if (*{$sym}{CODE}) {
+    croak "Subroutine (alias) $opts->{destpkg}::$name redefined";
+  }
+  *$sym = sub () {$alias};
 }
 
 
