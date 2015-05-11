@@ -3,6 +3,7 @@ use strict;
 use warnings FATAL => qw/all/;
 use Carp;
 use fields ();
+use mro qw/c3/;
 
 use MOP4Import::Declare -as_base;
 

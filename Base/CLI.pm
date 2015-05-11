@@ -1,6 +1,7 @@
 package MOP4Import::Base::CLI;
 use strict;
 use warnings FATAL => qw/all/;
+use mro qw/c3/;
 
 use File::Basename ();
 use Data::Dumper ();
