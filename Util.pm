@@ -14,6 +14,10 @@ sub globref {
   \*{$symname};
 }
 
+sub symtab {
+  *{globref(shift, '')}{HASH}
+}
+
 sub fields_hash {
   my $sym = fields_symbol(@_);
   # XXX: return \%{*$sym}; # If we use this, we get "used only once" warning.
@@ -37,6 +41,44 @@ sub terse_dump {
   } @_;
 }
 
+sub parse_opts {
+  my ($pack, $list, $result, $alias) = @_;
+  my $wantarray = wantarray;
+  unless (defined $result) {
+    $result = $wantarray ? [] : {};
+  }
+  while (@$list and my ($n, $v) = $list->[0]
+	 =~ m{^--$ | ^(?:--? ([\w:\-\.]+) (?: =(.*))?)$}xs) {
+    shift @$list;
+    last unless defined $n;
+    $n = $alias->{$n} if $alias and $alias->{$n};
+    $v = 1 unless defined $v;
+    if (ref $result eq 'HASH') {
+      $result->{$n} = $v;
+    } else {
+      push @$result, $n, $v;
+    }
+  }
+  $wantarray && ref $result ne 'HASH' ? @$result : $result;
+}
+
+sub parse_pairlist {
+  my ($pack, $aref, $do_box) = @_;
+  my @res;
+  while (@$aref) {
+    my $item = shift @$aref;
+    if ($item =~ /^(\w+)=(.*)/) {
+      push @res, $do_box ? [$1, $2] : ($1, $2);
+    } elsif ($item =~ /^(\w+):?$/) {
+      my $val = shift @$aref;
+      push @res, $do_box ? [$1, $val] : ($1, $val);
+    } else {
+      die "Invalid parameter!: $item\n"; # XXX: Too much? should push back?
+    }
+  }
+  @res;
+}
+
 sub function_names {
   my (%opts) = @_;
   my $packname = delete $opts{from}     // caller;
@@ -56,8 +98,8 @@ sub function_names {
   @result;
 }
 
-our @EXPORT = our @EXPORT_OK
-  = function_names(from => __PACKAGE__
+our @EXPORT = qw/globref fields_hash fields_symbol lexpand terse_dump/;
+our @EXPORT_OK = function_names(from => __PACKAGE__
 		   , except => qr/^(import|c\w*)$/
 		 );
 
