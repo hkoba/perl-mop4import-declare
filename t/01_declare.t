@@ -59,6 +59,16 @@ END
     };
   };
 
+  describe "use YOUR_CLASS", sub {
+    it "should be used without error", no_error <<'END';
+package TarotUser; use Tarot1;
+END
+
+    it "should *not* inherit YOUR_CLASS by default", sub {
+      ok {@TarotUser::ISA == 0};
+    };
+  };
+
   describe "use YOUR_CLASS -as_base", sub {
     it "should have no error", no_error <<'END';
 package Tarot2; use Tarot1 -as_base;

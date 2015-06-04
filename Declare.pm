@@ -25,7 +25,7 @@ sub import {
 # This serves as @EXPORT
 #
 sub default_exports {
-  qw/-as_base/;
+  ();
 }
 
 sub dispatch_declare {
