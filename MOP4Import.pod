@@ -52,6 +52,8 @@ MOP4Import - Meta Object Protocol to build extensible exporters.
 
 =head1 DESCRIPTION
 
+I<Note:> This module is not yet released to CPAN. I need your feedback!
+
 MOP4Import, I'm proposing here, is "Meta Object Protocol for Import"
 to make C<"use Module LIST"> functionality more composable/extensible.
 
@@ -93,7 +95,7 @@ Currently, two style protocol is defined.
 
 =item MOP4Import::Declare
 
-L<MOP4Import::Declare> maps each ARRAY arguments
+C<MOP4Import::Declare> maps each ARRAY arguments
 like C<< [foo => qw/bar baz/] >> to
 C<< Module->declare_foo(qw/bar baz/) >>.
 Also, C<< -foo >> is mapped to C<< Module->declare_foo() >>.
@@ -103,7 +105,7 @@ other string arguments are treated as importing of vars/subs/globs.
 
 =item MOP4Import::Types
 
-L<MOP4Import::Types> maps pairs of arguments C<< NAME => LIST >> to...
+C<MOP4Import::Types> maps pairs of arguments C<< NAME => LIST >> to...
 (hmm, I should cleanup this as real PROTOCOL, too.
 Comments/suggestions are welcome!)
 
