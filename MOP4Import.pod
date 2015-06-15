@@ -1,6 +1,6 @@
 =head1 NAME
 
-MOP4Import - Meta Object Protocol to build extensible exporter
+MOP4Import - Meta Object Protocol to build extensible exporters.
 
 =head1 SYNOPSIS
 
@@ -33,7 +33,7 @@ MOP4Import - Meta Object Protocol to build extensible exporter
    );
 
 
-   sub get_all_artist_cds {
+   sub get_all_artists_with_cd_titles {
      (my MY $self) = @_;
      my $fetch_artists = $self->{DBH}->prepare($self->sql_maker(..));
      my $fetch_cds     = $self->{DBH}->prepare($self->sql_maker(..));
@@ -41,10 +41,10 @@ MOP4Import - Meta Object Protocol to build extensible exporter
      $fetch_artists->execute;
      my @result;
      while (my Artist $artist = $fetch_artists->fetchrow_hashref) {
-       push @result, my $released = [$artist];
+       push @result, my $released = [$artist->{name}];
        $fetch_cds->execute($artist->{artistid});
        while (my CD $cd = $fetch_cds->fetchrow_hashref) {
-         push @$released, $cd;
+         push @$released, $cd->{title};
        }
      }
      @result;
@@ -52,4 +52,67 @@ MOP4Import - Meta Object Protocol to build extensible exporter
 
 =head1 DESCRIPTION
 
+MOP4Import, I'm proposing here, is "Meta Object Protocol for Import"
+to make C<"use Module LIST"> functionality more composable/extensible.
 
+It is well known for Perl programmers that
+Perl's L<use|perlfunc/use> behaves like following code:
+
+  BEGIN { require Module; Module->import( LIST ); }  # == "use Module LIST";
+
+And this C<< Module->import >> usually used to modify caller module
+just compiling about (like L<Exporter>).
+This is a kind of Meta Programming.
+
+However, since C<import> is a method and
+a class can have atmost one C<import> method,
+there is difficulties about reusability.
+For example, imagine some module X can be used like following
+and you favored it:
+
+  use X ':foo', ':bar';
+
+You may want to reuse ":foo" feature in your own module Y,
+but X::import is monolithically writen with "if .. elsif ...",
+so you end up to copy-n-paste specific portion to your Y::import.
+(And someday other guy find your :foo is nice... repeated.)
+
+Source of problem here is that single function "import" provides
+both protocol(entry point) and implementation,
+and there is no way to selectively reuse/override specific case
+of import argument.
+
+So, I propose some protocols for this area.
+These protocols maps import list of "use Module LIST"
+into specific method invocations like "Module->declare_foo()"
+, "Module->declare_bar()"...
+
+Currently, two style protocol is defined.
+
+=over 4
+
+=item MOP4Import::Declare
+
+L<MOP4Import::Declare> maps each ARRAY arguments
+like C<< [foo => qw/bar baz/] >> to
+C<< Module->declare_foo(qw/bar baz/) >>.
+Also, C<< -foo >> is mapped to C<< Module->declare_foo() >>.
+
+This module also mimics Exporter, so
+other string arguments are treated as importing of vars/subs/globs.
+
+=item MOP4Import::Types
+
+L<MOP4Import::Types> maps pairs of arguments C<< NAME => LIST >> to...
+(hmm, I should cleanup this as real PROTOCOL, too.
+Comments/suggestions are welcome!)
+
+=back
+
+=head1 AUTHOR
+
+"KOBAYASI, Hiroaki" <hkoba@cpan.org>
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
