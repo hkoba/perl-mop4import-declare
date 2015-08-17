@@ -1,7 +1,7 @@
 package MOP4Import::Types;
 use 5.010;
 use strict;
-use warnings FATAL => qw/all/;
+use warnings FATAL => qw(FATAL all NONFATAL misc);
 use Carp;
 
 use MOP4Import::Declare -as_base;

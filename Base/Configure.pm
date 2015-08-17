@@ -1,6 +1,6 @@
 package MOP4Import::Base::Configure; sub MY () {__PACKAGE__}
 use strict;
-use warnings FATAL => qw/all/;
+use warnings FATAL => qw(FATAL all NONFATAL misc);
 use Carp;
 use fields ();
 use mro qw/c3/;
