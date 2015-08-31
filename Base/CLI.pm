@@ -7,8 +7,9 @@ use File::Basename ();
 use Data::Dumper ();
 
 use MOP4Import::Base::Configure -as_base;
-use MOP4Import::Util qw/parse_opts terse_dump fields_hash/;
+use MOP4Import::Util qw/parse_opts terse_dump fields_hash fields_array/;
 use MOP4Import::Util::FindMethods;
+use MOP4Import::FieldSpec;
 
 #========================================
 
@@ -60,6 +61,7 @@ sub cmd_help {
   my $self = shift;
   my $pack = ref $self || $self;
   my $fields = fields_hash($self);
+  my $names = fields_array($self);
   my @methods = FindMethods($pack, sub {s/^cmd_//});
   die join("\n", @_, <<END);
 Usage: @{[File::Basename::basename($0)]} [--opt-value].. <command> [--opt-value].. ARGS...
@@ -68,7 +70,13 @@ Commands:
   @{[join("\n  ", @methods)]}
 
 Options:
-  --@{[join "\n  --", sort grep {/^[a-z]/} keys %$fields]}
+  --@{[join "\n  --", map {
+  if (ref (my FieldSpec $fs = $fields->{$_})) {
+    join("\t  ", $_, ($fs->{doc} ? $fs->{doc} : ()));
+  } else {
+    $_
+  }
+} grep {/^[a-z]/} @$names]}
 END
 }
 

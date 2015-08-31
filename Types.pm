@@ -11,8 +11,12 @@ use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
 sub import {
   my $myPack = shift;
-  $myPack->declare_types(Opts->new(scalar(caller))
-			 , @_);
+  my Opts $opts = Opts->new(scalar(caller));
+  if (@_ and ref $_[0] eq 'HASH') {
+    my $o = shift;
+    $opts->{$_} = $o->{$_} for keys %$o;
+  }
+  $myPack->declare_types($opts, @_);
 }
 
 sub declare_types {

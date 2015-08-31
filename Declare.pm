@@ -10,6 +10,7 @@ use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
 use MOP4Import::Opts;
 use MOP4Import::Util;
+use MOP4Import::FieldSpec;
 
 our %FIELDS;
 
@@ -114,6 +115,16 @@ sub declare_as_base {
   $myPack->declare_constant($opts, MY => $opts->{objpkg}, or_ignore => 1);
 }
 
+sub declare_as {
+  (my $myPack, my Opts $opts, my ($name)) = @_;
+
+  unless (defined $name and $name ne '') {
+    croak "Usage: use ${myPack} [as => NAME]";
+  }
+
+  $myPack->declare_constant($opts, $name => $myPack);
+}
+
 sub declare_inc {
   (my $myPack, my Opts $opts, my ($pkg)) = @_;
   $pkg //= $opts->{objpkg};
@@ -137,6 +148,7 @@ sub declare_fields {
   (my $myPack, my Opts $opts, my (@fields)) = @_;
 
   my $extended = fields_hash($opts->{objpkg});
+  my $fields_array = fields_array($opts->{objpkg});
 
   # Import all fields from super class
   foreach my $super_class (@{*{globref($opts->{objpkg}, 'ISA')}{ARRAY}}) {
@@ -147,13 +159,15 @@ sub declare_fields {
       print STDERR "Field $opts->{objpkg}.$name is inherited "
 	. "from $super_class.\n" if DEBUG;
       $extended->{$name} = $super->{$name}; # XXX: clone?
+      push @$fields_array, $name;
     }
   }
 
   foreach my $spec (@fields) {
     my ($name, @rest) = ref $spec ? @$spec : $spec;
     print STDERR "Field $opts->{objpkg}.$name is declared.\n" if DEBUG;
-    $extended->{$name} = \@rest; # XXX: should have better object.
+    $extended->{$name} = $myPack->FieldSpec->new(@rest);
+    push @$fields_array, $name;
     if ($name =~ /^[a-z]/i) {
       *{globref($opts->{objpkg}, $name)} = sub { $_[0]->{$name} };
     }

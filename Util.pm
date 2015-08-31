@@ -27,8 +27,30 @@ sub fields_hash {
   *{$sym}{HASH};
 }
 
+sub fields_array {
+  my $sym = fields_symbol(@_);
+  unless (*{$sym}{ARRAY}) {
+    *$sym = [];
+  }
+  *{$sym}{ARRAY};
+}
+
 sub fields_symbol {
   globref($_[0], 'FIELDS');
+}
+
+# MOP4Import::Util::extract_fields_as(BASE_CLASS => $obj)
+# => returns name, value pairs found in BASE_CLASS.
+sub extract_fields_as ($$) {
+  my ($asPack, $obj) = @_;
+  my $fields = fields_hash($asPack);
+  map {
+    if (/^[a-z]/ and defined $obj->{$_}) {
+      ($_ => $obj->{$_})
+    } else {
+      ()
+    }
+  } keys %$fields
 }
 
 sub lexpand {
@@ -98,7 +120,9 @@ sub function_names {
   @result;
 }
 
-our @EXPORT = qw/globref fields_hash fields_symbol lexpand terse_dump/;
+our @EXPORT = qw/globref fields_hash fields_symbol lexpand terse_dump
+		 fields_array
+		/;
 our @EXPORT_OK = function_names(from => __PACKAGE__
 		   , except => qr/^(import|c\w*)$/
 		 );
