@@ -126,6 +126,22 @@ sub declare_base {
   $myPack->declare_fields($opts);
 }
 
+sub declare_parent {
+  (my $myPack, my Opts $opts, my (@base)) = @_;
+
+  print STDERR "Inheriting ".terse_dump(@base)." from $opts->{objpkg}\n"
+    if DEBUG;
+
+  foreach my $fn (@base) {
+    (my $cp = $fn) =~ s{::|'}{/}g;
+    require "$cp.pm";
+  }
+
+  push @{*{globref($opts->{objpkg}, 'ISA')}}, @base;
+
+  $myPack->declare_fields($opts);
+}
+
 sub declare_as_base {
   (my $myPack, my Opts $opts, my (@fields)) = @_;
 
@@ -178,7 +194,7 @@ sub declare_fields {
 
   # Import all fields from super class
   foreach my $super_class (@{*{globref($opts->{objpkg}, 'ISA')}{ARRAY}}) {
-    my $super = *{globref($super_class, 'FIELDS')}{HASH};
+    my $super = fields_hash($super_class);
     next unless $super;
     foreach my $name (keys %$super) {
       next if defined $extended->{$name};
@@ -215,6 +231,16 @@ sub declare_alias {
   *$sym = sub () {$alias};
 }
 
+sub declare_map_methods {
+  (my $myPack, my Opts $opts, my (@pairs)) = @_;
+
+  foreach my $pair (@pairs) {
+    my ($from, $to) = @$pair;
+    my $sub = $opts->{objpkg}->can($to)
+      or croak "Can't find method $to in (parent of) $opts->{objpkg}";
+    *{globref($opts->{objpkg}, $from)} = $sub;
+  }
+}
 
 1;
 __END__
