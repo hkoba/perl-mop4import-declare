@@ -166,10 +166,13 @@ sub declare_fields {
   foreach my $spec (@fields) {
     my ($name, @rest) = ref $spec ? @$spec : $spec;
     print STDERR "Field $opts->{objpkg}.$name is declared.\n" if DEBUG;
-    $extended->{$name} = $myPack->FieldSpec->new(@rest);
+    my FieldSpec $obj = $extended->{$name} = $myPack->FieldSpec->new(@rest);
     push @$fields_array, $name;
     if ($name =~ /^[a-z]/i) {
       *{globref($opts->{objpkg}, $name)} = sub { $_[0]->{$name} };
+    }
+    if (defined $obj->{default}) {
+      $myPack->declare_constant($opts, "default_$name", $obj->{default});
     }
   }
 

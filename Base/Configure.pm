@@ -6,6 +6,7 @@ use fields ();
 use mro qw/c3/;
 
 use MOP4Import::Declare -as_base;
+use MOP4Import::FieldSpec;
 
 our %FIELDS;
 
@@ -16,7 +17,17 @@ sub new {
   $self;
 }
 
-sub after_new {} # XXX: Sholud we call next::method?
+sub after_new {
+  (my MY $self) = @_;
+
+  my $fields = MOP4Import::Declare::fields_hash($self);
+
+  while ((my $name, my FieldSpec $spec) = each %$fields) {
+    if (not defined $self->{$name} and defined $spec->{default}) {
+      $self->{$name} = $self->can("default_$name")->();
+    }
+  }
+}
 
 sub configure {
   (my MY $self) = shift;

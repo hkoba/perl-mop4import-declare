@@ -10,6 +10,7 @@ our @EXPORT = @EXPORT_OK;
 use fields
   (# documentation
    'doc'
+   , 'default'
    # file? line? package?
  );
 
