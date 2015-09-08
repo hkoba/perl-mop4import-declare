@@ -1,11 +1,7 @@
-package MOP4Import::Base::Configure; sub MY () {__PACKAGE__}
-use strict;
-use warnings qw(FATAL all NONFATAL misc);
-use Carp;
-use fields ();
-use mro qw/c3/;
+package MOP4Import::Base::Configure;
+use MOP4Import::Declare -as_base, -fatal;
 
-use MOP4Import::Declare -as_base;
+use Carp;
 use MOP4Import::FieldSpec;
 
 our %FIELDS;

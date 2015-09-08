@@ -5,6 +5,7 @@ use strict;
 use warnings qw(FATAL all NONFATAL misc);
 our $VERSION = '0.01';
 use Carp;
+use mro qw/c3/;
 
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
@@ -26,7 +27,7 @@ sub import {
 # This serves as @EXPORT
 #
 sub default_exports {
-  ();
+  (-strict);
 }
 
 sub dispatch_declare {
@@ -91,6 +92,29 @@ sub dispatch_declare_pragma {
   }
 }
 
+# You may want to override these pragrams.
+sub declare_default_pragma {
+  (my $myPack, my Opts $opts) = @_;
+  $myPack->declare_strict($opts);
+  $myPack->declare_c3($opts);
+}
+
+sub declare_strict {
+  (my $myPack, my Opts $opts) = @_;
+  $_->import for qw(strict warnings); # I prefer fatalized warnings, but...
+}
+
+# Not enabled by default.
+sub declare_fatal {
+  (my $myPack, my Opts $opts) = @_;
+  warnings->import(qw(FATAL all NONFATAL misc));
+}
+
+sub declare_c3 {
+  (my $myPack, my Opts $opts) = @_;
+  mro::set_mro($opts->{destpkg}, 'c3');
+}
+
 sub declare_base {
   (my $myPack, my Opts $opts, my (@base)) = @_;
 
@@ -107,6 +131,8 @@ sub declare_as_base {
 
   print STDERR "Inheriting $myPack from $opts->{objpkg}\n"
     if DEBUG;
+
+  $myPack->declare_default_pragma($opts); # strict, mro c3...
 
   push @{*{globref($opts->{objpkg}, 'ISA')}}, $myPack;
 
