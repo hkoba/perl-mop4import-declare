@@ -57,7 +57,7 @@ sub declare_import {
 
   my ($name, $exported);
 
-  if ($declSpec =~ /^-(\w+)$/) {
+  if ($declSpec =~ /^-([A-Za-z]\w*)$/) {
 
     return $myPack->dispatch_declare_pragma($opts, $1);
 
@@ -77,7 +77,7 @@ sub declare_import {
     croak "Invalid import spec: $declSpec";
   }
 
-  print STDERR "Declaring $name in $opts->{destpkg} as "
+  print STDERR " Declaring $name in $opts->{destpkg} as "
     .terse_dump($exported)."\n" if DEBUG;
 
   *{globref($opts->{destpkg}, $name)} = $exported;
@@ -85,7 +85,8 @@ sub declare_import {
 
 sub dispatch_declare_pragma {
   (my $myPack, my Opts $opts, my ($pragma, @args)) = @_;
-  if (my $sub = $myPack->can("declare_$pragma")) {
+  if ($pragma =~ /^[A-Za-z]/
+      and my $sub = $myPack->can("declare_$pragma")) {
     $sub->($myPack, $opts, @args);
   } else {
     croak "Unknown pragma '$pragma' in $opts->{destpkg}";
@@ -118,7 +119,7 @@ sub declare_c3 {
 sub declare_base {
   (my $myPack, my Opts $opts, my (@base)) = @_;
 
-  print STDERR "Inheriting ".terse_dump(@base)." from $opts->{objpkg}\n"
+  print STDERR "Class $opts->{objpkg} extends ".terse_dump(@base)."\n"
     if DEBUG;
 
   push @{*{globref($opts->{objpkg}, 'ISA')}}, @base;
@@ -198,7 +199,7 @@ sub declare_fields {
     next unless $super;
     foreach my $name (keys %$super) {
       next if defined $extended->{$name};
-      print STDERR "Field $opts->{objpkg}.$name is inherited "
+      print STDERR "  Field $opts->{objpkg}.$name is inherited "
 	. "from $super_class.\n" if DEBUG;
       $extended->{$name} = $super->{$name}; # XXX: clone?
       push @$fields_array, $name;
@@ -207,7 +208,7 @@ sub declare_fields {
 
   foreach my $spec (@fields) {
     my ($name, @rest) = ref $spec ? @$spec : $spec;
-    print STDERR "Field $opts->{objpkg}.$name is declared.\n" if DEBUG;
+    print STDERR "  Field $opts->{objpkg}.$name is declared.\n" if DEBUG;
     my FieldSpec $obj = $extended->{$name} = $myPack->FieldSpec->new(@rest);
     push @$fields_array, $name;
     if ($name =~ /^[a-z]/i) {
@@ -223,7 +224,7 @@ sub declare_fields {
 
 sub declare_alias {
   (my $myPack, my Opts $opts, my ($name, $alias)) = @_;
-  print STDERR "Declaring alias $name in $opts->{destpkg} as $alias\n" if DEBUG;
+  print STDERR " Declaring alias $name in $opts->{destpkg} as $alias\n" if DEBUG;
   my $sym = globref($opts->{destpkg}, $name);
   if (*{$sym}{CODE}) {
     croak "Subroutine (alias) $opts->{destpkg}::$name redefined";
