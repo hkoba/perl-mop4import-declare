@@ -146,16 +146,56 @@ sub declare_parent {
 sub declare_as_base {
   (my $myPack, my Opts $opts, my (@fields)) = @_;
 
-  print STDERR "Inheriting $myPack from $opts->{objpkg}\n"
+  print STDERR "Class $opts->{objpkg} inherits $myPack\n"
     if DEBUG;
 
   $myPack->declare_default_pragma($opts); # strict, mro c3...
 
-  push @{*{globref($opts->{objpkg}, 'ISA')}}, $myPack;
+  $myPack->declare___add_isa($opts->{objpkg}, $myPack);
 
   $myPack->declare_fields($opts, @fields);
 
   $myPack->declare_constant($opts, MY => $opts->{objpkg}, or_ignore => 1);
+}
+
+sub declare___add_isa {
+  my ($myPack, $objpkg, @parents) = @_;
+  my $isa = MOP4Import::Util::isa_array($objpkg);
+
+  my $using_c3 = mro::get_mro($objpkg) eq 'c3';
+
+  if (DEBUG) {
+    print STDERR " $objpkg (MRO=",mro::get_mro($objpkg),") ISA "
+      , terse_dump(mro::get_linear_isa($objpkg)), "\n";
+    print STDERR " Adding $_ (MRO=",mro::get_mro($_),") ISA "
+      , terse_dump(mro::get_linear_isa($_))
+      , "\n" for @parents;
+  }
+
+  my @new = grep {
+    my $parent = $_;
+    $parent ne $objpkg
+      and not grep {$parent eq $_} @$isa;
+  } @parents;
+
+  if ($using_c3) {
+    local $@;
+    foreach my $parent (@new) {
+      my $cur = mro::get_linear_isa($objpkg);
+      my $adding = mro::get_linear_isa($parent);
+      eval {
+	unshift @$isa, $parent;
+      };
+      if ($@) {
+        croak "Can't add base '$parent' to '$objpkg' (\n"
+          .  "  $objpkg ISA ".terse_dump($cur).")\n"
+          .  "  Adding $parent ISA ".terse_dump($adding)
+          ."\n) because of this error: " . $@;
+      }
+    }
+  } else {
+    push @$isa, @new;
+  }
 }
 
 sub declare_as {

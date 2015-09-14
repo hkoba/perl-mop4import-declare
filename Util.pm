@@ -39,6 +39,14 @@ sub fields_symbol {
   globref($_[0], 'FIELDS');
 }
 
+sub isa_array {
+  my $sym = globref($_[0], 'ISA');
+  unless (*{$sym}{ARRAY}) {
+    *$sym = [];
+  }
+  *{$sym}{ARRAY};
+}
+
 # sub define_const {
 #   my ($name_or_glob, $value) = @_;
 #   my $glob = ref $name_or_glob ? $name_or_glob : globref($name_or_glob);

@@ -71,7 +71,7 @@ END
 
   describe "use YOUR_CLASS -as_base", sub {
     it "should have no error", no_error <<'END';
-package Tarot2; use Tarot1 -as_base;
+package Tarot2; use Tarot1 -as_base, -inc;
 END
 
     it "should make Tarot2 as a subclass of Tarot1", sub {
@@ -104,6 +104,28 @@ END
 	  qr/^No such class field "towerrr" in variable \$foo of type Tarot2/;
 
 
+  };
+
+  describe "Safe multiple inheritance with c3 mro", sub {
+    describe "use Generic -as_base; use Specific -as_base;", sub {
+      it "should have no error", no_error <<'END';
+package TarotUserC3;
+use Tarot1 -as_base;
+use Tarot2 -as_base;
+END
+
+      it "should have c3 mro", sub {
+	expect(mro::get_mro('TarotUserC3'))->to_be('c3');
+      };
+    };
+
+    describe "use Specific -as_base; use Generic -as_base;", sub {
+      it "should raise (better) error", sub {
+	local $@;
+	expect(do {eval q{package Ng2;use Tarot2 -as_base;use Tarot1 -as_base;}; $@}
+	     )->to_match(qr/^Can't add base 'Tarot1' to 'Ng2'/);
+      };
+    };
   };
 };
 
