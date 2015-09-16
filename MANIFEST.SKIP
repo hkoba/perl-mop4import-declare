@@ -1,3 +1,6 @@
+^_build/
+^Build$
+^\.git$
 \bRCS\b
 \bCVS\b
 ^MANIFEST\.
@@ -19,3 +22,5 @@
 ^\.shipit$
 ^\.git/
 \.sw[po]$
+^MYMETA\.yml$
+^MYMETA\.json$

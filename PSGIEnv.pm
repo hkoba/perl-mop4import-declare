@@ -66,7 +66,7 @@ use MOP4Import::Declare -as_base, qw/Opts/
 sub import {
   (my $myPack, my (@more_fields)) = @_;
 
-  my Opts $opts = Opts->new(scalar caller);
+  my Opts $opts = Opts->new([caller]);
 
   my $name = 'Env';
 
@@ -74,9 +74,10 @@ sub import {
 
   my $innerClass = join("::", $opts->{destpkg}, $name);
 
-  $myPack->declare_alias($opts, $name, $innerClass);
+  $myPack->declare_alias($opts, $opts->{destpkg}, $name, $innerClass);
 
   $myPack->dispatch_declare($opts->with_objpkg($innerClass)
+			    , $opts->{destpkg}
 			    , [base => $opts->{basepkg}]
 			    , [fields => @more_fields]
 			  );

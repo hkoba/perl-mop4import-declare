@@ -3,7 +3,7 @@ package MOP4Import::Declare;
 use 5.010;
 use strict;
 use warnings qw(FATAL all NONFATAL misc);
-our $VERSION = '0.01';
+our $VERSION = '0.000_001';
 use Carp;
 use mro qw/c3/;
 
@@ -18,9 +18,11 @@ our %FIELDS;
 sub import {
   my ($myPack, @decls) = @_;
 
+  my Opts $opts = Opts->new([caller]);
+
   @decls = $myPack->default_exports unless @decls;
 
-  my Opts $opts = Opts->new([caller]);
+  $myPack->declare_strict($opts, $opts->{destpkg});
 
   $myPack->dispatch_declare($opts, $opts->{destpkg}, @decls);
 }
@@ -29,7 +31,7 @@ sub import {
 # This serves as @EXPORT
 #
 sub default_exports {
-  (-strict);
+  ();
 }
 
 sub dispatch_declare {
@@ -98,7 +100,6 @@ sub dispatch_declare_pragma {
 # You may want to override these pragrams.
 sub declare_default_pragma {
   (my $myPack, my Opts $opts, my $callpack) = @_;
-  $myPack->declare_strict($opts, $callpack);
   $myPack->declare_c3($opts, $callpack);
 }
 
@@ -290,36 +291,64 @@ __END__
 
 =head1 NAME
 
-MOP4Import::Declare - map import args to declare_... method calls.
+MOP4Import::Declare - map import args to C<< $meta->declare_...() >> pragma methods.
 
 =head1 SYNOPSIS
 
   #-------------------
-  # To implement MOP4Import, just use this like:
+  # To implement an exporter with MOP4Import::Declare,
+  # just use it in YourExporter.pm "as base" like following:
 
-  package YourExporter;
-  use MOP4Import::Declare -as_base;
+  package YourExporter {
 
-  # and define what you want as "declare_..." method.
-  sub declare_foo {
-    my ($myPack, $opts, $callpack) = @_;
-  }
+    use MOP4Import::Declare -as_base; # "use strict" is turned on too.
 
-  sub declare_bar {
-    my ($myPack, $opts, $callpack, $x, $y, @z)) = @_;
-  }
+    use MOP4Import::Util qw/globref/; # encapsulates "no strict 'refs'".
+    
+    # This method is called via '-foo' pragma,
+    # and adds method named 'foo()' in $callpack.
+    sub declare_foo {
+      my ($myPack, $opts, $callpack) = @_;
+      
+      *{globref($callpack, 'foo')} = sub (@) { join("! ", "FOOOOOO", @_) };
+    }
+    
+    # This method is called via [bar => $x, $y, @z] pragma,
+    # and adds variables $bar, %bar and @bar in $callpack.
+    sub declare_bar {
+      my ($myPack, $opts, $callpack, $x, $y, @z) = @_;
+      
+      my $glob = globref($callpack, 'bar');
+      *$glob = \ $x;
+      *$glob = +{bar => $y};
+      *$glob = \@z;
+    }
+  };
+  1
 
   #-------------------
-  # Then in user's code:
+  # Then you can use above from command line like:
+
+  % perl -MYourExporter=-foo -le 'print foo bar => 3'
+  FOOOOOO! bar! 3
+  %
+
+  #-------------------
+  # Or in another file:
 
   package MyApp;
-  use YourExporter -foo, [bar => 1,2,3,4];
-
-  # Above will be mapped to:
-  #
+  use YourExporter -foo, [bar => "A", "x", 1..3];
+  
+  # Above means you called:
+  #   use strict;
+  #   use warnings;
   #   YourExporter->declare_foo($opts, 'MyApp');
   #   YourExporter->declare_bar($opts, 'MyApp', 1,2,3,4);
+  
+  print "scalar=$bar\t", "hash=$bar{bar}\t", "array=@bar\n";
 
+  # So, you will get:
+  #   scalar=A        hash=x  array=1 2 3
 
 =head1 DESCRIPTION
 

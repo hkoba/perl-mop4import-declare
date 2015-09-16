@@ -1,12 +1,28 @@
 =head1 NAME
 
-MOP4Import::Intro - Meta Object Protocol for Import
+MOP4Import::Intro - Thin Meta-Object Protocol For Import
 
 =head1 SYNOPSIS
 
-Define your exporter like following:
+Create inner-classes C<MyApp::Artist> and C<MyApp::CD>
+using L<MOP4Import::Types>.
 
-  ### Define MyExporter with help of MOP4Import::Declare.
+  package MyApp;
+  use MOP4Import::Types
+    (Artist => [[fields => qw/artistid name/]]
+     , CD   => [[fields => qw/cdid artistid title year/]]);
+
+  sub print_artist_cds {
+    (my $self, my Artist $artist) = @_;
+    my @cds = $self->DB->select(CD => {artistid => $artist->{artistid}});
+    foreach my CD $cd (@cds) {
+      print tsv($cd->{title}, $cd->{year}), "\n";
+    }
+  }
+
+
+Define your exporter C<MyExporter> with help of L<MOP4Import::Declare>.
+
   package MyExporter {
     use MOP4Import::Declare -as_base;
     use MOP4Import::Util qw/globref/;
@@ -32,7 +48,7 @@ Define your exporter like following:
     }
   };
 
-Then use MyExporter in your class like following:
+Then use C<MyExporter> in your class like following:
 
   ### Import MyExporter into your class MyApp.
   package MyApp;
@@ -50,45 +66,10 @@ Then use MyExporter in your class like following:
   say "scalar=$bar\t", "hash=$bar{bar}\t", "array=@bar";
 
 
-  ### Create inner class MyApp::Artist and MyApp::CD using MOP4Import::Types.
-  use MOP4Import::Types
-    (Artist => [[fields => qw/artistid name/]]
-     , CD   => [[fields => qw/cdid artistid title year/]]);
-  
-  my $dbh = sqlite_connect(shift);
-  {
-    my $sth = prepare_execute($dbh, "select * from artist");
-    while (my Artist $artist = $sth->fetchrow_hashref) {
-      say $artist->{name}
-    }
-  }
-  
-  {
-    my $sth = prepare_execute($dbh, "select * from CD");
-    while (my CD $cd = $sth->fetchrow_hashref) {
-      say $cd->{title}
-    }
-  }
-  
-  # Used in above example.
-  sub sqlite_connect {
-    my ($dsn) = @_;
-    require DBI;
-    DBI->connect('dbi:SQLite:'.($dsn || ':memory:'));
-  }
-  
-  sub prepare_execute {
-    my ($dbh, $query, @params) = @_;
-    my $sth = $dbh->prepare($query);
-    $sth->execute(@params);
-    $sth
-  }
-
-
 =head1 DESCRIPTION
 
 MOP4Import, I propose here, is a set of (experimental) protocols
-(and their dispatcher implementation) to write Exporter modules
+(and their dispatcher implementations) to write Exporter modules
 in some B<extensible> ways.
 
 =head1 MODULES
@@ -99,21 +80,21 @@ L<MOP4Import::Declare> protocol dispatcher basically maps each
 C<import()> arguments to method calls starting with B<declare_...>.
 Typicall use of MOP4Import::Declare is like following:
 
-  use MOP4Import::Declare -as_base, [fields => qw/foo bar/];
+  use MOP4Import::Declare -strict, [fields => qw/foo bar/];
 
 Above means basically:
 
   BEGIN {
     require MOP4Import::Declare;
     
-    MOP4Import::Declare->declare_as_base(+{}, __PACKAGE__);
+    MOP4Import::Declare->declare_strict(+{}, __PACKAGE__);
     
     MOP4Import::Declare->declare_fields(+{}, __PACKAGE__, qw/foo bar/);
   }
 
 These methods are called I<MOP4Import declaration pragma>,
 or simply I<pragma>. This module also provides some useful pragmas
-like C<-as_base>, C<< [fields => qw/foo bar/] >> .. shown above
+like C<-strict>, C<< [fields => qw/foo bar/] >> .. shown above
 and serves as a base for other MOP4Import dispatchers.
 
 =head2 MOP4Import::Types
@@ -153,8 +134,8 @@ To use this as a base class, simply:
   use MOP4Import::Base::Configure -as_base;
 
 This class is designed to fully utilize B<statically checked> L<fields>.
-L<fields> getters are automatically generated for public fields.
-To set fields values, C<< $obj->configure(key => value, key2 => value2...) >>.
+Also, L<fields> getters are automatically generated for I<public> fields.
+To set fields values, call C<< $obj->configure(key => value, key2 => value2...) >>.
 You can have set-hook as C<onconfigure_key($value)>.
 
 Also there is its variant L<MOP4Import::Base::CLI>, which is designed for
@@ -162,8 +143,14 @@ Command Line applications.
 
 =head2 MOP4Import::PSGIEnv
 
-L<MOP4Import::PSGIEnv> provides B<static checking> for L<PSGI> ENV.
-You can also declare your extension to PSGI Env.
+L<MOP4Import::PSGIEnv> defines an inner-class C<Env>
+with predeclared L<PSGI> standard L<$env fields|PSGI/The Environment>.
+
+To use B<static checking> for PSGI env, just C<use> this module
+and change argument declaration from C<my ($env)> to C< (my Env $env) >.
+
+Note: You are not limited to standard PSGI items.
+you can add fields just by listing your own extensions.
 
   use MOP4Import::PSGIEnv qw/mypsgi.extension/;
   

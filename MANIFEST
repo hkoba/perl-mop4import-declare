@@ -1,0 +1,21 @@
+.gitignore
+Base/CLI.pm
+Base/Configure.pm
+Build.PL
+Changes
+cpanfile
+Declare.pm
+FieldSpec.pm
+Intro.pod
+MANIFEST			This list of files
+MOP4Import.pod
+Opts.pm
+PSGIEnv.pm
+t/00_compile.t
+t/01_declare.t
+t/02_types.t
+t/10_configure.t
+t/t_lib.pm
+Types.pm
+Util.pm
+Util/FindMethods.pm
