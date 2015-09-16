@@ -8,7 +8,7 @@ my $builder = Module::Build::Pluggable->new
   (dist_name           => 'MOP4Import'
    , dist_author       => q{KOBAYASHI, Hiroaki <hkoba@cpan.org>},
    , dist_version_from => 'Declare.pm'
-   , dist_abstract     => 'Thin Meta-Object Protocol For Import'
+   , dist_abstract     => 'Thin Meta-Object Protocol to build extensible exporters'
    , license           => 'perl'
  );
 

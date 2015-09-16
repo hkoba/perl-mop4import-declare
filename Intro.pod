@@ -1,6 +1,6 @@
 =head1 NAME
 
-MOP4Import::Intro - Thin Meta-Object Protocol For Import
+MOP4Import::Intro - Thin Meta-Object Protocol to build extensible exporters
 
 =head1 SYNOPSIS
 
@@ -68,9 +68,50 @@ Then use C<MyExporter> in your class like following:
 
 =head1 DESCRIPTION
 
-MOP4Import, I propose here, is a set of (experimental) protocols
-(and their dispatcher implementations) to write Exporter modules
+I<Note:> This module is not yet released to CPAN. I need your comments!
+
+MOP4Import, "Meta-Object Protocol for Import", I propose here, 
+is a set of (experimental) protocols
+(and their dispatcher implementations) to write B<exporter> modules
 in some B<extensible> ways.
+
+It is well known for Perl programmers that
+Perl's L<use|perlfunc/use> behaves like following code:
+
+  use YourExporter LIST;
+
+  # means:
+
+  BEGIN { require YourExporter; YourExporter->import( LIST ); }
+
+And this C<< YourExporter->import >> usually used to modify caller module
+just compiling about, like L<Exporter>.
+This is a kind of Meta Programming.
+If correctly used, this can help reducing some boilerplates and
+have more chances to check programs statically.
+
+However, since C<import> is a method and
+a class can have atmost one C<import> method,
+there is a difficulty about reusability.
+For example, imagine some module X can be used like following
+and you favored it:
+
+  use X ':foo', ':bar';
+
+You may want to reuse ":foo" pragma feature in your own module Y,
+but X::import is monolithically writen with "if .. elsif ...",
+so you end up to copy-n-paste specific portion to your Y::import.
+(And someday other guy find your :foo is nice... repeated.)
+
+Source of this problem here is that single function "import" provides
+both protocol(entry point) and implementation,
+and there is no way to selectively reuse/override specific case
+of import specs.
+
+So, I propose some protocols for this area.
+These protocols maps import list of "use Module LIST"
+into specific method invocations like "Module->declare_foo()"
+, "Module->declare_bar()"...
 
 =head1 MODULES
 
@@ -96,6 +137,10 @@ These methods are called I<MOP4Import declaration pragma>,
 or simply I<pragma>. This module also provides some useful pragmas
 like C<-strict>, C<< [fields => qw/foo bar/] >> .. shown above
 and serves as a base for other MOP4Import dispatchers.
+
+This module also mimics type sigil specific import found in L<Exporter>,
+so you don't need to write codes for ordinally symbol/vars/subs exporting.
+
 
 =head2 MOP4Import::Types
 
