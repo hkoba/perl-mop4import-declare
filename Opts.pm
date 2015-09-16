@@ -14,6 +14,8 @@ use fields
 
    # What to inherit. Optional.
    , 'basepkg'
+
+   , qw/filename line/
  );
 
 use MOP4Import::Util;
@@ -23,12 +25,14 @@ use MOP4Import::Util;
 sub Opts () {__PACKAGE__}
 
 sub new {
-  my ($pack, $callpack, @toomany) = @_;
+  my ($pack, $caller, @toomany) = @_;
   if (@toomany) {
     croak "Too many arguments! You may need to write Opts->new(scalar caller)";
   }
   my Opts $opts = fields::new($pack);
-  $opts->{destpkg} = $opts->{objpkg} = $callpack;
+  ($opts->{destpkg}, $opts->{filename}, $opts->{line})
+    = ref $caller ? @$caller : $caller;
+  $opts->{objpkg} = $opts->{destpkg};
   $opts;
 }
 

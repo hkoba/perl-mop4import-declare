@@ -4,23 +4,22 @@ use strict;
 use warnings qw(FATAL all NONFATAL misc);
 use Carp;
 
-use MOP4Import::Declare -as_base;
-use MOP4Import::Opts qw/Opts with_objpkg with_basepkg/;
+use MOP4Import::Declare -as_base, qw/Opts/;
 
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
 sub import {
   my $myPack = shift;
-  my Opts $opts = Opts->new(scalar(caller));
+  my Opts $opts = Opts->new([caller]);
   if (@_ and ref $_[0] eq 'HASH') {
     my $o = shift;
     $opts->{$_} = $o->{$_} for keys %$o;
   }
-  $myPack->declare_types($opts, @_);
+  $myPack->declare_types($opts, $opts->{destpkg}, @_);
 }
 
 sub declare_types {
-  (my $myPack, my Opts $opts, my (@pairs)) = @_;
+  (my $myPack, my Opts $opts, my $callpack, my (@pairs)) = @_;
 
   unless (@pairs % 2 == 0) {
     croak "Odd number of arguments!";
@@ -40,16 +39,18 @@ sub declare_types {
     # Note: if $innerClass has no actual definitions, you will get errors like:
     #   No such class Foo at (eval 45) line 1, near "(my Foo"
     #
-    $myPack->declare_alias($opts, $name, $innerClass);
+    $myPack->declare_alias($opts, $callpack, $name, $innerClass);
 
     $myPack->dispatch_declare($opts->with_objpkg($innerClass)
+			      , $callpack
 			      , @spec);
   }
 }
 
 sub declare_subtypes {
-  (my $myPack, my Opts $opts, my @specs) = @_;
+  (my $myPack, my Opts $opts, my $callpack, my @specs) = @_;
   $myPack->declare_types($opts->with_basepkg($opts->{objpkg})
+			 , $callpack
 			 , @specs);
 }
 

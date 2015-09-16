@@ -20,7 +20,9 @@ sub import {
 
   @decls = $myPack->default_exports unless @decls;
 
-  $myPack->dispatch_declare(Opts->new(scalar caller), @decls);
+  my Opts $opts = Opts->new([caller]);
+
+  $myPack->dispatch_declare($opts, $opts->{destpkg}, @decls);
 }
 
 #
@@ -31,20 +33,20 @@ sub default_exports {
 }
 
 sub dispatch_declare {
-  (my $myPack, my Opts $opts, my (@decls)) = @_;
+  (my $myPack, my Opts $opts, my ($callpack, @decls)) = @_;
 
   foreach my $declSpec (@decls) {
     if (not ref $declSpec) {
 
-      $myPack->declare_import($opts, $declSpec);
+      $myPack->declare_import($opts, $callpack, $declSpec);
 
     } elsif (ref $declSpec eq 'ARRAY') {
 
-      $myPack->dispatch_declare_pragma($opts, @$declSpec);
+      $myPack->dispatch_declare_pragma($opts, $callpack, @$declSpec);
 
     } elsif (ref $declSpec eq 'CODE') {
 
-      $declSpec->($myPack, $opts);
+      $declSpec->($myPack, $opts, $callpack);
 
     } else {
       croak "Invalid declaration spec: $declSpec";
@@ -53,13 +55,13 @@ sub dispatch_declare {
 }
 
 sub declare_import {
-  (my $myPack, my Opts $opts, my ($declSpec)) = @_;
+  (my $myPack, my Opts $opts, my ($callpack, $declSpec)) = @_;
 
   my ($name, $exported);
 
   if ($declSpec =~ /^-([A-Za-z]\w*)$/) {
 
-    return $myPack->dispatch_declare_pragma($opts, $1);
+    return $myPack->dispatch_declare_pragma($opts, $callpack, $1);
 
   } elsif ($declSpec =~ /^\*(\w+)$/) {
     ($name, $exported) = ($1, globref($myPack, $1));
@@ -84,10 +86,10 @@ sub declare_import {
 }
 
 sub dispatch_declare_pragma {
-  (my $myPack, my Opts $opts, my ($pragma, @args)) = @_;
+  (my $myPack, my Opts $opts, my ($callpack, $pragma, @args)) = @_;
   if ($pragma =~ /^[A-Za-z]/
       and my $sub = $myPack->can("declare_$pragma")) {
-    $sub->($myPack, $opts, @args);
+    $sub->($myPack, $opts, $callpack, @args);
   } else {
     croak "Unknown pragma '$pragma' in $opts->{destpkg}";
   }
@@ -95,40 +97,40 @@ sub dispatch_declare_pragma {
 
 # You may want to override these pragrams.
 sub declare_default_pragma {
-  (my $myPack, my Opts $opts) = @_;
-  $myPack->declare_strict($opts);
-  $myPack->declare_c3($opts);
+  (my $myPack, my Opts $opts, my $callpack) = @_;
+  $myPack->declare_strict($opts, $callpack);
+  $myPack->declare_c3($opts, $callpack);
 }
 
 sub declare_strict {
-  (my $myPack, my Opts $opts) = @_;
+  (my $myPack, my Opts $opts, my $callpack) = @_;
   $_->import for qw(strict warnings); # I prefer fatalized warnings, but...
 }
 
 # Not enabled by default.
 sub declare_fatal {
-  (my $myPack, my Opts $opts) = @_;
+  (my $myPack, my Opts $opts, my $callpack) = @_;
   warnings->import(qw(FATAL all NONFATAL misc));
 }
 
 sub declare_c3 {
-  (my $myPack, my Opts $opts) = @_;
+  (my $myPack, my Opts $opts, my $callpack) = @_;
   mro::set_mro($opts->{destpkg}, 'c3');
 }
 
 sub declare_base {
-  (my $myPack, my Opts $opts, my (@base)) = @_;
+  (my $myPack, my Opts $opts, my $callpack, my (@base)) = @_;
 
   print STDERR "Class $opts->{objpkg} extends ".terse_dump(@base)."\n"
     if DEBUG;
 
   push @{*{globref($opts->{objpkg}, 'ISA')}}, @base;
 
-  $myPack->declare_fields($opts);
+  $myPack->declare_fields($opts, $callpack);
 }
 
 sub declare_parent {
-  (my $myPack, my Opts $opts, my (@base)) = @_;
+  (my $myPack, my Opts $opts, my $callpack, my (@base)) = @_;
 
   print STDERR "Inheriting ".terse_dump(@base)." from $opts->{objpkg}\n"
     if DEBUG;
@@ -140,22 +142,22 @@ sub declare_parent {
 
   push @{*{globref($opts->{objpkg}, 'ISA')}}, @base;
 
-  $myPack->declare_fields($opts);
+  $myPack->declare_fields($opts, $callpack);
 }
 
 sub declare_as_base {
-  (my $myPack, my Opts $opts, my (@fields)) = @_;
+  (my $myPack, my Opts $opts, my $callpack, my (@fields)) = @_;
 
   print STDERR "Class $opts->{objpkg} inherits $myPack\n"
     if DEBUG;
 
-  $myPack->declare_default_pragma($opts); # strict, mro c3...
+  $myPack->declare_default_pragma($opts, $callpack); # strict, mro c3...
 
   $myPack->declare___add_isa($opts->{objpkg}, $myPack);
 
-  $myPack->declare_fields($opts, @fields);
+  $myPack->declare_fields($opts, $callpack, @fields);
 
-  $myPack->declare_constant($opts, MY => $opts->{objpkg}, or_ignore => 1);
+  $myPack->declare_constant($opts, $callpack, MY => $opts->{objpkg}, or_ignore => 1);
 }
 
 sub declare___add_isa {
@@ -199,24 +201,24 @@ sub declare___add_isa {
 }
 
 sub declare_as {
-  (my $myPack, my Opts $opts, my ($name)) = @_;
+  (my $myPack, my Opts $opts, my $callpack, my ($name)) = @_;
 
   unless (defined $name and $name ne '') {
     croak "Usage: use ${myPack} [as => NAME]";
   }
 
-  $myPack->declare_constant($opts, $name => $myPack);
+  $myPack->declare_constant($opts, $callpack, $name => $myPack);
 }
 
 sub declare_inc {
-  (my $myPack, my Opts $opts, my ($pkg)) = @_;
+  (my $myPack, my Opts $opts, my $callpack, my ($pkg)) = @_;
   $pkg //= $opts->{objpkg};
   $pkg =~ s{::}{/}g;
   $INC{$pkg . '.pm'} = 1;
 }
 
 sub declare_constant {
-  (my $myPack, my Opts $opts, my ($name, $value, %opts)) = @_;
+  (my $myPack, my Opts $opts, my $callpack, my ($name, $value, %opts)) = @_;
 
   my $my_sym = globref($opts->{objpkg}, $name);
   if (*{$my_sym}{CODE}) {
@@ -228,7 +230,7 @@ sub declare_constant {
 }
 
 sub declare_fields {
-  (my $myPack, my Opts $opts, my (@fields)) = @_;
+  (my $myPack, my Opts $opts, my $callpack, my (@fields)) = @_;
 
   my $extended = fields_hash($opts->{objpkg});
   my $fields_array = fields_array($opts->{objpkg});
@@ -255,7 +257,7 @@ sub declare_fields {
       *{globref($opts->{objpkg}, $name)} = sub { $_[0]->{$name} };
     }
     if (defined $obj->{default}) {
-      $myPack->declare_constant($opts, "default_$name", $obj->{default});
+      $myPack->declare_constant($opts, $callpack, "default_$name", $obj->{default});
     }
   }
 
@@ -263,7 +265,7 @@ sub declare_fields {
 }
 
 sub declare_alias {
-  (my $myPack, my Opts $opts, my ($name, $alias)) = @_;
+  (my $myPack, my Opts $opts, my $callpack, my ($name, $alias)) = @_;
   print STDERR " Declaring alias $name in $opts->{destpkg} as $alias\n" if DEBUG;
   my $sym = globref($opts->{destpkg}, $name);
   if (*{$sym}{CODE}) {
@@ -273,7 +275,7 @@ sub declare_alias {
 }
 
 sub declare_map_methods {
-  (my $myPack, my Opts $opts, my (@pairs)) = @_;
+  (my $myPack, my Opts $opts, my $callpack, my (@pairs)) = @_;
 
   foreach my $pair (@pairs) {
     my ($from, $to) = @$pair;
@@ -295,39 +297,43 @@ MOP4Import::Declare - map import args to declare_... method calls.
   #-------------------
   # To implement MOP4Import, just use this like:
 
-  package YourModule;
-  use MOP4Import::Declare -as_base, qw/Opts/;
+  package YourExporter;
+  use MOP4Import::Declare -as_base;
 
   # and define what you want as "declare_..." method.
   sub declare_foo {
-    (my $myPack, my Opts $opts) = @_;
+    my ($myPack, $opts, $callpack) = @_;
   }
 
   sub declare_bar {
-    (my $myPack, my Opts $opts, my ($x, $y, @z)) = @_;
+    my ($myPack, $opts, $callpack, $x, $y, @z)) = @_;
   }
 
   #-------------------
   # Then in user's code:
 
   package MyApp;
-  use YourModule -foo, [bar => 1,2,3,4];
+  use YourExporter -foo, [bar => 1,2,3,4];
 
   # Above will be mapped to:
   #
-  #   YourMoudle->declare_foo($opts, 'MyApp');
-  #   YourMoudle->declare_bar($opts, 'MyApp', 1,2,3,4);
+  #   YourExporter->declare_foo($opts, 'MyApp');
+  #   YourExporter->declare_bar($opts, 'MyApp', 1,2,3,4);
 
 
 =head1 DESCRIPTION
 
-MOP4Import::Declare is...
+MOP4Import::Declare is one of L<MOP4Import> family.
+This maps arguments given to L<import()> to method calls
+starting with L<declare_...()>.
 
 =head1 AUTHOR
 
 KOBAYASHI, Hiroaki E<lt>hkoba@cpan.orgE<gt>
 
 =head1 SEE ALSO
+
+L<MOP4Import>, L<MOP4Import::Types>, L<MOP4Import::PSGIEnv>
 
 =head1 LICENSE
 
