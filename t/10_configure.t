@@ -1,5 +1,7 @@
+#!/usr/bin/env perl
 use strict;
 use Test::Kantan;
+use Scalar::Util qw/isweak/;
 
 use rlib qw!../..!;
 
@@ -8,7 +10,8 @@ use MOP4Import::t::t_lib qw/no_error expect_script_error/;
 describe "MOP4Import::Base::Configure", sub {
   describe "use ... -as_base, [fields => qw/aquarius scorpio gemini/]", sub {
 
-    it "should have no error", no_error <<'END';
+    it "should have no error"
+      , no_error q{
 package Zodiac1;
 use MOP4Import::Base::Configure -as_base, -inc
     , [fields => qw/aquarius scorpio _scorpio_cnt gemini _gemini_cnt/];
@@ -26,7 +29,7 @@ sub onconfigure_twins {
 }
 
 1;
-END
+};
 
     it "should make Zodiac1 as a subclass of ..Configure", sub {
       ok {Zodiac1->isa('MOP4Import::Base::Configure')};
@@ -85,13 +88,36 @@ END
   };
 
   describe "package MyZodiac {use Zodiac1 -as_base}", sub {
-    it "should have no error", no_error <<'END';
+    it "should have no error"
+      , no_error q{
 package MyZodiac; use Zodiac1 -as_base;
-END
+};
 
     it "should inherit Zodiac1", sub {
       ok {MyZodiac->isa('Zodiac1')};
     };
+  };
+
+  describe "use .. [fields [f => \@spec],...]", sub {
+    describe "spec: default => 'value'", sub {
+      it "should be accepted"
+	, no_error q{package F_def; use Zodiac1 -as_base, [fields => [f => default => 'defval']]};
+
+      it "should be set as default value", sub {
+	ok {F_def->new->f eq 'defval'};
+      }
+    };
+
+    describe "spec: weakref => 1", sub {
+      it "should be accepted"
+	, no_error q{package F_weak; use Zodiac1 -as_base, [fields => [f => weakref => 1]]};
+
+      it "should be weakened", sub {
+	my $obj = [];
+	ok {$obj->[0] = F_weak->new(f => $obj); isweak($obj->[0]->{f})};
+      }
+    };
+    
   };
 };
 

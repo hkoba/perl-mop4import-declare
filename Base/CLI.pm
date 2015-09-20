@@ -6,10 +6,9 @@ use mro qw/c3/;
 use File::Basename ();
 use Data::Dumper ();
 
-use MOP4Import::Base::Configure -as_base;
+use MOP4Import::Base::Configure -as_base, qw/FieldSpec/;
 use MOP4Import::Util qw/parse_opts terse_dump fields_hash fields_array/;
 use MOP4Import::Util::FindMethods;
-use MOP4Import::FieldSpec;
 
 #========================================
 

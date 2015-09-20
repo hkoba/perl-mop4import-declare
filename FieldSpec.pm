@@ -8,8 +8,8 @@ our @EXPORT_OK = qw/FieldSpec/;
 our @EXPORT = @EXPORT_OK;
 
 use fields
-  (# documentation
-   'doc'
+  ('name'
+   , 'doc' # documentation
    , 'default'
    # file? line? package?
  );

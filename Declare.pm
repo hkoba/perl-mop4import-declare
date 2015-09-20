@@ -249,20 +249,66 @@ sub declare_fields {
     }
   }
 
-  foreach my $spec (@fields) {
-    my ($name, @rest) = ref $spec ? @$spec : $spec;
-    print STDERR "  Field $opts->{objpkg}.$name is declared.\n" if DEBUG;
-    my FieldSpec $obj = $extended->{$name} = $myPack->FieldSpec->new(@rest);
-    push @$fields_array, $name;
-    if ($name =~ /^[a-z]/i) {
-      *{globref($opts->{objpkg}, $name)} = sub { $_[0]->{$name} };
-    }
-    if (defined $obj->{default}) {
-      $myPack->declare_constant($opts, $callpack, "default_$name", $obj->{default});
-    }
-  }
+  $myPack->declare___field($opts, $callpack, ref $_ ? @$_ : $_) for @fields;
 
   $opts->{objpkg}; # XXX:
+}
+
+sub declare___field {
+  (my $myPack, my Opts $opts, my $callpack, my ($name, @rest)) = @_;
+  print STDERR "  Declaring field $opts->{objpkg}.$name " if DEBUG;
+  my $extended = fields_hash($opts->{objpkg});
+  my $fields_array = fields_array($opts->{objpkg});
+
+  my $field_class = $myPack->FieldSpec;
+  my $spec = fields_hash($field_class);
+  my (@early, @delayed);
+  while (my ($k, $v) = splice @rest, 0, 2) {
+    unless (defined $k) {
+      croak "Undefined field spec key for $opts->{objpkg}.$name in $callpack";
+    }
+    if ($k =~ /^[A-Za-z]/) {
+      if (my $sub = $myPack->can("declare___field_with_$k")) {
+	push @delayed, [$sub, $k, $v];
+	next;
+      } elsif (exists $spec->{$k}) {
+	push @early, $k, $v;
+	next;
+      }
+    }
+    croak "Unknown option for $opts->{objpkg}.$name in $callpack: "
+      . ".$k";
+  }
+
+  my FieldSpec $obj = $extended->{$name}
+    = $field_class->new(@early, name => $name);
+  print STDERR " with $myPack $field_class => ", terse_dump($obj), "\n"
+    if DEBUG;
+  push @$fields_array, $name;
+
+  # Create accessor for all public fields.
+  if ($name =~ /^[a-z]/i) {
+    *{globref($opts->{objpkg}, $name)} = sub { $_[0]->{$name} };
+  }
+
+  foreach my $delayed (@delayed) {
+    my ($sub, $k, $v) = @$delayed;
+    $sub->($myPack, $opts, $callpack, $obj, $k, $v);
+  }
+
+  $obj;
+}
+
+sub declare___field_with_default {
+  (my $myPack, my Opts $opts, my $callpack, my FieldSpec $fs, my ($k, $v)) = @_;
+
+  $fs->{$k} = $v;
+
+  if (ref $v eq 'CODE') {
+    *{globref($opts->{objpkg}, "default_$fs->{name}")} = $v;
+  } else {
+    $myPack->declare_constant($opts, $callpack, "default_$fs->{name}", $v);
+  }
 }
 
 sub declare_alias {

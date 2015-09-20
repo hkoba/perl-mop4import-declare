@@ -127,6 +127,46 @@ END
       };
     };
   };
+
+  describe "use .. [fields [f => \@spec],...]", sub {
+    describe "YourClass->FieldSpec typename", sub {
+      it "should be accesible as a typename method", sub {
+	ok {Tarot2->FieldSpec eq MOP4Import::Declare->FieldSpec};
+      };
+    };
+
+    describe "FieldSpec->name", sub {
+      it "should be defined", sub {
+	expect(eval q{$Tarot2::FIELDS{tower}{name}})->to_be('tower');
+      };
+    };
+
+    describe "spec: doc => 'help mesage'", sub {
+      it "should be accepted"
+	, no_error q{package F_doc; use Tarot2 [fields => [f => doc => 'help mesage']]};
+
+      it "should be set correctly", sub {
+	expect(eval q{$F_doc::FIELDS{f}{doc}})->to_be('help mesage');
+      };
+    };
+
+    describe "spec: default => 'value'", sub {
+      it "should be accepted"
+	, no_error q{package F_def; use Tarot2 [fields => [f => default => 'defval']]};
+
+      describe "YourClass->default_FNAME", sub {
+	it "should return default value", sub {
+	  ok {F_def->default_f eq 'defval'};
+	};
+      };
+    };
+
+    describe "unknown spec name", sub {
+      it "should raise error", expect_script_error
+	q{package F_unk; use Tarot2 [fields => [f => unknown => 1]]}
+	, to_match => qr/^Unknown option for F_unk.f in F_unk/;
+    };
+  };
 };
 
 done_testing();
