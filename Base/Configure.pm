@@ -84,3 +84,82 @@ sub declare___field_with_weakref {
 
 __END__
 
+=head1 NAME
+
+MOP4Import::Base::Configure - OO Base class (based on MOP4Import)
+
+=head1 SYNOPSIS
+
+  package MyPSGIMiddlewareSample {
+    use MOP4Import::Base::Configure -as_base
+      , [fields =>
+
+         , [app =>
+             , doc => 'For Plack::Middleware standard conformance.']
+
+         , [dbname =>
+             , doc => 'Name of SQLite dbfile']
+        ];
+
+    use parent qw( Plack::Middleware );
+
+    use DBI;
+
+    sub call {
+      (my MY $self, my $env) = @_;
+
+      $env->{'myapp.dbh'} = DBI->connect("dbi:SQLite:dbname=$self->{dbname}");
+
+      return $self->app->($env);
+    }
+  };
+
+=head1 DESCRIPTION
+
+MOP4Import::Base::Configure is a
+L<MOP4Import|MOP4Import::Intro> family
+and is my latest implementation of
+L<Tk-like configure based object|MOP4Import::whyfields>
+base classs. This class also inherits L<MOP4Import::Declare>,
+so you can define your own C<declare_..> pragmas too.
+
+=head1 METHODS
+
+=head2 new (%opts | \%opts)
+X<new>
+
+Usual constructor. This passes given C<%opts> to L</configure>.
+
+=head2 configure (%opts | \%opts)
+X<configure>
+
+General setter interface for public fields.
+See also L<Tk style configure method|MOP4Import::whyfields/Tk-style-configure>.
+
+=head2 configure_default ()
+X<configure_default>
+
+This fills undefined public fields with their default values.
+Default values are obtained via C<default_FIELD> hook
+and they are automatically defined via C<XXX:>
+
+=head1 HOOK METHODS
+
+=head2 after_new
+X<after_new>
+
+This hook is called just after call of C<configure> in C<new>.
+
+=head1 FIELD PRAGMAS
+
+For L<field spec|MOP4Import::Declare/FieldSpec>, you can also have
+hook for field spec.
+
+=head2 default => VALUE
+
+This defines C<default_FIELDNAME> method with given VALUE.
+
+=head2 weakref => 1
+
+This generates set hook (onconfigure_weakref) with
+L<Scalar::Util/weaken>.

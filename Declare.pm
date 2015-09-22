@@ -659,7 +659,7 @@ rely them for now.
 
 =head2 FieldSpec
 
-L<fields pragma/fields> in this module creates this type of object for
+L<fields pragma|/fields> in this module creates this type of object for
 each field specs. Currently, only C<name>, C<doc> and C<default> are declared.
 But you can extend FieldSpec in your exporter like following:
 

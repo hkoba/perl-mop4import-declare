@@ -138,8 +138,11 @@ or simply I<pragma>. This module also provides some useful pragmas
 like C<-strict>, C<< [fields => qw/foo bar/] >> .. shown above
 and serves as a base for other MOP4Import dispatchers.
 
+If you are curious about my advocates of using fields,
+see L<whyfields|MOP4Import::whyfields>.
+
 This module also mimics type sigil specific import found in L<Exporter>,
-so you don't need to write codes to export usual vars/subs/symbols.
+so you don't have to write codes to export usual vars/subs/symbols.
 
 
 =head2 MOP4Import::Types
@@ -164,6 +167,28 @@ Above means basically:
     use MOP4Import::Declare pragma, ...;
   }
 
+From protocol perspective, first is briefly same as:
+
+  package MyApp;
+  BEGIN {
+    require MOP4Import::Types;
+
+    MOP4Import::Types->dispatch_pairs_as(type => +{}, $callpack
+       T1 => [pragma, pragma..],
+       T2 => [pragma,...]
+    );
+  }
+
+And that is
+
+  package MyApp;
+  BEGIN {
+    require MOP4Import::Types;
+
+    MOP4Import::Types->declare___type(+{}, $callpack, T1 => pragma, pragma..);
+    MOP4Import::Types->declare___type(+{}, $callpack, T2 => pragma,...);
+  }
+
 =head2 MOP4Import::Util
 
 L<MOP4Import::Util> provides several functions to handle GLOBs 
@@ -173,13 +198,13 @@ and C<%FIELDS> such as C<globref($class,$name)>, C<fields_hash($class)> ...
 
 =head2 MOP4Import::Base::Configure
 
-L<MOP4Import::Base::Configure> is a base class for Object Orientation.
-To use this as a base class, simply:
+L<MOP4Import::Base::Configure> is a sample (but enough usable)
+base class for Object Orientation. To use this as a base class, simply:
 
   use MOP4Import::Base::Configure -as_base;
 
 This class is designed to fully utilize B<statically checked> L<fields>.
-Also, L<fields> getters are automatically generated for I<public> fields.
+Also, fields getters are automatically generated for I<public> fields.
 To set fields values, call C<< $obj->configure(key => value, key2 => value2...) >>.
 You can have set-hook as C<onconfigure_key($value)>.
 
