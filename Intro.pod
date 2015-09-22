@@ -139,7 +139,7 @@ like C<-strict>, C<< [fields => qw/foo bar/] >> .. shown above
 and serves as a base for other MOP4Import dispatchers.
 
 This module also mimics type sigil specific import found in L<Exporter>,
-so you don't need to write codes for ordinally symbol/vars/subs exporting.
+so you don't need to write codes to export usual vars/subs/symbols.
 
 
 =head2 MOP4Import::Types

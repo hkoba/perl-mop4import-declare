@@ -36,6 +36,18 @@ sub new {
   $opts;
 }
 
+sub take_option_maybe {
+  (my Opts $opts, my $list) = @_;
+
+  return $opts unless @$list and ref $list->[0] eq 'HASH';
+
+  my $o = shift @$list;
+
+  $opts->{$_} = $o->{$_} for keys %$o;
+
+  $opts;
+}
+
 # Should I use Clone::clone?
 sub clone {
   (my Opts $old) = @_;

@@ -1,5 +1,7 @@
 *.sw[po]
 /Build
+/MYMETA.json
+/MYMETA.yml
 /_build
 MANIFEST.bak
 META.yml

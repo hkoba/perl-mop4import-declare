@@ -40,7 +40,7 @@ sub dispatch_declare {
   foreach my $declSpec (@decls) {
     if (not ref $declSpec) {
 
-      $myPack->declare_import($opts, $callpack, $declSpec);
+      $myPack->dispatch_import($opts, $callpack, $declSpec);
 
     } elsif (ref $declSpec eq 'ARRAY') {
 
@@ -56,7 +56,13 @@ sub dispatch_declare {
   }
 }
 
-sub declare_import {
+our %SIGIL_MAP = qw(* GLOB
+		    $ SCALAR
+		    % HASH
+		    @ ARRAY
+		    & CODE);
+
+sub dispatch_import {
   (my $myPack, my Opts $opts, my ($callpack, $declSpec)) = @_;
 
   my ($name, $exported);
@@ -65,27 +71,56 @@ sub declare_import {
 
     return $myPack->dispatch_declare_pragma($opts, $callpack, $1);
 
-  } elsif ($declSpec =~ /^\*(\w+)$/) {
-    ($name, $exported) = ($1, globref($myPack, $1));
-  } elsif ($declSpec =~ /^\$(\w+)$/) {
-    ($name, $exported) = ($1, *{globref($myPack, $1)}{SCALAR});
-  } elsif ($declSpec =~ /^\%(\w+)$/) {
-    ($name, $exported) = ($1, *{globref($myPack, $1)}{HASH});
-  } elsif ($declSpec =~ /^\@(\w+)$/) {
-    ($name, $exported) = ($1, *{globref($myPack, $1)}{ARRAY});
-  } elsif ($declSpec =~ /^\&(\w+)$/) {
-    ($name, $exported) = ($1, *{globref($myPack, $1)}{CODE});
-  } elsif ($declSpec =~ /^(\w+)$/) {
-    ($name, $exported) = ($1, globref($myPack, $1));
+  } elsif ($declSpec =~ /^([\*\$\%\@\&])?(\w+)$/) {
+
+    if ($1) {
+      $myPack->can("import_$SIGIL_MAP{$1}")
+	->($myPack, $opts, $callpack, $1, $2);
+    } else {
+      $myPack->import_NAME($opts, $callpack => $2);
+    }
   } else {
     croak "Invalid import spec: $declSpec";
   }
+}
+
+sub import_NAME {
+  (my $myPack, my Opts $opts, my ($callpack, $name)) = @_;
+
+  my $exported = globref($myPack, $name);
 
   print STDERR " Declaring $name in $opts->{destpkg} as "
     .terse_dump($exported)."\n" if DEBUG;
 
   *{globref($opts->{destpkg}, $name)} = $exported;
 }
+
+sub import_GLOB {
+  (my $myPack, my Opts $opts, my ($callpack, $kind, $name)) = @_;
+
+  my $exported = globref($myPack, $name);
+
+  print STDERR " Declaring $name in $opts->{destpkg} as "
+    .terse_dump($exported)."\n" if DEBUG;
+
+  *{globref($opts->{destpkg}, $name)} = $exported;
+}
+
+sub import_SIGIL {
+  (my $myPack, my Opts $opts, my ($callpack, $kind, $name)) = @_;
+
+  my $exported = *{globref($myPack, $name)}{$kind};
+
+  print STDERR " Declaring $name in $opts->{destpkg} as "
+    .terse_dump($exported)."\n" if DEBUG;
+
+  *{globref($opts->{destpkg}, $name)} = $exported;
+}
+
+*import_SCALAR = *import_SIGIL; *import_SCALAR = *import_SIGIL;
+*import_ARRAY = *import_SIGIL; *import_ARRAY = *import_SIGIL;
+*import_HASH = *import_SIGIL; *import_HASH = *import_SIGIL;
+*import_CODE = *import_SIGIL; *import_CODE = *import_SIGIL;
 
 sub dispatch_declare_pragma {
   (my $myPack, my Opts $opts, my ($callpack, $pragma, @args)) = @_;
@@ -122,10 +157,7 @@ sub declare_c3 {
 sub declare_base {
   (my $myPack, my Opts $opts, my $callpack, my (@base)) = @_;
 
-  print STDERR "Class $opts->{objpkg} extends ".terse_dump(@base)."\n"
-    if DEBUG;
-
-  push @{*{globref($opts->{objpkg}, 'ISA')}}, @base;
+  $myPack->declare___add_isa($opts->{objpkg}, @base);
 
   $myPack->declare_fields($opts, $callpack);
 }
@@ -133,17 +165,12 @@ sub declare_base {
 sub declare_parent {
   (my $myPack, my Opts $opts, my $callpack, my (@base)) = @_;
 
-  print STDERR "Inheriting ".terse_dump(@base)." from $opts->{objpkg}\n"
-    if DEBUG;
-
   foreach my $fn (@base) {
     (my $cp = $fn) =~ s{::|'}{/}g;
     require "$cp.pm";
   }
 
-  push @{*{globref($opts->{objpkg}, 'ISA')}}, @base;
-
-  $myPack->declare_fields($opts, $callpack);
+  $myPack->declare_base($opts, $callpack, @base);
 }
 
 sub declare_as_base {
@@ -163,6 +190,10 @@ sub declare_as_base {
 
 sub declare___add_isa {
   my ($myPack, $objpkg, @parents) = @_;
+
+  print STDERR "Class $objpkg extends ".terse_dump(@parents)."\n"
+    if DEBUG;
+
   my $isa = MOP4Import::Util::isa_array($objpkg);
 
   my $using_c3 = mro::get_mro($objpkg) eq 'c3';
@@ -201,6 +232,7 @@ sub declare___add_isa {
   }
 }
 
+# XXX: about to change! (because this name is ambiguous)
 sub declare_as {
   (my $myPack, my Opts $opts, my $callpack, my ($name)) = @_;
 
@@ -351,7 +383,7 @@ MOP4Import::Declare - map import args to C<< $meta->declare_...() >> pragma meth
 
     use MOP4Import::Util qw/globref/; # encapsulates "no strict 'refs'".
     
-    # This method is called via '-foo' pragma,
+    # This method implements '-foo' pragma,
     # and adds method named 'foo()' in $callpack.
     sub declare_foo {
       my ($myPack, $opts, $callpack) = @_;
@@ -359,7 +391,7 @@ MOP4Import::Declare - map import args to C<< $meta->declare_...() >> pragma meth
       *{globref($callpack, 'foo')} = sub (@) { join("! ", "FOOOOOO", @_) };
     }
     
-    # This method is called via [bar => $x, $y, @z] pragma,
+    # This method implements [bar => $x, $y, @z] pragma,
     # and adds variables $bar, %bar and @bar in $callpack.
     sub declare_bar {
       my ($myPack, $opts, $callpack, $x, $y, @z) = @_;
@@ -389,7 +421,7 @@ MOP4Import::Declare - map import args to C<< $meta->declare_...() >> pragma meth
   #   use strict;
   #   use warnings;
   #   YourExporter->declare_foo($opts, 'MyApp');
-  #   YourExporter->declare_bar($opts, 'MyApp', 1,2,3,4);
+  #   YourExporter->declare_bar($opts, 'MyApp', "A", "x", 1..3);
   
   print "scalar=$bar\t", "hash=$bar{bar}\t", "array=@bar\n";
 
@@ -398,9 +430,249 @@ MOP4Import::Declare - map import args to C<< $meta->declare_...() >> pragma meth
 
 =head1 DESCRIPTION
 
-MOP4Import::Declare is one of L<MOP4Import> family.
-This maps arguments given to L<import()> to method calls
-starting with L<declare_...()>.
+MOP4Import::Declare is one protocol implementation
+of L<MOP4Import|MOP4Import::Intro> family.
+You can use this module to implement your own exporter
+in an extensible way.
+
+With MOP4Import::Declare, arguments of L<import()>
+are mapped into method calls starting with C<declare_...()>.
+
+=head2 "MetaObject Protocol for Import" in this module
+
+C<import()> method of MOP4Import::Declare briefly does following:
+
+  sub import {
+    my ($myPack, @pragma) = @_;
+    
+    my $callpack = caller;
+    
+    $myPack->dispatch_declare(+{}, $callpack, -strict, @pragma);
+  }
+
+L<dispatch_declare()|MOP4Import::Declare/dispatch_declare> dispatches
+C<declare_PRAGMA()> pragma handlers based on each pragma argument types
+(string, arrayref or coderef).
+
+=over 4
+
+=item -PRAGMA
+
+  use YourExporter -PRAGMA;
+
+C<-Identifier>, word starting with C<->, is dispatched as:
+
+  $myPack->declare_PRAGMA($opts, $callpack);
+
+Note: You don't need to quote this pragma because perl has special support
+for this kind of syntax (bareword lead by C<->).
+
+=item [PRAGMA => ARGS...]
+
+  use YourExporter [PRAGMA => @ARGS];
+
+ARRAY ref is dispatched as:
+
+  $myPack->declare_PRAGMA($opts, $callpack, @ARGS);
+
+=item NAME, *NAME, $NAME, %NAME, @NAME, &NAME
+
+  use YourExporter qw/NAME *NAME $NAME %NAME @NAME &NAME/;
+
+These kind of words (optionally starting with sigil) just behaves
+as ordinally export/import.
+
+=item sub {...}
+
+  use YourExporter sub { ... };
+
+You can pass callback too.
+
+  sub {
+    my ($yourExporterPackage, $opts, $callpack) = @_;
+    # do rest of job
+  }
+
+=back
+
+=head1 PRAGMAS
+
+All pragmas below are actually implemented as "declare_PRAGMA" method,
+so you can override them in your subclass, as you like.
+
+=head2 -strict
+X<strict>
+
+This pragma turns on C<use strict; use warnings;>.
+
+=head2 -fatal
+X<fatal>
+
+This pragma turns on C<use warnings qw(FATAL all NONFATAL misc);>.
+
+=head2 C<< [base => CLASS...] >>
+X<base>
+
+Establish an ISA relationship with base classes at compile time.
+Like L<base>, this imports C<%FIELDS> from base classes too.
+
+Note: when target module uses L<c3 mro|mro/"The C3 MRO">,
+this pragma adds given classes in front of C<@ISA>.
+
+=head2 C<< [parent => CLASS...] >>
+X<parent>
+
+Establish an ISA relationship with base classes at compile time.
+In addition to L</base>,
+this loads requested classes at compile time, like L<parent>.
+
+=head2 -as_base,  C<< [as_base => FIELD_SPECs...] >>
+X<as_base>
+
+This pragma sets YourExporter as base class of target module.
+Optional arguments are passed to L<fields pragma/fields>.
+
+Note: as noted in L</base>, this pragma cares mro of target module.
+You can simply inherit classes with "generic" to "specific" order.
+
+=head2 C<< [fields => SPEC...] >>
+X<fields>
+
+This pragma adds C<%FIELDS> definitions to target module, based on
+given field specs. Each fields specs are either single string or array ref.
+
+
+
+=head2 C<< [constant => NAME => VALUE] >>
+X<constant>
+
+  use YourExporter [constant => FOO => 'BAR', or_ignore => 1];
+
+This pragma adds constant sub C<NAME> to target module.
+
+=over 4
+
+=item C<< or_ignore => BOOL >>
+
+If this option is given and given NAME already defined in target module,
+skip adding.
+
+=back
+
+=head2 -inc
+X<inc>
+
+This pragma adds target module to C<%INC>
+so that make the module C<require> safe.
+
+=head2 C<< [map_methods => [FROM => TO]...] >>
+X<map_methods>
+
+This pragma looks up actual sub of C<TO> and set it to target module
+with name C<FROM>. For example:
+
+  package MyStore {
+    use MOP4Import::Declare
+         [parent => qw/Plack::Session::Store::File/]
+       , [map_methods => [get => 'fetch'], [set => 'store']];
+  }
+
+  use Plack::Builder;
+  builder {
+    enable 'Session::Simple', store => MyStore->new(dir => $sess_dir);
+    $app
+  };
+
+=head1 METHODS
+
+=head2 dispatch_declare($opts, $callpack, PRAGMA...)
+X<dispatch_declare>
+
+This implements C<MOP4Import::Declare> style type-based pragma dispatching.
+
+  YourExporter->dispatch_declare($opts, $callpack, -foo, [bar => 'baz'], '*FOO');
+
+is same as
+
+  YourExporter->declare_foo($opts, $callpack);
+  YourExporter->declare_bar($opts, $callpack, 'baz');
+  YourExporter->dispatch_import($opts, $callpack, '*FOO');
+
+=head2 dispatch_import($opts, $callpack, $STRING)
+X<dispatch_import>
+
+This mimics L<Exporter> like sigil based import.
+Actually this dispatches C<import_...> method with respect to leading sigil.
+(This means you can override each cases in your subclass).
+If C<$STRING> has no sigil, L</import_NAME> will be called.
+
+  use YourExporter qw/*FOO $BAR @BAZ %QUX &QUUX/;
+
+is same as
+
+  BEGIN {
+    YourExporter->import_GLOB(+{},   $callpack, GLOB   => 'FOO');
+    YourExporter->import_SCALAR(+{}, $callpack, SCALAR => 'BAR');
+    YourExporter->import_ARRAY(+{},  $callpack, ARRAY  => 'BAZ');
+    YourExporter->import_HASH(+{},   $callpack, HASH   => 'QUX');
+    YourExporter->import_CODE(+{},   $callpack, CODE   => 'QUUX');
+  }
+
+Note: some complex features like export list C<@EXPORT>, C<@EXPORT_OK>
+and C<:TAG> based import are not implemented.
+
+If you really want to implement those features, you can inherit this module and
+simply override C<dispatch_import>. It will be called for all non reference
+pragmas.
+
+=head2 import_NAME($opts, $callpack, $name)
+X<import_NAME>
+
+This method (hook) is called when simple word (matches C</^\w+$/>) is given
+as import list.
+
+  use YourExporter qw/FOO/;
+
+is same as:
+
+  BEGIN {
+    YourExporter->import_NAME(+{}, __PACKAGE__, 'Foo');
+  }
+
+=head2 import_SIGIL($opts, $callpack, $type, $name)
+X<import_SIGIL>
+
+Actual implementation of C<import_GLOB>, C<import_SCALAR>, C<import_ARRAY>, C<import_CODE>.
+
+
+=head1 TYPES
+
+=head2 Opts
+
+This type of object is always given as a second argument of
+each invocation of C<declare_PRAGMA>.
+This object carries complex info such as caller filename, lineno
+to each pragma handlers. In simple cases, you don't need to care about these.
+
+Note: field names of this type are about to change, so please do not
+rely them for now.
+
+=head2 FieldSpec
+
+L<fields pragma/fields> in this module creates this type of object for
+each field specs. Currently, only C<name>, C<doc> and C<default> are declared.
+But you can extend FieldSpec in your exporter like following:
+
+  use YourBaseObject {
+    use MOP4Import::Declare -as_base;
+    use MOP4Import::Types
+      FieldSpec => [[fields => qw/readonly required validator/]];
+  }
+  
+  package MyApp {
+    use YourBaseObject -as_base,
+        [fields => [app_name => readonly => 1, required => 1]]
+  }
 
 =head1 AUTHOR
 
