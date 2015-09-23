@@ -8,9 +8,9 @@ Declare.pm
 FieldSpec.pm
 Intro.pod
 MANIFEST			This list of files
-MOP4Import.pod
 Opts.pm
 PSGIEnv.pm
+README.md
 t/00_compile.t
 t/01_declare.t
 t/02_types.t
@@ -19,3 +19,4 @@ t/t_lib.pm
 Types.pm
 Util.pm
 Util/FindMethods.pm
+whyfields.pod
