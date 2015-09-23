@@ -75,6 +75,10 @@ is a set of (experimental) protocols
 (and their dispatcher implementations) to write B<exporter> modules
 in some B<extensible> ways.
 
+For more about design background, see L<whyfields|MOP4Import::whyfields>.
+
+=head2 What kind of problems does this try to solve?
+
 It is well known for Perl programmers that
 Perl's L<use|perlfunc/use> behaves like following code:
 
@@ -84,7 +88,7 @@ Perl's L<use|perlfunc/use> behaves like following code:
 
   BEGIN { require YourExporter; YourExporter->import( LIST ); }
 
-And this C<< YourExporter->import >> usually used to modify caller module
+And this C<< YourExporter->import >> usually used to B<modify caller module>
 just compiling about, like L<Exporter>.
 This is a kind of Meta Programming.
 If correctly used, this can help reducing some boilerplates and
@@ -103,15 +107,15 @@ but X::import is monolithically writen with "if .. elsif ...",
 so you end up to copy-n-paste specific portion to your Y::import.
 (And someday other guy find your :foo is nice... repeated.)
 
-Source of this problem here is that single function "import" provides
-both protocol(entry point) and implementation,
+Source of this problem here is that single function C<import> provides
+both B<protocol(entry point)> and B<implementation>,
 and there is no way to selectively reuse/override specific case
 of import specs.
 
 So, I propose some protocols for this area.
 These protocols maps import list of "use Module LIST"
-into specific method invocations like "Module->declare_foo()"
-, "Module->declare_bar()"...
+into specific method invocations like C<< Module->declare_foo() >>
+, C<< Module->dispatch_pragma_bar() >>...
 
 =head1 MODULES
 
