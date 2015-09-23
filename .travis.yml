@@ -5,4 +5,5 @@ perl:
   - "5.16"
   - "5.14"
   - "5.12"
+script: perl Build.PL && ./Build test verbose=1
 sudo: false
