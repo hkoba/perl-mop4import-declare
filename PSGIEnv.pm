@@ -84,3 +84,29 @@ sub import {
 }
 
 1;
+
+__END__
+
+=head1 NAME
+
+MOP4Import::PSGIEnv - define Env class for PSGI, with extensions.
+
+=head1 SYNOPSIS
+
+  use MOP4Import::PSGIEnv qw/mypsgi.extension/;
+  
+  return sub {
+    (my Env $env) = @_;
+    return [200, [], ["PATH_INFO is ", $env->{PATH_INFO}
+                    , extension => $env->{'mypsgi.extension'}
+                  ]];
+  }
+
+=head1 DESCRIPTION
+
+MOP4Import::PSGIEnv is yet another protocol implementation
+of L<MOP4Import|MOP4Import::Intro> family.
+
+This module simply defines C<Env> class.
+Standard L<PSGI $env|PSGI/The Environment> is already defined.
+
