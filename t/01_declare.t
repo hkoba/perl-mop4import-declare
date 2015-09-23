@@ -236,8 +236,12 @@ END
     describe "use Specific -as_base; use Generic -as_base;", sub {
       it "should raise (better) error", sub {
 	local $@;
-	expect(do {eval q{package Ng2;use Tarot2 -as_base;use Tarot1 -as_base;}; $@}
-	     )->to_match(qr/^Can't add base 'Tarot1' to 'Ng2'/);
+	if ($] >= 5.014) {
+	  expect(do {eval q{package Ng2;use Tarot2 -as_base;use Tarot1 -as_base;}; $@}
+	       )->to_match(qr/^Can't add base 'Tarot1' to 'Ng2'/);
+	} else {
+	  # skip...
+	}
       };
     };
   };

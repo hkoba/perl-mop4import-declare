@@ -1,6 +1,7 @@
 *.sw[po]
-/Build
 /*.tar.gz
+/.perl-version
+/Build
 /MYMETA.json
 /MYMETA.yml
 /_build

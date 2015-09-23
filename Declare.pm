@@ -224,6 +224,10 @@ sub declare___add_isa {
       my $adding = mro::get_linear_isa($parent);
       eval {
 	unshift @$isa, $parent;
+	# if ($] < 5.014) {
+	#   mro::method_changed_in($objpkg);
+	#   mro::get_linear_isa($objpkg);
+	# }
       };
       if ($@) {
         croak "Can't add base '$parent' to '$objpkg' (\n"
