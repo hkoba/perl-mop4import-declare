@@ -68,9 +68,7 @@ Then use C<MyExporter> in your class like following:
 
 =head1 DESCRIPTION
 
-I<Note:> This module is not yet released to CPAN. I need your comments!
-
-MOP4Import, "Meta-Object Protocol for Import", I propose here, 
+MOP4Import, "Meta-Object Protocol for Import", I propose here,
 is a set of (experimental) protocols
 (and their dispatcher implementations) to write B<exporter> modules
 in some B<extensible> ways.
