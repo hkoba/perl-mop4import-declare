@@ -18,6 +18,7 @@ t/00_compile.t
 t/01_declare.t
 t/02_types.t
 t/10_configure.t
+t/t_lib.pl
 t/t_lib.pm
 Types.pm
 Util.pm
