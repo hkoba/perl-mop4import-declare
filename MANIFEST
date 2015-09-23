@@ -1,4 +1,5 @@
 .gitignore
+.travis.yml
 Base/CLI.pm
 Base/Configure.pm
 Build.PL

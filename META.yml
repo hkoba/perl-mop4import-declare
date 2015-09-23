@@ -1,0 +1,24 @@
+---
+abstract: 'Thin Meta-Object Protocol to build extensible exporters'
+author:
+  - 'KOBAYASHI, Hiroaki <hkoba@cpan.org>'
+build_requires:
+  Module::Build::Pluggable::CPANfile: '0.05'
+  Test::Kantan: '0'
+  rlib: '0'
+configure_requires:
+  Module::Build: '0'
+  Module::Build::Pluggable::CPANfile: '0.05'
+  Module::CPANfile: '0'
+dynamic_config: 1
+generated_by: 'Module::Build version 0.4214, CPAN::Meta::Converter version 2.150001'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: '1.4'
+name: MOP4Import
+requires:
+  perl: '5.010'
+resources:
+  license: http://dev.perl.org/licenses/
+version: 0.000_001

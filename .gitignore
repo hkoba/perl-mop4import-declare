@@ -4,7 +4,6 @@
 /MYMETA.yml
 /_build
 MANIFEST.bak
-META.yml
 Makefile
 Makefile.old
 blib
