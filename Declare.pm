@@ -730,10 +730,6 @@ But you can extend FieldSpec in your exporter like following:
 
 KOBAYASHI, Hiroaki E<lt>hkoba@cpan.orgE<gt>
 
-=head1 SEE ALSO
-
-L<MOP4Import>, L<MOP4Import::Types>, L<MOP4Import::PSGIEnv>
-
 =head1 LICENSE
 
 This library is free software; you can redistribute it and/or modify
