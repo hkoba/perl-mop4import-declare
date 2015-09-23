@@ -211,7 +211,7 @@ like C<< $cat->{namae} >>, you will get compilation error
 like B<No such class field "namae" in variable $cat of type main::Cat>.
 
 Interestingly, above story does not mention value of C<%FIELDS>.
-Actually, the values are only used in L<fields.pm> to achieve
+Actually, the values are only used in fields.pm to achieve
 single inheritance restriction. Perl's core itself
 does not care its content.
 
