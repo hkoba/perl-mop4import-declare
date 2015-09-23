@@ -506,17 +506,17 @@ All pragmas below are actually implemented as "declare_PRAGMA" method,
 so you can override them in your subclass, as you like.
 
 =head2 -strict
-X<strict>
+X<strict> X<declare_strict>
 
 This pragma turns on C<use strict; use warnings;>.
 
 =head2 -fatal
-X<fatal>
+X<fatal> X<declare_fatal>
 
 This pragma turns on C<use warnings qw(FATAL all NONFATAL misc);>.
 
 =head2 C<< [base => CLASS...] >>
-X<base>
+X<base> X<declare_base>
 
 Establish an ISA relationship with base classes at compile time.
 Like L<base>, this imports C<%FIELDS> from base classes too.
@@ -525,14 +525,14 @@ Note: when target module uses L<c3 mro|mro/"The C3 MRO">,
 this pragma adds given classes in front of C<@ISA>.
 
 =head2 C<< [parent => CLASS...] >>
-X<parent>
+X<parent> X<declare_parent>
 
 Establish an ISA relationship with base classes at compile time.
 In addition to L</base>,
 this loads requested classes at compile time, like L<parent>.
 
 =head2 -as_base,  C<< [as_base => FIELD_SPECs...] >>
-X<as_base>
+X<as_base> X<declare_as_base>
 
 This pragma sets YourExporter as base class of target module.
 Optional arguments are passed to L<fields pragma/fields>.
@@ -541,15 +541,62 @@ Note: as noted in L</base>, this pragma cares mro of target module.
 You can simply inherit classes with "generic" to "specific" order.
 
 =head2 C<< [fields => SPEC...] >>
-X<fields>
+X<fields> X<declare_fields>
 
 This pragma adds C<%FIELDS> definitions to target module, based on
-given field specs. Each fields specs are either single string or array ref.
+given field specs. Each fields specs are either single string
+or array ref like C<< [FIELD_NAME => SPEC => value, ...] >>.
 
+  use MOP4Import::Declare
+     [fields =>
+        qw/
+          foo bar baz
+        /
+      ];
+
+  use MOP4Import::Declare
+     [fields =>
+        [debug   => doc => 'debug level'],
+        [dbi_dsn => doc => 'DBI connection string'],
+        qw/dbi_user dbi_password/
+     ];
+
+For more about fields, see L<whyfields|MOP4Import::whyfields>.
+
+=head3 field spec hooks.
+X<field_hook> X<declare___field_with>
+
+You can define special hook for field spec.
+That should named starting with C<declare___field_with_...>.
+
+ sub declare___field_with_foo {
+   (my $myPack, my $opts, my $callpack, my FieldSpec $fs, my ($k, $v)) = @_;
+
+   $fs->{$k} = $v;
+
+   # Do other jobs...
+ }
+
+=head4 default
+X<declare___field_with_default>
+
+When field C<bar> in class C<Foo> has spec C<< default => $VALUE >>,
+method C<Foo::default_bar> is defined with $VALUE.
+
+  sub Foo::default_bar { $VALUE }
+
+If VALUE is CODE ref, it is directly assigned to method symbol.
+
+Note: This spec only cares about defining above C<default_...> method.
+To make default value assignment really work,
+you must have constructor which cooperate well with this.
+You can use L<MOP4Import::Base::Configure> for that purpose
+but are not restricted to it.
+Anyway MOP4Import::Declare itself will be kept constructor agnostic.
 
 
 =head2 C<< [constant => NAME => VALUE] >>
-X<constant>
+X<constant> X<declare_constant>
 
   use YourExporter [constant => FOO => 'BAR', or_ignore => 1];
 
@@ -565,13 +612,13 @@ skip adding.
 =back
 
 =head2 -inc
-X<inc>
+X<inc> X<declare_inc>
 
 This pragma adds target module to C<%INC>
 so that make the module C<require> safe.
 
 =head2 C<< [map_methods => [FROM => TO]...] >>
-X<map_methods>
+X<map_methods> X<declare_map_methods>
 
 This pragma looks up actual sub of C<TO> and set it to target module
 with name C<FROM>. For example:
