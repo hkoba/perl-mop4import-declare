@@ -140,8 +140,9 @@ See also L<Tk style configure method|MOP4Import::whyfields/Tk-style-configure>.
 X<configure_default>
 
 This fills undefined public fields with their default values.
-Default values are obtained via C<default_FIELD> hook
-and they are automatically defined via C<XXX:>
+Default values are obtained via C<default_FIELD> hook.
+They are normally defined by
+L<default|MOP4Import::Declare/declare___field_with_default> field spec.
 
 =head1 HOOK METHODS
 
@@ -150,7 +151,7 @@ X<after_new>
 
 This hook is called just after call of C<configure> in C<new>.
 
-=head1 FIELD PRAGMAS
+=head1 FIELD SPECs
 
 For L<field spec|MOP4Import::Declare/FieldSpec>, you can also have
 hook for field spec.
@@ -161,5 +162,5 @@ This defines C<default_FIELDNAME> method with given VALUE.
 
 =head2 weakref => 1
 
-This generates set hook (onconfigure_weakref) with
+This generates set hook (onconfigure_FIELDNAME) wrapped with
 L<Scalar::Util/weaken>.
