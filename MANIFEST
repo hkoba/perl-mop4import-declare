@@ -8,6 +8,8 @@ Declare.pm
 FieldSpec.pm
 Intro.pod
 MANIFEST			This list of files
+META.json
+META.yml
 Opts.pm
 PSGIEnv.pm
 README.md
