@@ -237,12 +237,12 @@ sub declare___add_isa {
   }
 }
 
-# XXX: about to change! (because this name is ambiguous)
-sub declare_as {
+# XXX: previously was [as].
+sub declare_naming {
   (my $myPack, my Opts $opts, my $callpack, my ($name)) = @_;
 
   unless (defined $name and $name ne '') {
-    croak "Usage: use ${myPack} [as => NAME]";
+    croak "Usage: use ${myPack} [naming => NAME]";
   }
 
   $myPack->declare_constant($opts, $callpack, $name => $myPack);

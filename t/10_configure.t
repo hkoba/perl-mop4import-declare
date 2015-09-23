@@ -69,12 +69,28 @@ END
        ok {$obj->gemini   eq "baz"};
     };
 
+    it "should accept new({key => value...}) too", sub {
+       my $obj = Zodiac1->new
+           ({aquarius => "bar", scorpio => "baz", gemini => "foo"});
+       ok {$obj->aquarius eq "bar"};
+       ok {$obj->scorpio  eq "baz"};
+       ok {$obj->gemini   eq "foo"};
+    };
+
     it "should accept configure(key => value...)", sub {
        my $obj = Zodiac1->new->configure
            (aquarius => "foo", scorpio => "bar", gemini => "baz");
        ok {$obj->aquarius eq "foo"};
        ok {$obj->scorpio  eq "bar"};
        ok {$obj->gemini   eq "baz"};
+    };
+
+    it "should wrong argument for configure", sub {
+      expect(do {eval q{Zodiac1->new(undef, 'foo')}; $@})
+	->to_match(qr/^Undefined option name for class Zodiac1/);
+
+      expect(do {eval q{Zodiac1->new(foo => 'bar')}; $@})
+	->to_match(qr/^Unknown option for class Zodiac1: foo/);
     };
 
     it "should call onconfigure_zzz hook ", sub {
@@ -84,7 +100,7 @@ END
        ok {$obj->{_scorpio_cnt} == 2};
        ok {$obj->gemini   eq "qux"};
        ok {$obj->{_gemini_cnt} == 2};
-    };
+     };
   };
 
   describe "package MyZodiac {use Zodiac1 -as_base}", sub {

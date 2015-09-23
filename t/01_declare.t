@@ -100,7 +100,7 @@ END
 
   describe "use YOUR_CLASS -as_base", sub {
     it "should have no error", no_error $subst->(q{
-package Tarot2; use Tarot1 -as_base, -inc;
+package Tarot2; use Tarot1 -as_base, -inc, [naming => 'Base'];
 
 our @CARDS = qw(@*SUBST*@);
 
@@ -119,8 +119,12 @@ sub CARDS { [reverse @CARDS] }
       ok {Tarot2->isa('MOP4Import::Declare')};
     };
 
-    it "should make define MY alias in Tarot2", sub {
+    it "should define MY alias in Tarot2", sub {
       ok {Tarot2->MY eq 'Tarot2'};
+    };
+
+    it "should name Tarot1 Base in Tarot2", sub {
+      ok {Tarot2->Base eq 'Tarot1'};
     };
 
     it "should inherit fields from Tarot1", no_error <<'END';
