@@ -38,6 +38,9 @@ sub dispatch_declare {
   (my $myPack, my Opts $opts, my ($callpack, @decls)) = @_;
 
   foreach my $declSpec (@decls) {
+
+    croak "Undefined pragma!" unless defined $declSpec;
+
     if (not ref $declSpec) {
 
       $myPack->dispatch_import($opts, $callpack, $declSpec);
@@ -51,7 +54,7 @@ sub dispatch_declare {
       $declSpec->($myPack, $opts, $callpack);
 
     } else {
-      croak "Invalid declaration spec: $declSpec";
+      croak "Invalid pragma: ".terse_dump($declSpec);
     }
   }
 }
@@ -71,11 +74,12 @@ sub dispatch_import {
 
     return $myPack->dispatch_declare_pragma($opts, $callpack, $1);
 
-  } elsif ($declSpec =~ /^([\*\$\%\@\&])?(\w+)$/) {
+  } elsif ($declSpec =~ /^([\*\$\%\@\&])?([A-Za-z]\w*)$/) {
 
     if ($1) {
-      $myPack->can("import_$SIGIL_MAP{$1}")
-	->($myPack, $opts, $callpack, $1, $2);
+      my $kind = $SIGIL_MAP{$1};
+      $myPack->can("import_$kind")
+	->($myPack, $opts, $callpack, $1, $kind, $2);
     } else {
       $myPack->import_NAME($opts, $callpack => $2);
     }
@@ -96,7 +100,7 @@ sub import_NAME {
 }
 
 sub import_GLOB {
-  (my $myPack, my Opts $opts, my ($callpack, $kind, $name)) = @_;
+  (my $myPack, my Opts $opts, my ($callpack, $sigil, $kind, $name)) = @_;
 
   my $exported = globref($myPack, $name);
 
@@ -107,12 +111,13 @@ sub import_GLOB {
 }
 
 sub import_SIGIL {
-  (my $myPack, my Opts $opts, my ($callpack, $kind, $name)) = @_;
+  (my $myPack, my Opts $opts, my ($callpack, $sigil, $kind, $name)) = @_;
 
   my $exported = *{globref($myPack, $name)}{$kind};
 
-  print STDERR " Declaring $name in $opts->{destpkg} as "
-    .terse_dump($exported)."\n" if DEBUG;
+  print STDERR " Declaring $sigil$opts->{destpkg}::$name"
+    . ", import from $sigil${myPack}::$name"
+    . " (=".terse_dump($exported).")\n" if DEBUG;
 
   *{globref($opts->{destpkg}, $name)} = $exported;
 }

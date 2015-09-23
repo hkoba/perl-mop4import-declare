@@ -1,3 +1,4 @@
+#!/usr/bin/env perl
 use strict;
 use Test::Kantan;
 
@@ -10,9 +11,8 @@ describe "MOP4Import::Declare", sub {
 
     it "should have no error", no_error <<'END';
 package Tarot1;
-use MOP4Import::Declare -as_base, [fields => qw/pentacle chariot tower
-                                                _hermit/];
-$INC{'Tarot1.pm'} = 1;
+use MOP4Import::Declare -as_base, -inc
+   , [fields => qw/pentacle chariot tower _hermit/];
 1;
 END
 
@@ -69,10 +69,47 @@ END
     };
   };
 
+  describe "Error checking for pragmas (specs)", sub {
+    it "should detect undef", expect_script_error
+      q{package SpecError1; use MOP4Import::Declare undef;}
+      , to_match => qr/^Undefined pragma!/;
+
+    it "should detect unknown type", expect_script_error
+      q{package SpecError2; use MOP4Import::Declare +{'foo' => 'bar'};}
+      , to_match => qr/^Invalid pragma: \{'foo' => 'bar'\}/;
+
+    it "should detect invalid import spec", expect_script_error
+      q{package SpecError3; use MOP4Import::Declare '_foo';}
+      , to_match => qr/^Invalid import spec: _foo/;
+
+    it "should detect unknown pragma", expect_script_error
+      q{package SpecError4; use MOP4Import::Declare '-foo';}
+      , to_match => qr/^Unknown pragma 'foo' in SpecError4/;
+  };
+
+  my @cards = qw(Ace Chariot Cup Death Devil Emperor Empress Fool Hanged_Man
+ Hermit Hierophant High_Priestess Judgement Justice King Knight Lovers
+ Magician Moon Page Pentacle Queen Star Strength Sun Sword Temperance
+ Tower Wand Wheel_of_Fortune World);
+
+  my $subst = sub {
+    (my $str = $_[0])
+      =~ s{\@\*SUBST\*\@}{@cards}g;
+    $str;
+  };
+
   describe "use YOUR_CLASS -as_base", sub {
-    it "should have no error", no_error <<'END';
+    it "should have no error", no_error $subst->(q{
 package Tarot2; use Tarot1 -as_base, -inc;
-END
+
+our @CARDS = qw(@*SUBST*@);
+
+our %CARDS = map {$_ => $_} @CARDS;
+
+our $CARDS = join(" ", @CARDS);
+
+sub CARDS { [reverse @CARDS] }
+});
 
     it "should make Tarot2 as a subclass of Tarot1", sub {
       ok {Tarot2->isa('Tarot1')};
@@ -104,6 +141,73 @@ END
 	  qr/^No such class field "towerrr" in variable \$foo of type Tarot2/;
 
 
+  };
+
+  describe "Exporter like sigil based import for \$, \@, \% and &", sub {
+    it "should have no error", no_error q{
+package TarotImport1;
+use Tarot2 qw/$CARDS @CARDS %CARDS &CARDS/;
+};
+    it 'should import @CARDS', sub {
+      expect(eval q{package TarotImport1; \@CARDS})->to_be(\@cards);
+    };
+    it 'should import $CARDS', sub {
+      expect(eval q{package TarotImport1; $CARDS})->to_be(join(" ", @cards));
+    };
+    it 'should import %CARDS', sub {
+      expect(eval q{package TarotImport1; \%CARDS})->to_be(+{map {$_ => $_} @cards});
+    };
+    it 'should import &CARDS', sub {
+      expect(eval q{package TarotImport1; CARDS()})->to_be([reverse @cards]);
+    };
+  };
+
+  describe "Exporter like sigil based import for *", sub {
+    it "should have no error", no_error q{
+package TarotImportGLOB;
+use Tarot2 qw/*CARDS/;
+};
+    it 'should import @CARDS', sub {
+      expect(eval q{package TarotImportGLOB; \@CARDS})->to_be(\@cards);
+    };
+    it 'should import $CARDS', sub {
+      expect(eval q{package TarotImportGLOB; $CARDS})->to_be(join(" ", @cards));
+    };
+    it 'should import %CARDS', sub {
+      expect(eval q{package TarotImportGLOB; \%CARDS})->to_be(+{map {$_ => $_} @cards});
+    };
+    it 'should import &CARDS', sub {
+      expect(eval q{package TarotImportGLOB; CARDS()})->to_be([reverse @cards]);
+    };
+  };
+
+  describe "Exporter like word import for *", sub {
+    it "should have no error", no_error q{
+package TarotImportWORD;
+use Tarot2 qw/CARDS/;
+};
+    it 'should import @CARDS', sub {
+      expect(eval q{package TarotImportWORD; \@CARDS})->to_be(\@cards);
+    };
+    it 'should import $CARDS', sub {
+      expect(eval q{package TarotImportWORD; $CARDS})->to_be(join(" ", @cards));
+    };
+    it 'should import %CARDS', sub {
+      expect(eval q{package TarotImportWORD; \%CARDS})->to_be(+{map {$_ => $_} @cards});
+    };
+    it 'should import &CARDS', sub {
+      expect(eval q{package TarotImportWORD; CARDS()})->to_be([reverse @cards]);
+    };
+  };
+
+  describe "[parent => CLASS] pragma", sub {
+    it "should raise error for unknown class"
+      , expect_script_error q{package Error10; use MOP4Import::Declare [parent => 'UnknownMissingModuleZZZZZ'];}
+      , to_match => qr/Can't locate UnknownMissingModuleZZZZZ\.pm/;
+
+    it "should work for valid (loadable) class", sub {
+      expect(eval q{package OK4parent; use MOP4Import::Declare [parent => 'Data::Dumper']; our @ISA; \@ISA})->to_be(['Data::Dumper']);
+    };
   };
 
   describe "Safe multiple inheritance with c3 mro", sub {
