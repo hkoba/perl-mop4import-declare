@@ -9,6 +9,7 @@ perl:
 before_install: 
   cpanm -n Devel::Cover::Report::Coveralls
 script:
+  ln -vnsf perl-mop4import ../MOP4Import && cd ../MOP4Import &&
   perl Build.PL && ./Build build && cover -test
 after_success:
   cover -report coveralls
