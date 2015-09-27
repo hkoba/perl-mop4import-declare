@@ -1,3 +1,4 @@
+sudo: false
 language: perl
 perl:
   - "5.20"
@@ -5,5 +6,7 @@ perl:
   - "5.16"
   - "5.14"
   - "5.12"
-script: perl Build.PL && ./Build test verbose=1
-sudo: false
+before_install: 
+  cpanm -n Devel::Cover::Report::Coveralls
+script:
+  perl Build.PL && ./Build build && cover -test -report coveralls
