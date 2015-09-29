@@ -150,6 +150,9 @@ END
 	, to_match =>
 	  qr/^No such class field "towerrr" in variable \$foo of type Tarot2/;
 
+    it "should keep fields declaration order", sub {
+      expect(MOP4Import::Util::fields_array('Tarot2'))->to_be([qw/pentacle chariot tower _hermit/]);
+    };
 
   };
 
