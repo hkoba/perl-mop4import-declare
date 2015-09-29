@@ -281,7 +281,9 @@ sub declare_fields {
   foreach my $super_class (@{*{globref($opts->{objpkg}, 'ISA')}{ARRAY}}) {
     my $super = fields_hash($super_class);
     next unless $super;
-    foreach my $name (@{fields_array($super_class)}) {
+    my $super_names = fields_array($super_class);
+    my @names = @$super_names ? @$super_names : keys %$super;
+    foreach my $name (@names) {
       next if defined $extended->{$name};
       print STDERR "  Field $opts->{objpkg}.$name is inherited "
 	. "from $super_class.\n" if DEBUG;
