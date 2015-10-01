@@ -36,7 +36,7 @@ sub new {
   $opts;
 }
 
-sub take_option_maybe {
+sub take_hash_maybe {
   (my Opts $opts, my $list) = @_;
 
   return $opts unless @$list and ref $list->[0] eq 'HASH';

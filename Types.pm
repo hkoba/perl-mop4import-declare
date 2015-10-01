@@ -11,7 +11,7 @@ use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 sub import {
   my $myPack = shift;
 
-  my Opts $opts = Opts->new([caller])->take_option_maybe(\@_);
+  my Opts $opts = Opts->new([caller])->take_hash_maybe(\@_);
 
   $myPack->dispatch_pairs_as(__type => $opts, $opts->{destpkg}, @_);
 }
