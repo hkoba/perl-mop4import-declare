@@ -7,7 +7,8 @@ use File::Basename ();
 use Data::Dumper ();
 
 use MOP4Import::Base::Configure -as_base, qw/FieldSpec/;
-use MOP4Import::Util qw/parse_opts terse_dump fields_hash fields_array/;
+use MOP4Import::Util qw/parse_opts terse_dump fields_hash fields_array
+			take_hash_opts_maybe/;
 use MOP4Import::Util::FindMethods;
 
 #========================================
@@ -26,13 +27,11 @@ sub run {
   if (my $sub = $self->can("cmd_$cmd")) {
     # Invoke official command.
 
-    $self->configure($class->parse_opts($arglist, undef, $opt_alias));
     $sub->($self, @$arglist);
 
   } elsif ($sub = $self->can($cmd)) {
     # Invoke internal methods.
 
-    $self->configure($class->parse_opts($arglist, undef, $opt_alias));
     if ($cmd =~ /^(is|has)_/) {
 
       # If method name starts with 'is', 'has', set proper exit code.

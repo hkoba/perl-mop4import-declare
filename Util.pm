@@ -55,7 +55,8 @@ sub isa_array {
 # }
 
 # MOP4Import::Util::extract_fields_as(BASE_CLASS => $obj)
-# => returns name, value pairs found in BASE_CLASS.
+# => returns name, value pairs found in BASE_CLASS and defined in $obj.
+# Note: this only extracts fields starting with [a-z].
 sub extract_fields_as ($$) {
   my ($asPack, $obj) = @_;
   my $fields = fields_hash($asPack);
@@ -68,8 +69,17 @@ sub extract_fields_as ($$) {
   } keys %$fields
 }
 
+#
+# Expand given item as list.
+#
 sub lexpand {
-  ref $_[0] ? @{$_[0]} : $_[0];
+  if (not defined $_[0]) {
+    return
+  } elsif (ref $_[0] eq 'ARRAY') {
+    @{$_[0]}
+  } else {
+    $_[0]
+  }
 }
 
 sub terse_dump {
@@ -78,13 +88,33 @@ sub terse_dump {
   } @_;
 }
 
+#
+# This may be useful to parse/take subcommand option/hash.
+#
+sub take_hash_opts_maybe {
+  my ($pack, $list, $result) = @_;
+
+  if (@$list and ref $list->[0] eq 'HASH') {
+    # If first element of $list is HASH, take it.
+
+    shift @$list;
+  } else {
+    # Otherwise, take --posix_style=options.
+
+    $pack->parse_opts($list, $result);
+  }
+}
+
+#
+# posix_style long option.
+#
 sub parse_opts {
   my ($pack, $list, $result, $alias) = @_;
   my $wantarray = wantarray;
   unless (defined $result) {
     $result = $wantarray ? [] : {};
   }
-  while (@$list and my ($n, $v) = $list->[0]
+  while (@$list and defined $list->[0] and my ($n, $v) = $list->[0]
 	 =~ m{^--$ | ^(?:--? ([\w:\-\.]+) (?: =(.*))?)$}xs) {
     shift @$list;
     last unless defined $n;
@@ -99,19 +129,16 @@ sub parse_opts {
   $wantarray && ref $result ne 'HASH' ? @$result : $result;
 }
 
+#
+# make style KEY=VALUE list
+#
 sub parse_pairlist {
   my ($pack, $aref, $do_box) = @_;
   my @res;
-  while (@$aref) {
+  while (@$aref and defined $aref->[0]
+	 and $aref->[0] =~ /^([\w:\-\.]+)=(.*)/) {
     my $item = shift @$aref;
-    if ($item =~ /^(\w+)=(.*)/) {
-      push @res, $do_box ? [$1, $2] : ($1, $2);
-    } elsif ($item =~ /^(\w+):?$/) {
-      my $val = shift @$aref;
-      push @res, $do_box ? [$1, $val] : ($1, $val);
-    } else {
-      die "Invalid parameter!: $item\n"; # XXX: Too much? should push back?
-    }
+    push @res, $do_box ? [$1, $2] : ($1, $2);
   }
   @res;
 }
