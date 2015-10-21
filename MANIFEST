@@ -15,10 +15,8 @@ Opts.pm
 PSGIEnv.pm
 README.md
 t/00_compile.t
-t/01_declare.t
 t/01_util.t
 t/02_declare.t
-t/02_types.t
 t/03_types.t
 t/10_configure.t
 t/t_lib.pl

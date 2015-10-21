@@ -5,6 +5,7 @@
 /MYMETA.json
 /MYMETA.yml
 /_build
+/MOP4Import-*
 MANIFEST.bak
 Makefile
 Makefile.old

@@ -47,7 +47,7 @@
       },
       "MOP4Import::Declare" : {
          "file" : "Declare.pm",
-         "version" : "0.000_001"
+         "version" : "0.000_002"
       },
       "MOP4Import::FieldSpec" : {
          "file" : "FieldSpec.pm"
@@ -74,5 +74,5 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "0.000_001"
+   "version" : "0.000_002"
 }
