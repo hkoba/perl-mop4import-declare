@@ -282,6 +282,19 @@ END
       };
     };
 
+    describe "spec: no_getter => 1", sub {
+      it "should be accepted"
+	, no_error q{package F_nog; use Tarot2 [fields => [f => no_getter => 1]]};
+
+      it "should define field F_nog->{f}", no_error <<'END';
+sub test {(my F_nog $obj) = @_; $obj->{f}}
+END
+
+      it "should not have a getter", sub {
+	expect(F_nog->can("f"))->to_be(undef);
+      };
+    };
+
     describe "unknown spec name", sub {
       it "should raise error", expect_script_error
 	q{package F_unk; use Tarot2 [fields => [f => unknown => 1]]}

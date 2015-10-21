@@ -11,6 +11,7 @@ use fields
   ('name'
    , 'doc' # documentation
    , 'default'
+   , 'no_getter'
    # file? line? package?
  );
 

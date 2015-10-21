@@ -330,7 +330,7 @@ sub declare___field {
   push @$fields_array, $name;
 
   # Create accessor for all public fields.
-  if ($name =~ /^[a-z]/i) {
+  if ($name =~ /^[a-z]/i and not $obj->{no_getter}) {
     *{globref($opts->{objpkg}, $name)} = sub { $_[0]->{$name} };
   }
 
