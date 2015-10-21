@@ -24,3 +24,4 @@
 \.sw[po]$
 ^MYMETA\.yml$
 ^MYMETA\.json$
+^cover_db/
