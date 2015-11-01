@@ -3,7 +3,7 @@ package MOP4Import::Declare;
 use 5.010;
 use strict;
 use warnings qw(FATAL all NONFATAL misc);
-our $VERSION = '0.000_002';
+our $VERSION = '0.001_001';
 use Carp;
 use mro qw/c3/;
 
@@ -442,7 +442,7 @@ MOP4Import::Declare - map import args to C<< $meta->declare_...() >> pragma meth
 =head1 DESCRIPTION
 
 MOP4Import::Declare is one protocol implementation
-of L<MOP4Import|MOP4Import::Intro> family.
+of L<MOP4Import> family.
 You can use this module to implement your own exporter
 in an extensible way.
 

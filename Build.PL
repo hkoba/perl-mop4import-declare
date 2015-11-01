@@ -14,7 +14,7 @@ my %pm_files = map {
 } @{Module::Build->rscan_dir('.', qr/\.pm$/)};
 
 my $builder = Module::Build::Pluggable->new
-  (dist_name           => 'MOP4Import'
+  (dist_name           => 'MOP4Import::Declare'
    , dist_author       => q{KOBAYASHI, Hiroaki <hkoba@cpan.org>},
    , dist_version_from => 'Declare.pm'
    , dist_abstract     => 'Thin Meta-Object Protocol to build extensible exporters'
