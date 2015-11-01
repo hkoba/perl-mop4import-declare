@@ -1,5 +1,8 @@
 Revision history for Perl extension MOP4Import::Declare
 
+0.001_001    2015-11-01
+    * Split dist into namespace and real implementation.
+
 0.000_002    2015-10-21
     * Mainly for CPAN, travis-ci and coveralls.
     * Changes
