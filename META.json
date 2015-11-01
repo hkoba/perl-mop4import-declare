@@ -12,7 +12,7 @@
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
       "version" : "2"
    },
-   "name" : "MOP4Import::Declare",
+   "name" : "MOP4Import-Declare",
    "prereqs" : {
       "build" : {
          "requires" : {
@@ -47,7 +47,7 @@
       },
       "MOP4Import::Declare" : {
          "file" : "Declare.pm",
-         "version" : "0.001_001"
+         "version" : "0.001_002"
       },
       "MOP4Import::FieldSpec" : {
          "file" : "FieldSpec.pm"
@@ -74,5 +74,5 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "0.001_001"
+   "version" : "0.001_002"
 }
