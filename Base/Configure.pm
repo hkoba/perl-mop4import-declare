@@ -5,7 +5,7 @@ use Scalar::Util qw/weaken/;
 use Carp;
 
 use MOP4Import::Opts;
-use MOP4Import::Types
+use MOP4Import::Types::Extend
   FieldSpec => [[fields => qw/weakref/]];
 
 use constant DEBUG_WEAK => $ENV{DEBUG_MOP4IMPORT_WEAKREF};

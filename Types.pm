@@ -4,7 +4,8 @@ use strict;
 use warnings qw(FATAL all NONFATAL misc);
 use Carp;
 
-use MOP4Import::Declare -as_base, qw/Opts/;
+use MOP4Import::Pairs -as_base, qw/Opts/;
+use MOP4Import::Declare::Type -as_base;
 
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
@@ -13,55 +14,7 @@ sub import {
 
   my Opts $opts = Opts->new([caller])->take_hash_maybe(\@_);
 
-  $myPack->dispatch_pairs_as(__type => $opts, $opts->{destpkg}, @_);
-}
-
-sub dispatch_pairs_as {
-  (my $myPack, my $pragma, my Opts $opts, my $callpack, my (@pairs)) = @_;
-
-  unless (@pairs % 2 == 0) {
-    croak "Odd number of arguments!";
-  }
-
-  my $sub = $myPack->can("declare_$pragma")
-    or croak "Unknown declare pragma: $pragma";
-
-  while (my ($name, $speclist) = splice @pairs, 0, 2) {
-
-    $sub->($myPack, $opts, $callpack, $name, @$speclist);
-  }
-}
-
-sub declare___type {
-  (my $myPack, my Opts $opts, my $callpack, my ($name, @spec)) = @_;
-
-  if ($opts->{basepkg}) {
-    unshift @spec, [base => $opts->{basepkg}];
-  } elsif (my $sub = $opts->{destpkg}->can($name)) {
-    unshift @spec, [base => $sub->($opts->{destpkg})];
-  }
-
-  my $innerClass = join("::", $opts->{destpkg}, $name);
-
-  $myPack->declare_alias($opts, $callpack, $name, $innerClass);
-
-  if (@spec) {
-    $myPack->dispatch_declare($opts->with_objpkg($innerClass)
-			      , $callpack
-			      , @spec);
-  } else {
-    # Note: To make sure %FIELDS is defined. Without this we get:
-    #   No such class Foo at (eval 45) line 1, near "(my Foo"
-    #
-    $myPack->declare_fields($opts->with_objpkg($innerClass), $callpack);
-  }
-}
-
-sub declare_subtypes {
-  (my $myPack, my Opts $opts, my $callpack, my @specs) = @_;
-
-  $myPack->dispatch_pairs_as(__type => $opts->with_basepkg($opts->{objpkg})
-			     , $callpack, @specs);
+  $myPack->dispatch_pairs_as(type => $opts, $opts->{destpkg}, @_);
 }
 
 1;

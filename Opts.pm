@@ -15,6 +15,9 @@ use fields
    # What to inherit. Optional.
    , 'basepkg'
 
+   # Used in MOP4Import::Types::Extend and MOP4Import::Declare::Type
+   , 'extending'
+
    , qw/filename line/
  );
 
