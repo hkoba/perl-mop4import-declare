@@ -6,12 +6,14 @@ Build.PL
 Changes
 cpanfile
 Declare.pm
+Declare/Type.pm
 FieldSpec.pm
 Intro.pod
 MANIFEST			This list of files
 META.json
 META.yml
 Opts.pm
+Pairs.pm
 PSGIEnv.pm
 README.md
 t/00_compile.t
@@ -22,6 +24,7 @@ t/10_configure.t
 t/t_lib.pl
 t/t_lib.pm
 Types.pm
+Types/Extend.pm
 Util.pm
 Util/FindMethods.pm
 whyfields.pod

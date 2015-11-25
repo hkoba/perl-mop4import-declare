@@ -1,6 +1,8 @@
 Revision history for Perl extension MOP4Import::Declare
 
-0.001_002    2015-11-01
+0.002    2015-11-25
+    * [GH #17] Split Types and Types::Extend
+        - Types are now based on Pairs protocol.
     * Fix dist_name/module_name
     * Split dist into namespace and real implementation.
 
