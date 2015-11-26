@@ -6,7 +6,10 @@ use mro qw/c3/;
 use File::Basename ();
 use Data::Dumper ();
 
-use MOP4Import::Base::Configure -as_base, qw/FieldSpec/;
+use MOP4Import::Base::Configure -as_base, qw/FieldSpec/
+  , [fields =>
+     [quiet => doc => 'to be (somewhat) quiet']
+   ];
 use MOP4Import::Util qw/parse_opts terse_dump fields_hash fields_array
 			take_hash_opts_maybe/;
 use MOP4Import::Util::FindMethods;
@@ -32,17 +35,21 @@ sub run {
   } elsif ($sub = $self->can($cmd)) {
     # Invoke internal methods.
 
-    if ($cmd =~ /^(is|has)_/) {
+    my @res = $sub->($self, @$arglist);
+    print join("\n", map {terse_dump($_)} @res), "\n"
+      if not $self->{quiet} and @res;
 
-      # If method name starts with 'is', 'has', set proper exit code.
-      exit($sub->($self, @$arglist) ? 0 : 1);
+    if ($cmd =~ /^has_/) {
+      # If method name starts with 'has_' and result is empty,
+      # exit with 1.
+      exit(@res ? 0 : 1);
 
-    } else {
-
-      # Otherwise, just dump results.
-      my @res = $sub->($self, @$arglist);
-      print join("\n", map {terse_dump($_)} @res), "\n" if @res;
+    } elsif ($cmd =~ /^is_/) {
+      # If method name starts with 'is_' and first result is false,
+      # exit with 1.
+      exit($res[0] ? 0 : 1);
     }
+
   } else {
     $self->cmd_help("Error: No such command '$cmd'\n");
   }
