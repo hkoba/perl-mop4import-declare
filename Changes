@@ -1,5 +1,9 @@
 Revision history for Perl extension MOP4Import::Declare
 
+0.003    2015-12-16
+    * [GH #19] - Add rlib deps.
+    * [GH #18] - Fix Base::CLI->run exit code handling.
+
 0.002    2015-11-25
     * [GH #17] Split Types and Types::Extend
         - Types are now based on Pairs protocol.
