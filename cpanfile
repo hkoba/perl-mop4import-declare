@@ -2,7 +2,7 @@
 
 requires perl => '>= 5.010';
 
-on build => sub {
+on configure => sub {
   requires 'rlib';
   requires 'Module::Build::Pluggable';
   requires 'Module::CPANfile';

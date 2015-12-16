@@ -1,7 +1,7 @@
 Revision history for Perl extension MOP4Import::Declare
 
-0.003    2015-12-16
-    * [GH #19] - Add rlib deps.
+0.004    2015-12-16
+    * [GH #19] - Add rlib to configure_requires.
     * [GH #18] - Fix Base::CLI->run exit code handling.
 
 0.002    2015-11-25
