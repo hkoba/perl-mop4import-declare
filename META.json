@@ -16,21 +16,23 @@
    "prereqs" : {
       "build" : {
          "requires" : {
-            "Module::Build::Pluggable" : "0",
             "Module::Build::Pluggable::CPANfile" : "0.05",
-            "Module::CPANfile" : "0",
             "rlib" : "0"
          }
       },
       "configure" : {
          "requires" : {
             "Module::Build" : "0.42",
-            "Module::Build::Pluggable::CPANfile" : "0.05"
+            "Module::Build::Pluggable" : "0",
+            "Module::Build::Pluggable::CPANfile" : "0.05",
+            "Module::CPANfile" : "0",
+            "rlib" : "0"
          }
       },
       "runtime" : {
          "requires" : {
-            "perl" : "5.010"
+            "perl" : "5.010",
+            "rlib" : "0"
          }
       },
       "test" : {
@@ -48,7 +50,7 @@
       },
       "MOP4Import::Declare" : {
          "file" : "Declare.pm",
-         "version" : "0.003"
+         "version" : "0.004"
       },
       "MOP4Import::Declare::Type" : {
          "file" : "Declare/Type.pm"
@@ -84,5 +86,5 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "0.003"
+   "version" : "0.004"
 }
