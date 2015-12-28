@@ -12,20 +12,31 @@ use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 sub dispatch_pairs_as {
   (my $myPack, my $pragma, my Opts $opts, my $callpack, my (@pairs)) = @_;
 
-  if (@pairs and ref $pairs[0] eq 'CODE') {
-    (shift @pairs)->($myPack, $opts, $callpack);
+  #
+  # Process leading non-pair pragmas. (ARRAY and -pragma)
+  #
+  while (@pairs) {
+    if (ref $pairs[0] eq 'CODE') {
+      (shift @pairs)->($myPack, $opts, $callpack);
+    } elsif ($pairs[0] =~ /^-([A-Za-z]\w*)$/) {
+      shift @pairs;
+      $myPack->dispatch_declare_pragma($opts, $callpack, $1);
+    } else {
+      last;
+    }
   }
 
   unless (@pairs % 2 == 0) {
-    croak "Odd number of arguments!";
+    croak "Odd number of arguments!: ".terse_dump(\@pairs);
   }
 
   my $sub = $myPack->can("declare_$pragma")
     or croak "Unknown declare pragma: $pragma";
 
   while (my ($name, $speclist) = splice @pairs, 0, 2) {
-    print STDERR " dispatching $pragma for pair("
-      , terse_dump($name, $speclist), "\n" if DEBUG;
+    print STDERR " dispatching 'declare_$pragma' for pair("
+      , terse_dump($name, $speclist)
+      , $myPack->file_line_of($opts), "\n" if DEBUG;
 
     $sub->($myPack, $opts, $callpack, $name, @$speclist);
   }

@@ -27,6 +27,11 @@ sub import {
   $myPack->dispatch_declare($opts, $opts->{destpkg}, @decls);
 }
 
+sub file_line_of {
+  (my $myPack, my Opts $opts) = @_;
+  " at $opts->{filename} line $opts->{line}";
+}
+
 #
 # This serves as @EXPORT
 #
@@ -133,7 +138,8 @@ sub dispatch_declare_pragma {
       and my $sub = $myPack->can("declare_$pragma")) {
     $sub->($myPack, $opts, $callpack, @args);
   } else {
-    croak "Unknown pragma '$pragma' in $opts->{destpkg}";
+    croak "Unknown pragma ".terse_dump($pragma)." in $opts->{destpkg}"
+      . $myPack->file_line_of($opts);
   }
 }
 

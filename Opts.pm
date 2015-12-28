@@ -34,7 +34,7 @@ sub new {
   }
   my Opts $opts = fields::new($pack);
   ($opts->{destpkg}, $opts->{filename}, $opts->{line})
-    = ref $caller ? @$caller : $caller;
+    = ref $caller ? @$caller : ($caller, '', '');
   $opts->{objpkg} = $opts->{destpkg};
   $opts;
 }
