@@ -46,7 +46,7 @@ sub configure {
     unless (defined $key) {
       croak "Undefined option name for class ".ref($self);
     }
-    next unless $key =~ m{^[A-Za-z]\w*\z};
+    next unless $key =~ m{^[A-Za-z][-\w]*\z};
 
     if (my $sub = $self->can("onconfigure_$key")) {
       push @setter, [$sub, $value];
