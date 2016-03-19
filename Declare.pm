@@ -96,7 +96,7 @@ sub dispatch_import {
 sub import_NAME {
   (my $myPack, my Opts $opts, my ($callpack, $name)) = @_;
 
-  my $exported = globref($myPack, $name);
+  my $exported = safe_globref($myPack, $name);
 
   print STDERR " Declaring $name in $opts->{destpkg} as "
     .terse_dump($exported)."\n" if DEBUG;
@@ -107,7 +107,7 @@ sub import_NAME {
 sub import_GLOB {
   (my $myPack, my Opts $opts, my ($callpack, $sigil, $kind, $name)) = @_;
 
-  my $exported = globref($myPack, $name);
+  my $exported = safe_globref($myPack, $name);
 
   print STDERR " Declaring $name in $opts->{destpkg} as "
     .terse_dump($exported)."\n" if DEBUG;
@@ -118,7 +118,7 @@ sub import_GLOB {
 sub import_SIGIL {
   (my $myPack, my Opts $opts, my ($callpack, $sigil, $kind, $name)) = @_;
 
-  my $exported = *{globref($myPack, $name)}{$kind};
+  my $exported = *{safe_globref($myPack, $name)}{$kind};
 
   print STDERR " Declaring $sigil$opts->{destpkg}::$name"
     . ", import from $sigil${myPack}::$name"

@@ -3,6 +3,7 @@ use strict;
 use warnings qw(FATAL all NONFATAL misc);
 use Carp;
 use Data::Dumper;
+use Carp;
 
 use Exporter qw/import/;
 
@@ -16,6 +17,15 @@ sub globref {
 
 sub symtab {
   *{globref(shift, '')}{HASH}
+}
+
+sub safe_globref {
+  my ($pack_or_obj, $name) = @_;
+  unless (defined symtab($pack_or_obj)->{$name}) {
+    my $pack = ref $pack_or_obj || $pack_or_obj;
+    croak "No such symbol '$name' in package $pack";
+  }
+  globref($pack_or_obj, $name);
 }
 
 sub fields_hash {
@@ -162,7 +172,9 @@ sub function_names {
   @result;
 }
 
-our @EXPORT = qw/globref fields_hash fields_symbol lexpand terse_dump
+our @EXPORT = qw/globref
+		 safe_globref
+		 fields_hash fields_symbol lexpand terse_dump
 		 fields_array
 		/;
 our @EXPORT_OK = function_names(from => __PACKAGE__

@@ -173,6 +173,14 @@ use Tarot2 qw/$CARDS @CARDS %CARDS &CARDS/;
     it 'should import &CARDS', sub {
       expect(eval q{package TarotImport1; CARDS()})->to_be([reverse @cards]);
     };
+
+    it "should raise error for typos", sub {
+      expect(do {eval q{package Ng1; use Tarot2 qw/$CAR/;}; $@})->to_match(qr/No such symbol 'CAR' in package Tarot2/);
+      expect(do {eval q{package Ng1; use Tarot2 qw/@CAR/;}; $@})->to_match(qr/No such symbol 'CAR' in package Tarot2/);
+      expect(do {eval q{package Ng1; use Tarot2 qw/%CAR/;}; $@})->to_match(qr/No such symbol 'CAR' in package Tarot2/);
+      expect(do {eval q{package Ng1; use Tarot2 qw/&CAR/;}; $@})->to_match(qr/No such symbol 'CAR' in package Tarot2/);
+    };
+
   };
 
   describe "Exporter like sigil based import for *", sub {
@@ -192,6 +200,10 @@ use Tarot2 qw/*CARDS/;
     it 'should import &CARDS', sub {
       expect(eval q{package TarotImportGLOB; CARDS()})->to_be([reverse @cards]);
     };
+
+    it "should raise error for typos", sub {
+      expect(do {eval q{package Ng1; use Tarot2 qw/*CAR/;}; $@})->to_match(qr/No such symbol 'CAR' in package Tarot2/);
+    };
   };
 
   describe "Exporter like word import for *", sub {
@@ -210,6 +222,10 @@ use Tarot2 qw/CARDS/;
     };
     it 'should import &CARDS', sub {
       expect(eval q{package TarotImportWORD; CARDS()})->to_be([reverse @cards]);
+    };
+
+    it "should raise error for typos", sub {
+      expect(do {eval q{package Ng1; use Tarot2 qw/CAR/;}; $@})->to_match(qr/No such symbol 'CAR' in package Tarot2/);
     };
   };
 
