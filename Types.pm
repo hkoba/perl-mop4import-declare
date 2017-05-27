@@ -30,12 +30,26 @@ MOP4Import::Types - create multiple inner-classes at once.
 Create inner-classes C<MyApp::Artist> and C<MyApp::CD>
 using L<MOP4Import::Types>.
 
+  # Define subtype Artist and CD with their fields.
   package MyApp;
   use MOP4Import::Types
     (Artist => [[fields => qw/artistid name/]]
      , CD   => [[fields => qw/cdid artistid title year/]]);
 
-Then you can use above types like following with static checking of L<fields>.
+Above is an equivalent of following:
+
+  package MyApp;
+  sub Artist () {'MyApp::Artist'}
+  package MyApp::Artist {
+     use MOP4Import::Declare [fields => qw/artistid name/];
+  }
+  sub CD () {'MyApp::CD'}
+  package MyApp::CD {
+     use MOP4Import::Declare [fields => qw/cdid artistid title year/];
+  }
+
+You can use above types like following with compile-time field name
+typos detection of L<fields>.
 
   sub print_artist_cds {
     (my $self, my Artist $artist) = @_;
