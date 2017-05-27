@@ -729,7 +729,7 @@ But you can extend FieldSpec in your exporter like following:
 
   use YourBaseObject {
     use MOP4Import::Declare -as_base;
-    use MOP4Import::Types
+    use MOP4Import::Types::Extend
       FieldSpec => [[fields => qw/readonly required validator/]];
   }
   
