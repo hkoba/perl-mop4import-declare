@@ -23,15 +23,19 @@ sub new {
 sub after_new {}
 
 sub configure_default {
-  (my MY $self) = @_;
+  (my MY $self, my $target) = @_;
+
+  $target //= $self;
 
   my $fields = MOP4Import::Declare::fields_hash($self);
 
   while ((my $name, my FieldSpec $spec) = each %$fields) {
-    if (not defined $self->{$name} and defined $spec->{default}) {
-      $self->{$name} = $self->can("default_$name")->($self);
+    if (not defined $target->{$name} and defined $spec->{default}) {
+      $target->{$name} = $self->can("default_$name")->($self);
     }
   }
+
+  $target;
 }
 
 sub configure {
