@@ -4,6 +4,7 @@ use warnings qw(FATAL all NONFATAL misc);
 use Carp;
 use Data::Dumper;
 use Carp;
+use Encode ();
 
 use Exporter qw/import/;
 
@@ -119,7 +120,7 @@ sub take_hash_opts_maybe {
 # posix_style long option.
 #
 sub parse_opts {
-  my ($pack, $list, $result, $alias) = @_;
+  my ($pack, $list, $result, $alias, $converter) = @_;
   my $wantarray = wantarray;
   unless (defined $result) {
     $result = $wantarray ? [] : {};
@@ -131,12 +132,37 @@ sub parse_opts {
     $n = $alias->{$n} if $alias and $alias->{$n};
     $v = 1 unless defined $v;
     if (ref $result eq 'HASH') {
-      $result->{$n} = $v;
+      $result->{$n} = $converter ? $converter->($v) : $v;
     } else {
-      push @$result, $n, $v;
+      push @$result, $n, $converter ? $converter->($v) : $v;
     }
   }
+  if ($converter) {
+    $_ = $converter->($_) for @$list;
+  }
   $wantarray && ref $result ne 'HASH' ? @$result : $result;
+}
+
+#
+# posix_style long option with JSON support.
+#
+sub parse_json_opts {
+  my ($pack, $list, $result, $alias) = @_;
+  require JSON;
+  $pack->parse_opts($list, $result, $alias, sub {
+    if (not defined $_[0]) {
+      undef
+    } elsif ($_[0] =~ /^(?:\[.*?\]|\{.*?\})\z/s) {
+      # Arguments might be already decoded.
+      my $copy = $_[0];
+      Encode::_utf8_off($copy) if Encode::is_utf8($copy);
+      JSON::from_json($copy, {relaxed => 1});
+    } elsif (not Encode::is_utf8($_[0]) and $_[0] =~ /\P{ASCII}/) {
+      Encode::decode(utf8 => $_[0]);
+    } else {
+      $_[0];
+    }
+  });
 }
 
 #

@@ -4,6 +4,10 @@ requires perl => '>= 5.010';
 
 requires 'rlib'; # XXX:
 
+requires 'JSON';
+
+recommends 'Module::Runtime';
+
 on configure => sub {
   requires 'rlib';
   requires 'Module::Build::Pluggable';

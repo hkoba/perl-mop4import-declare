@@ -171,6 +171,14 @@ describe "MOP4Import::Util", sub {
     };
   };
 
+  describe "parse_json_opts", sub {
+    my $CLS = 'MOP4Import::Util';
+
+    it "should deserialize json options", sub {
+      expect([$CLS->parse_json_opts([qw!--foo={} --bar=[]!])])->to_be([foo => +{}, bar => []]);
+    };
+  };
+
   describe "take_hash_opts_maybe", sub {
     my $CLS = 'MOP4Import::Util';
 
