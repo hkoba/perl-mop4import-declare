@@ -2,11 +2,14 @@ package MOP4Import::Base::CLI_JSON;
 use MOP4Import::Base::CLI -as_base
   , [fields =>
      , ['scalar' => doc => "evaluate subcommand in scalar context"]
-     , ['json-output' => default => 1]
+     , ['output' => default => 'json']
+     , ['undef-as' => default => 'null']
      , ['no-exit-code']
    ];
 
-use MOP4Import::Util qw/parse_json_opts/;
+use MOP4Import::Util qw/parse_json_opts
+                        lexpand
+                       /;
 
 use JSON;
 
@@ -46,6 +49,9 @@ sub run {
   } elsif ($sub = $self->can($cmd)) {
     # Invoke internal methods. Development aid.
 
+    my $output = $self->can("output_as_".$primary_opts->{'output'})
+      or Carp::croak("Unknown output format: $primary_opts->{'output'}");
+
     my @res;
     if ($primary_opts->{scalar}) {
       $res[0] = $sub->($self, @$arglist);
@@ -55,11 +61,8 @@ sub run {
 
     if (not $primary_opts->{quiet}
         and ($primary_opts->{scalar} ? $res[0] : @res)) {
-      if ($primary_opts->{'json-output'}) {
-        print JSON->new->utf8->canonical->encode(\@res), "\n";
-      } else {
-        print join("\n", map {MOP4Import::Util::terse_dump($_)} @res), "\n";
-      }
+
+      $output->($self, \@res);
     }
 
     if ($primary_opts->{'no-exit-code'}) {
@@ -72,6 +75,43 @@ sub run {
 
   } else {
     $self->cmd_help("Error: No such command '$cmd'\n");
+  }
+}
+
+#----------------------------------------
+
+sub output_as_json {
+  (my MY $self, my $list) = @_;
+  print JSON->new->utf8->canonical->encode($list), "\n";
+}
+
+sub output_as_tsv {
+  (my MY $self, my $list) = @_;
+  foreach my $item (lexpand($list)) {
+    print join("\t", map {
+      if (not defined $_) {
+        $self->{'undef-as'}
+      } elsif (ref $_) {
+        JSON->new->utf8->canonical->encode($_)
+      } else {
+        $_
+      }
+    } lexpand($item)), "\n";
+  }
+}
+
+sub output_as_dump {
+  (my MY $self, my $list) = @_;
+  foreach my $item (lexpand($list)) {
+    print join("\t", map {
+      if (not defined $_) {
+        $self->{'undef-as'}
+      } elsif (ref $_) {
+        MOP4Import::Util::terse_dump($_)
+      } else {
+        $_
+      }
+    } lexpand($item)), "\n";
   }
 }
 
