@@ -9,7 +9,12 @@ use mro qw/c3/;
 
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
-use MOP4Import::Opts;
+use MOP4Import::Opts
+  qw/
+      Opts
+      m4i_args
+      m4i_opts
+    /;
 use MOP4Import::Util;
 use MOP4Import::FieldSpec;
 
@@ -18,13 +23,13 @@ our %FIELDS;
 sub import {
   my ($myPack, @decls) = @_;
 
-  my Opts $opts = Opts->new([caller]);
+  my Opts $opts = m4i_opts([caller]);
 
   @decls = $myPack->default_exports unless @decls;
 
-  $myPack->declare_strict($opts, $opts->{destpkg});
+  $myPack->declare_strict($opts);
 
-  $myPack->dispatch_declare($opts, $opts->{destpkg}, @decls);
+  $myPack->dispatch_declare($opts, @decls);
 }
 
 sub file_line_of {
@@ -40,7 +45,7 @@ sub default_exports {
 }
 
 sub dispatch_declare {
-  (my $myPack, my Opts $opts, my ($callpack, @decls)) = @_;
+  (my $myPack, my Opts $opts, my (@decls)) = m4i_args(@_);
 
   foreach my $declSpec (@decls) {
 
@@ -48,15 +53,15 @@ sub dispatch_declare {
 
     if (not ref $declSpec) {
 
-      $myPack->dispatch_import($opts, $callpack, $declSpec);
+      $myPack->dispatch_import($opts, $declSpec);
 
     } elsif (ref $declSpec eq 'ARRAY') {
 
-      $myPack->dispatch_declare_pragma($opts, $callpack, @$declSpec);
+      $myPack->dispatch_declare_pragma($opts, @$declSpec);
 
     } elsif (ref $declSpec eq 'CODE') {
 
-      $declSpec->($myPack, $opts, $callpack);
+      $declSpec->($myPack, $opts);
 
     } else {
       croak "Invalid pragma: ".terse_dump($declSpec);
@@ -71,22 +76,22 @@ our %SIGIL_MAP = qw(* GLOB
 		    & CODE);
 
 sub dispatch_import {
-  (my $myPack, my Opts $opts, my ($callpack, $declSpec)) = @_;
+  (my $myPack, my Opts $opts, my ($declSpec)) = m4i_args(@_);
 
   my ($name, $exported);
 
   if ($declSpec =~ /^-([A-Za-z]\w*)$/) {
 
-    return $myPack->dispatch_declare_pragma($opts, $callpack, $1);
+    return $myPack->dispatch_declare_pragma($opts, $1);
 
   } elsif ($declSpec =~ /^([\*\$\%\@\&])?([A-Za-z]\w*)$/) {
 
     if ($1) {
       my $kind = $SIGIL_MAP{$1};
       $myPack->can("import_$kind")
-	->($myPack, $opts, $callpack, $1, $kind, $2);
+	->($myPack, $opts, $1, $kind, $2);
     } else {
-      $myPack->import_NAME($opts, $callpack => $2);
+      $myPack->import_NAME($opts => $2);
     }
   } else {
     croak "Invalid import spec: $declSpec";
@@ -94,7 +99,7 @@ sub dispatch_import {
 }
 
 sub import_NAME {
-  (my $myPack, my Opts $opts, my ($callpack, $name)) = @_;
+  (my $myPack, my Opts $opts, my ($name)) = m4i_args(@_);
 
   my $exported = safe_globref($myPack, $name);
 
@@ -105,7 +110,7 @@ sub import_NAME {
 }
 
 sub import_GLOB {
-  (my $myPack, my Opts $opts, my ($callpack, $sigil, $kind, $name)) = @_;
+  (my $myPack, my Opts $opts, my ($sigil, $kind, $name)) = m4i_args(@_);
 
   my $exported = safe_globref($myPack, $name);
 
@@ -116,7 +121,7 @@ sub import_GLOB {
 }
 
 sub import_SIGIL {
-  (my $myPack, my Opts $opts, my ($callpack, $sigil, $kind, $name)) = @_;
+  (my $myPack, my Opts $opts, my ($sigil, $kind, $name)) = m4i_args(@_);
 
   my $exported = *{safe_globref($myPack, $name)}{$kind};
 
@@ -133,10 +138,10 @@ sub import_SIGIL {
 *import_CODE = *import_SIGIL; *import_CODE = *import_SIGIL;
 
 sub dispatch_declare_pragma {
-  (my $myPack, my Opts $opts, my ($callpack, $pragma, @args)) = @_;
+  (my $myPack, my Opts $opts, my ($pragma, @args)) = m4i_args(@_);
   if ($pragma =~ /^[A-Za-z]/
       and my $sub = $myPack->can("declare_$pragma")) {
-    $sub->($myPack, $opts, $callpack, @args);
+    $sub->($myPack, $opts, @args);
   } else {
     croak "Unknown pragma ".terse_dump($pragma)." in $opts->{destpkg}"
       . $myPack->file_line_of($opts);
@@ -145,58 +150,58 @@ sub dispatch_declare_pragma {
 
 # You may want to override these pragrams.
 sub declare_default_pragma {
-  (my $myPack, my Opts $opts, my $callpack) = @_;
-  $myPack->declare_c3($opts, $callpack);
+  (my $myPack, my Opts $opts) = m4i_args(@_);
+  $myPack->declare_c3($opts);
 }
 
 sub declare_strict {
-  (my $myPack, my Opts $opts, my $callpack) = @_;
+  (my $myPack, my Opts $opts) = m4i_args(@_);
   $_->import for qw(strict warnings); # I prefer fatalized warnings, but...
 }
 
 # Not enabled by default.
 sub declare_fatal {
-  (my $myPack, my Opts $opts, my $callpack) = @_;
+  (my $myPack, my Opts $opts) = m4i_args(@_);
   warnings->import(qw(FATAL all NONFATAL misc));
 }
 
 sub declare_c3 {
-  (my $myPack, my Opts $opts, my $callpack) = @_;
+  (my $myPack, my Opts $opts) = m4i_args(@_);
   mro::set_mro($opts->{destpkg}, 'c3');
 }
 
 sub declare_base {
-  (my $myPack, my Opts $opts, my $callpack, my (@base)) = @_;
+  (my $myPack, my Opts $opts, my (@base)) = m4i_args(@_);
 
   $myPack->declare___add_isa($opts->{objpkg}, @base);
 
-  $myPack->declare_fields($opts, $callpack);
+  $myPack->declare_fields($opts);
 }
 
 sub declare_parent {
-  (my $myPack, my Opts $opts, my $callpack, my (@base)) = @_;
+  (my $myPack, my Opts $opts, my (@base)) = m4i_args(@_);
 
   foreach my $fn (@base) {
     (my $cp = $fn) =~ s{::|'}{/}g;
     require "$cp.pm";
   }
 
-  $myPack->declare_base($opts, $callpack, @base);
+  $myPack->declare_base($opts, @base);
 }
 
 sub declare_as_base {
-  (my $myPack, my Opts $opts, my $callpack, my (@fields)) = @_;
+  (my $myPack, my Opts $opts, my (@fields)) = m4i_args(@_);
 
   print STDERR "Class $opts->{objpkg} inherits $myPack\n"
     if DEBUG;
 
-  $myPack->declare_default_pragma($opts, $callpack); # strict, mro c3...
+  $myPack->declare_default_pragma($opts); # strict, mro c3...
 
   $myPack->declare___add_isa($opts->{objpkg}, $myPack);
 
-  $myPack->declare_fields($opts, $callpack, @fields);
+  $myPack->declare_fields($opts, @fields);
 
-  $myPack->declare_constant($opts, $callpack, MY => $opts->{objpkg}, or_ignore => 1);
+  $myPack->declare_constant($opts, MY => $opts->{objpkg}, or_ignore => 1);
 }
 
 sub declare___add_isa {
@@ -249,24 +254,24 @@ sub declare___add_isa {
 
 # XXX: previously was [as].
 sub declare_naming {
-  (my $myPack, my Opts $opts, my $callpack, my ($name)) = @_;
+  (my $myPack, my Opts $opts, my ($name)) = m4i_args(@_);
 
   unless (defined $name and $name ne '') {
     croak "Usage: use ${myPack} [naming => NAME]";
   }
 
-  $myPack->declare_constant($opts, $callpack, $name => $myPack);
+  $myPack->declare_constant($opts, $name => $myPack);
 }
 
 sub declare_inc {
-  (my $myPack, my Opts $opts, my $callpack, my ($pkg)) = @_;
+  (my $myPack, my Opts $opts, my ($pkg)) = m4i_args(@_);
   $pkg //= $opts->{objpkg};
   $pkg =~ s{::}{/}g;
   $INC{$pkg . '.pm'} = 1;
 }
 
 sub declare_constant {
-  (my $myPack, my Opts $opts, my $callpack, my ($name, $value, %opts)) = @_;
+  (my $myPack, my Opts $opts, my ($name, $value, %opts)) = m4i_args(@_);
 
   my $my_sym = globref($opts->{objpkg}, $name);
   if (*{$my_sym}{CODE}) {
@@ -278,7 +283,7 @@ sub declare_constant {
 }
 
 sub declare_fields {
-  (my $myPack, my Opts $opts, my $callpack, my (@fields)) = @_;
+  (my $myPack, my Opts $opts, my (@fields)) = m4i_args(@_);
 
   my $extended = fields_hash($opts->{objpkg});
   my $fields_array = fields_array($opts->{objpkg});
@@ -298,13 +303,13 @@ sub declare_fields {
     }
   }
 
-  $myPack->declare___field($opts, $callpack, ref $_ ? @$_ : $_) for @fields;
+  $myPack->declare___field($opts, ref $_ ? @$_ : $_) for @fields;
 
   $opts->{objpkg}; # XXX:
 }
 
 sub declare___field {
-  (my $myPack, my Opts $opts, my $callpack, my ($name, @rest)) = @_;
+  (my $myPack, my Opts $opts, my ($name, @rest)) = m4i_args(@_);
   print STDERR "  Declaring field $opts->{objpkg}.$name " if DEBUG;
   my $extended = fields_hash($opts->{objpkg});
   my $fields_array = fields_array($opts->{objpkg});
@@ -314,7 +319,7 @@ sub declare___field {
   my (@early, @delayed);
   while (my ($k, $v) = splice @rest, 0, 2) {
     unless (defined $k) {
-      croak "Undefined field spec key for $opts->{objpkg}.$name in $callpack";
+      croak "Undefined field spec key for $opts->{objpkg}.$name in $opts->{callpack}";
     }
     if ($k =~ /^[A-Za-z]/) {
       if (my $sub = $myPack->can("declare___field_with_$k")) {
@@ -325,7 +330,7 @@ sub declare___field {
 	next;
       }
     }
-    croak "Unknown option for $opts->{objpkg}.$name in $callpack: "
+    croak "Unknown option for $opts->{objpkg}.$name in $opts->{callpack}: "
       . ".$k";
   }
 
@@ -342,26 +347,26 @@ sub declare___field {
 
   foreach my $delayed (@delayed) {
     my ($sub, $k, $v) = @$delayed;
-    $sub->($myPack, $opts, $callpack, $obj, $k, $v);
+    $sub->($myPack, $opts, $obj, $k, $v);
   }
 
   $obj;
 }
 
 sub declare___field_with_default {
-  (my $myPack, my Opts $opts, my $callpack, my FieldSpec $fs, my ($k, $v)) = @_;
+  (my $myPack, my Opts $opts, my FieldSpec $fs, my ($k, $v)) = m4i_args(@_);
 
   $fs->{$k} = $v;
 
   if (ref $v eq 'CODE') {
     *{globref($opts->{objpkg}, "default_$fs->{name}")} = $v;
   } else {
-    $myPack->declare_constant($opts, $callpack, "default_$fs->{name}", $v);
+    $myPack->declare_constant($opts, "default_$fs->{name}", $v);
   }
 }
 
 sub declare_alias {
-  (my $myPack, my Opts $opts, my $callpack, my ($name, $alias)) = @_;
+  (my $myPack, my Opts $opts, my ($name, $alias)) = m4i_args(@_);
   print STDERR " Declaring alias $name in $opts->{destpkg} as $alias\n" if DEBUG;
   my $sym = globref($opts->{destpkg}, $name);
   if (*{$sym}{CODE}) {
@@ -371,7 +376,7 @@ sub declare_alias {
 }
 
 sub declare_map_methods {
-  (my $myPack, my Opts $opts, my $callpack, my (@pairs)) = @_;
+  (my $myPack, my Opts $opts, my (@pairs)) = m4i_args(@_);
 
   foreach my $pair (@pairs) {
     my ($from, $to) = @$pair;

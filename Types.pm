@@ -4,7 +4,7 @@ use strict;
 use warnings qw(FATAL all NONFATAL misc);
 use Carp;
 
-use MOP4Import::Pairs -as_base, qw/Opts/;
+use MOP4Import::Pairs -as_base, qw/Opts m4i_opts/;
 use MOP4Import::Declare::Type -as_base;
 
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
@@ -12,9 +12,9 @@ use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 sub import {
   my $myPack = shift;
 
-  my Opts $opts = Opts->new([caller])->take_hash_maybe(\@_);
+  my Opts $opts = m4i_opts([caller])->take_hash_maybe(\@_);
 
-  $myPack->dispatch_pairs_as(type => $opts, $opts->{destpkg}, @_);
+  $myPack->dispatch_pairs_as(type => $opts, @_);
 }
 
 1;
