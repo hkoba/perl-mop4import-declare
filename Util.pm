@@ -120,15 +120,23 @@ sub take_hash_opts_maybe {
 # posix_style long option.
 #
 sub parse_opts {
-  my ($pack, $list, $result, $alias, $converter) = @_;
+  my ($pack, $list, $result, $alias, $converter, %opts) = @_;
   my $wantarray = wantarray;
   unless (defined $result) {
     $result = $wantarray ? [] : {};
+  }
+  my $preserve_hyphen = delete $opts{preserve_hyphen} // do {
+    my $sub = $pack->can("parse_opts__preserve_hyphen");
+    $sub && $sub->($pack);
+  };
+  if (keys %opts) {
+      Carp::croak("Unknown option for parse_opts(): ".join(", ", keys %opts));
   }
   while (@$list and defined $list->[0] and my ($n, $v) = $list->[0]
 	 =~ m{^--$ | ^(?:--? ([\w:\-\.]+) (?: =(.*))?)$}xs) {
     shift @$list;
     last unless defined $n;
+    $n =~ s/-/_/g unless $preserve_hyphen;
     $n = $alias->{$n} if $alias and $alias->{$n};
     $v = 1 unless defined $v;
     if (ref $result eq 'HASH') {

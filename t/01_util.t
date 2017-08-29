@@ -148,11 +148,27 @@ describe "MOP4Import::Util", sub {
 	expect([$CLS->parse_opts([qw!--git-dir=/var/lib/git/foo.git
 				     --no-pager
 				     --info-path=/usr/share/info
-				    !])])->to_be([qw!git-dir /var/lib/git/foo.git
+				    !]
+                    , undef, undef, undef
+                    , preserve_hyphen => 1
+                    )])->to_be([qw!git-dir /var/lib/git/foo.git
 						     no-pager 1
 						     info-path /usr/share/info
 						    !]);
       };
+
+      it "should accept -", sub {
+	expect([$CLS->parse_opts([qw!--git-dir=/var/lib/git/foo.git
+				     --no-pager
+				     --info-path=/usr/share/info
+				    !]
+                    )])->to_be([qw!git_dir /var/lib/git/foo.git
+						     no_pager 1
+						     info_path /usr/share/info
+						    !]);
+      };
+
+
 
       it "should accept .", sub {
 	expect([$CLS->parse_opts([qw!--user.name=foobar
