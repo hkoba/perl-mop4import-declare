@@ -6,12 +6,26 @@ use MOP4Import::Base::CLI -as_base
      , ['undef-as' => default => 'null']
      , ['no-exit-code']
    ];
-
+use MOP4Import::Opts;
 use MOP4Import::Util qw/parse_json_opts
                         lexpand
                        /;
 
 use JSON;
+
+# Rewrite field names from kebab-case to snake_case.
+sub declare_options {
+    (my $myPack, my Opts $opts, my (@decls)) = m4i_args(@_);
+    $myPack->declare_fields($opts, map {
+        if (ref $_ and (my $name = $_->[0]) =~ s/-/_/g) {
+            [$name, @{$_}[1..$#$_]];
+        } elsif (not ref $_ and ($name = $_) =~ s/-/_/g) {
+            $name;
+        } else {
+            $_;
+        }
+    } @decls);
+}
 
 sub run {
   my ($class, $arglist, $opt_alias) = @_;
