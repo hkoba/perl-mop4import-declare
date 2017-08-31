@@ -206,10 +206,25 @@ sub function_names {
   @result;
 }
 
+sub m4i_log_start {
+  my $m4i_meta = caller;
+  my $m4i_dest = caller(1);
+  print STDERR "\n", "START of $m4i_meta->import() for $m4i_dest.\n";
+}
+
+sub m4i_log_end {
+  my ($m4i_dest) = @_;
+  my $m4i_meta = caller;
+  $m4i_dest //= caller(1);
+  print STDERR "END of $m4i_meta->import() for $m4i_dest.\n\n";
+}
+
 our @EXPORT = qw/globref
 		 safe_globref
 		 fields_hash fields_symbol lexpand terse_dump
 		 fields_array
+                 m4i_log_start
+                 m4i_log_end
 		/;
 our @EXPORT_OK = function_names(from => __PACKAGE__
 		   , except => qr/^(import|c\w*)$/
