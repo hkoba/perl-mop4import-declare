@@ -1,5 +1,6 @@
 package MOP4Import::Base::CLI_JSON;
 use MOP4Import::Base::CLI -as_base
+  , [constant => parse_opts__preserve_hyphen => 1]
   , [fields =>
      , ['scalar' => doc => "evaluate subcommand in scalar context"]
      , ['output' => default => 'json']
@@ -93,7 +94,7 @@ sub cli_invoke_sub_for_cmd {
   }
 
   if ($primary_opts->{'no-exit-code'}) {
-    exit 0;
+    return;
   } elsif ($primary_opts->{scalar}) {
     exit($res[0] ? 0 : 1);
   } else {
