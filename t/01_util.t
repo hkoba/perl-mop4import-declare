@@ -3,10 +3,13 @@
 #----------------------------------------
 use strict;
 use warnings qw(FATAL all NONFATAL misc);
+use utf8;
 use Carp;
 use FindBin; BEGIN { do "$FindBin::Bin/t_lib.pl" }
 
 use Test::Kantan;
+
+use Capture::Tiny ();
 
 use rlib qw!../..!;
 
@@ -76,6 +79,10 @@ describe "MOP4Import::Util", sub {
   };
 
   describe "lexpand", sub {
+    it "should expand list items", sub {
+      expect([lexpand([qw/foo bar baz/])])->to_be([qw/foo bar baz/]);
+    };
+
     it "should return empty list for undef", sub {
       expect([lexpand(undef)])->to_be([]);
     };
@@ -185,6 +192,18 @@ describe "MOP4Import::Util", sub {
 	expect([$CLS->parse_opts([qw!-v -d!], undef, \%alias)])->to_be([qw/verbose 1 debug 1/]);
       };
     };
+    
+    describe "options for parse_opts behavior", sub {
+      it "should raise error for unknown option", sub {
+	expect(catch {$CLS->parse_opts([qw!--git-dir=/var/lib/git/foo.git
+				     --no-pager
+				     --info-path=/usr/share/info
+				    !]
+                    , undef, undef, undef
+                    , unknown_option => 1
+                    )})->to_match(qr"\QUnknown option for parse_opts(): unknown_option");
+      };
+    };
   };
 
   describe "parse_json_opts", sub {
@@ -267,6 +286,27 @@ describe "MOP4Import::Util", sub {
       };
       it "should reserve unknown elements", sub {
 	expect(\@list)->to_be([qw/other elements/]);
+      };
+    };
+  };
+
+  describe "logging", sub {
+    package
+      MyTest;
+    Test::Kantan::describe "m4i_log_start", sub {
+      Test::Kantan::it "should print current package names and caller's package name", sub {
+        Test::Kantan::expect(Capture::Tiny::capture_stderr {MOP4Import::Util::m4i_log_start()})->to_be("\n". "START of MyTest->import() for Capture::Tiny.\n");
+      };
+    };
+
+    Test::Kantan::describe "m4i_log_end", sub {
+      Test::Kantan::it "should print current package names and caller's package name", sub {
+        Test::Kantan::expect(Capture::Tiny::capture_stderr {MOP4Import::Util::m4i_log_end()})->to_be("END of MyTest->import() for Capture::Tiny.\n\n");
+      };
+
+      Test::Kantan::it "should print given package name if given", sub {
+        Test::Kantan::expect(Capture::Tiny::capture_stderr {MOP4Import::Util::m4i_log_end('FooBar')})->to_be("END of MyTest->import() for FooBar.\n\n");
+
       };
     };
   };
