@@ -13,17 +13,7 @@ use rlib qw!../..!;
 
 use MOP4Import::t::t_lib qw/no_error expect_script_error/;
 
-use SelectSaver;
-sub capture (&) {
-  my ($code) = @_;
-  my $buffer = "";
-  {
-    open my $stdout, '>', \$buffer or die "Can't start capture: $!";
-    my $saver = SelectSaver->new($stdout);
-    $code->();
-  }
-  $buffer;
-}
+use Capture::Tiny qw(capture);
 
 describe "MOP4Import::Base::CLI", sub {
   describe "package MyApp1 {use ... -as_base;...}", sub {
