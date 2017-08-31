@@ -38,6 +38,8 @@ sub declare_extend {
 				    , @spec);
 }
 
+*declare_extends = *declare_extend; *declare_extends = *declare_extend;
+
 sub declare___inner_class_in {
   (my $myPack, my Opts $opts, my ($destpkg, $name, @spec)) = m4i_args(@_);
 
@@ -59,8 +61,60 @@ sub declare___inner_class_in {
 sub declare_subtypes {
   (my $myPack, my Opts $opts, my @specs) = m4i_args(@_);
 
-  $myPack->dispatch_pairs_as(type => $opts->with_basepkg($opts->{objpkg})
-			     , @specs);
+  $myPack->dispatch_pairs_as_declare(
+    type => $opts->with_basepkg($opts->{objpkg}),
+    @specs
+  );
 }
 
 1;
+
+=head1 NAME
+
+MOP4Import::Declare::Type - inner-type related pragmas
+
+=head1 SYNOPSIS
+
+  package MyApp;
+  use MOP4Import::Declare::Type
+    [type => BaseUser => [fields => qw/sessid/]
+      , [subtypes =>
+            Guest => []
+          , RegisteredUser => [[fields => qw/uid registered_at/]]
+        ]
+    ];
+
+
+=head1 DESCRIPTION
+
+This module provides inner-type related pragmas.
+Usually used via L<MOP4Import::Types>.
+
+=head1 PRAGMAS
+
+=head2 [type => $typename, @spec]
+X<type>
+
+Declare inner-type C<$typename> based on given C<@spec>.
+
+=head2 [extend => $typename, @spec]
+X<extend>
+
+Declare extended version of C<$typename>, which is inherited from parent class,
+based on given C<@spec>.
+
+=head2 [subtypes => ($typename => [@spec])...]
+X<subtypes>
+
+Declare multiple inner-types from given C<< $typename => [@spec] >> pair list.
+
+=head1 AUTHOR
+
+Kobayashi, Hiroaki E<lt>hkoba@cpan.orgE<gt>
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

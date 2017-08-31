@@ -553,6 +553,18 @@ given package name to C<MOP4Import::Opts> hash object for you.
     $myPack->dispatch_declare($callpack, -strict, @pragma);
   }
 
+=head2 DEBUG_MOP4IMPORT environment variable
+X<DEBUG_MOP4IMPORT>
+
+To inspect what MOP4Import::Declare does, set environment variable
+C<DEBUG_MOP4IMPORT> to positive integer. Logs are emitted to STDERR.
+
+=for code sh
+
+  DEBUG_MOP4IMPORT=1 perl YourExporter.pm
+
+=for code perl
+
 =head1 PRAGMAS
 
 All pragmas below are actually implemented as "declare_PRAGMA" method,
@@ -775,6 +787,10 @@ But you can extend FieldSpec in your exporter like following:
                       readonly => 1,
                       required => 1]]
   }
+
+=head1 SEE ALSO
+
+L<MOP4Import::Types>
 
 =head1 AUTHOR
 

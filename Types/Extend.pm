@@ -19,7 +19,7 @@ sub import {
 
   $opts->{extending} = 1;
 
-  $myPack->dispatch_pairs_as(type => $opts, @_);
+  $myPack->dispatch_pairs_as_declare(type => $opts, @_);
 
   m4i_log_end($opts->{callpack}) if DEBUG;
 }
