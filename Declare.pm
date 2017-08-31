@@ -27,17 +27,17 @@ our %FIELDS;
 sub import {
   my ($myPack, @decls) = @_;
 
-  my Opts $opts = m4i_opts([caller]);
+  m4i_log_start() if DEBUG;
 
-  if (DEBUG and DEBUG >= 2) {
-    print STDERR "MOP4Import::Opts->{callpack} = $opts->{callpack}\n";
-  }
+  my Opts $opts = m4i_opts([caller]);
 
   @decls = $myPack->default_exports unless @decls;
 
   $myPack->declare_strict($opts);
 
   $myPack->dispatch_declare($opts, @decls);
+
+  m4i_log_end($opts->{callpack}) if DEBUG;
 }
 
 sub file_line_of {
