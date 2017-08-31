@@ -83,7 +83,7 @@ sub m4i_opts {
   my ($arg) = @_;
   if (not ref $arg) {
     # Fake Opts from string.
-    Opts->new(destpkg => $arg);
+    Opts->new(caller => $arg);
 
   } elsif (UNIVERSAL::isa($arg, Opts)) {
     # Pass through.
