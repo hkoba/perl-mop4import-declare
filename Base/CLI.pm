@@ -36,23 +36,29 @@ sub run {
   } elsif ($sub = $self->can($cmd)) {
     # Invoke internal methods.
 
-    my @res = $sub->($self, @$arglist);
-    print join("\n", map {terse_dump($_)} @res), "\n"
-      if not $self->{quiet} and @res;
-
-    if ($cmd =~ /^has_/) {
-      # If method name starts with 'has_' and result is empty,
-      # exit with 1.
-      exit(@res ? 0 : 1);
-
-    } elsif ($cmd =~ /^is_/) {
-      # If method name starts with 'is_' and first result is false,
-      # exit with 1.
-      exit($res[0] ? 0 : 1);
-    }
+    $self->cli_invoke_sub_for_cmd($cmd, $sub, $self, @$arglist);
 
   } else {
-    $self->cmd_help("Error: No such command '$cmd'\n");
+    $self->cmd_help("Error: No such subcommand '$cmd'\n");
+  }
+}
+
+sub cli_invoke_sub_for_cmd {
+  (my MY $self, my ($cmd, $sub, @args)) = @_;
+
+  my @res = $sub->(@args);
+  print join("\n", map {terse_dump($_)} @res), "\n"
+    if not $self->{quiet} and @res;
+
+  if ($cmd =~ /^has_/) {
+    # If method name starts with 'has_' and result is empty,
+    # exit with 1.
+    exit(@res ? 0 : 1);
+
+  } elsif ($cmd =~ /^is_/) {
+    # If method name starts with 'is_' and first result is false,
+    # exit with 1.
+    exit($res[0] ? 0 : 1);
   }
 }
 
