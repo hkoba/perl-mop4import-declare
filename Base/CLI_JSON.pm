@@ -36,7 +36,7 @@ sub run {
   unless (@$arglist) {
     # Invoke help command if no arguments are given.
     $class->cmd_help;
-    exit;
+    return;
   }
 
   my $cmd = shift @$arglist;

@@ -23,7 +23,8 @@ sub run {
 
   unless (@$arglist) {
     # Invoke help command if no arguments are given.
-    $self->cmd_help
+    $self->cmd_help;
+    return;
   }
 
   my $cmd = shift @$arglist;
