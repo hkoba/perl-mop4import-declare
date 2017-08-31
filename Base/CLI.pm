@@ -55,27 +55,6 @@ sub run {
   }
 }
 
-sub run_with_context {
-  my ($class, $arglist, $opt_alias) = @_;
-  my MY $self = $class->new($class->parse_opts($arglist, undef, $opt_alias));
-  unless (@$arglist) {
-    $self->cmd_help
-  }
-  my $cmd = shift @$arglist;
-  if (my $sub = $self->can("cmd_$cmd")) {
-    $sub->($self, $self->parse_opts($arglist, +{}), @$arglist);
-  } elsif ($sub = $self->can($cmd)) {
-    if ($cmd =~ /^is/) {
-      exit($sub->($self, $self->parse_opts($arglist, +{}), @$arglist) ? 0 : 1);
-    } else {
-      my @res = $sub->($self, $self->parse_opts($arglist, +{}), @$arglist);
-      print join("\n", map {terse_dump($_)} @res), "\n" if @res;
-    }
-  } else {
-    die "$0: No such command $cmd\n";
-  }
-}
-
 sub cmd_help {
   my $self = shift;
   my $pack = ref $self || $self;
