@@ -9,6 +9,10 @@ use mro qw/c3/;
 
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
+print STDERR "Using MOP4Import::VERSION = $VERSION (file '"
+  . __FILE__ . "')\n"
+  if DEBUG and DEBUG >= 2;
+
 use MOP4Import::Opts
   qw/
       Opts
@@ -24,6 +28,10 @@ sub import {
   my ($myPack, @decls) = @_;
 
   my Opts $opts = m4i_opts([caller]);
+
+  if (DEBUG and DEBUG >= 2) {
+    print STDERR "MOP4Import::Opts->{callpack} = $opts->{callpack}\n";
+  }
 
   @decls = $myPack->default_exports unless @decls;
 
