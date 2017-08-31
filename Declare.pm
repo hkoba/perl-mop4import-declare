@@ -455,8 +455,10 @@ MOP4Import::Declare - map import args to C<< $meta->declare_...() >> pragma meth
   # Above means you called:
   #   use strict;
   #   use warnings;
-  #   YourExporter->declare_foo($opts, 'MyApp');
-  #   YourExporter->declare_bar($opts, 'MyApp', "A", "x", 1..3);
+  #   BEGIN {
+  #     YourExporter->declare_foo('MyApp');
+  #     YourExporter->declare_bar('MyApp', "A", "x", 1..3);
+  #   }
   
   print "scalar=$bar\t", "hash=$bar{bar}\t", "array=@bar\n";
 
@@ -739,7 +741,7 @@ as import list.
 is same as:
 
   BEGIN {
-    YourExporter->import_NAME(+{}, __PACKAGE__, 'Foo');
+    YourExporter->import_NAME(__PACKAGE__, 'Foo');
   }
 
 =head2 import_SIGIL($opts, $type, $name)
