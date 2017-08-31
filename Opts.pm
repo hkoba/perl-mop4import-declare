@@ -120,3 +120,99 @@ our @EXPORT_OK = (@EXPORT, MOP4Import::Util::function_names
 		  (matching => qr/^(with_|m4i_)/));
 
 1;
+
+=head1 NAME
+
+MOP4Import::Opts - Object to encapsulate caller() record
+
+=head1 SYNOPSIS
+
+  # To import the type 'Opts' and m4i api functions.
+  use MOP4Import::Opts;
+
+  # To create an instance of MOP4Import::Opts.
+  sub import {
+    ...
+    my Opts $opts = m4i_opts([caller]);
+    ...
+  }
+
+  # To extract MOP4Import::Opts safely from pragma args.
+  sub declare_foo {
+    (my $myPack, my Opts $opts, my (@args)) = m4i_args(@_);
+    ...
+  }
+
+=head1 DESCRIPTION
+
+This hash object encapsulates L<caller()|perlfunc/caller> info
+and other parameters for L<MOP4Import::Declare> family.
+
+=head1 ATTRIBUTES
+
+=over 4
+
+=item callpack
+
+L<scalar caller()|perlfunc/caller> of import in usual case.
+
+=item destpkg
+
+Where to export. Always defined.
+
+=item objpkg
+
+What to define. Optional.
+
+=item basepkg
+
+What to inherit. Optional.
+
+=item extending
+
+Used in MOP4Import::Types::Extend and MOP4Import::Declare::Type
+
+=item caller
+
+Original L<caller()|perlfunc/caller> info.
+This may be empty for faked m4i_opts().
+
+=item filename
+
+=item line
+
+=back
+
+=head1 FUNCTIONS
+
+=head2 m4i_args
+
+This function converts C<$_[1]> by L<m4i_opts> and returns whole C<@_>.
+
+  (my $myPack, my Opts $opts, my (@args)) = m4i_args(@_);
+
+=head2 m4i_opts
+
+  my Opts $opts = m4i_opts([caller]);
+
+  my Opts $opts = m4i_opts(scalar caller); # string is ok too.
+
+=head1 METHODS
+
+=head2 as_string
+
+  $opts->as_string;
+
+  "$opts"; # Same as above.
+
+=head1 AUTHOR
+
+Kobayashi, Hiroaki E<lt>hkoba@cpan.orgE<gt>
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
+

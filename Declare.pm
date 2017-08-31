@@ -403,35 +403,40 @@ MOP4Import::Declare - map import args to C<< $meta->declare_...() >> pragma meth
 
 =head1 SYNOPSIS
 
-  #-------------------
-  # To implement an exporter with MOP4Import::Declare,
-  # just use it in YourExporter.pm "as base" like following:
-
   package YourExporter {
-
+  
     use MOP4Import::Declare -as_base; # "use strict" is turned on too.
-
+    
+    use MOP4Import::Opts;             # import a type 'Opts' and m4i_args()
+    
     use MOP4Import::Util qw/globref/; # encapsulates "no strict 'refs'".
+    
+    use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
     
     # This method implements '-foo' pragma,
     # and adds method named 'foo()' in $callpack.
     sub declare_foo {
-      my ($myPack, $opts, $callpack) = @_;
+      my ($myPack, $callpack) = @_;
       
-      *{globref($callpack, 'foo')} = sub (@) { join("! ", "FOOOOOO", @_) };
+      my $glob = globref("$callpack", 'foo'); # Note: "" to stringify.
+  
+      *$glob = sub (@) { join("! ", "FOOOOOO", @_) };
     }
     
     # This method implements [bar => $x, $y, @z] pragma,
     # and adds variables $bar, %bar and @bar in $callpack.
     sub declare_bar {
-      my ($myPack, $opts, $callpack, $x, $y, @z) = @_;
+      (my $myPack, my Opts $callpack, my ($x, $y, @z)) = m4i_args(@_);
       
-      my $glob = globref($callpack, 'bar');
+      print STDERR "callpack = $callpack->{callpack}\n" if DEBUG;
+  
+      my $glob = globref($callpack->{callpack}, 'bar');
       *$glob = \ $x;
       *$glob = +{bar => $y};
       *$glob = \@z;
     }
   };
+  
   1
 
   #-------------------
@@ -475,13 +480,17 @@ C<import()> method of MOP4Import::Declare briefly does following:
   sub import {
     my ($myPack, @pragma) = @_;
     
-    my $callpack = caller;
+    my Opts $opts = m4i_opts([caller]);
     
-    $myPack->dispatch_declare(+{}, $callpack, -strict, @pragma);
+    $myPack->dispatch_declare($opts, -strict, @pragma);
   }
 
+An object of type L<MOP4Import::Opts>,
+which is instanciated via L<m4i_opts()|MOP4Import::Opts/m4i_opts>,
+carries L<caller|perlfunc/caller> information to each pragmas.
+
 L<dispatch_declare()|MOP4Import::Declare/dispatch_declare> dispatches
-C<declare_PRAGMA()> pragma handlers based on each pragma argument types
+C<declare_PRAGMA()> pragma handlers for each pragma, based on argument types
 (string, arrayref or coderef).
 
 =over 4
@@ -492,7 +501,7 @@ C<declare_PRAGMA()> pragma handlers based on each pragma argument types
 
 C<-Identifier>, word starting with C<->, is dispatched as:
 
-  $myPack->declare_PRAGMA($opts, $callpack);
+  $myPack->declare_PRAGMA($opts);
 
 Note: You don't need to quote this pragma because perl has special support
 for this kind of syntax (bareword lead by C<->).
@@ -503,7 +512,7 @@ for this kind of syntax (bareword lead by C<->).
 
 ARRAY ref is dispatched as:
 
-  $myPack->declare_PRAGMA($opts, $callpack, @ARGS);
+  $myPack->declare_PRAGMA($opts, @ARGS);
 
 =item NAME, *NAME, $NAME, %NAME, @NAME, &NAME
 
@@ -519,11 +528,28 @@ as ordinally export/import.
 You can pass callback too.
 
   sub {
-    my ($yourExporterPackage, $opts, $callpack) = @_;
+    my ($yourExporterPackage, $opts) = @_;
     # do rest of job
   }
 
 =back
+
+=head2 Simplified case API
+X<simpler-m4i-api>
+
+If you just want to implement ordinal exporter
+and feel L<MOP4Import::Opts> is overkill,
+you can just use C<scalar caller> as a MOP4Import option.
+L<m4i_args(@_)|MOP4Import::Opts/m4i_args> will convert
+given package name to C<MOP4Import::Opts> hash object for you.
+
+  sub import {
+    my ($myPack, @pragma) = @_;
+    
+    my $callpack = caller;
+    
+    $myPack->dispatch_declare($callpack, -strict, @pragma);
+  }
 
 =head1 PRAGMAS
 
@@ -595,7 +621,7 @@ You can define special hook for field spec.
 That should named starting with C<declare___field_with_...>.
 
  sub declare___field_with_foo {
-   (my $myPack, my $opts, my $callpack, my FieldSpec $fs, my ($k, $v)) = @_;
+   (my $myPack, my $opts, my FieldSpec $fs, my ($k, $v)) = @_;
 
    $fs->{$k} = $v;
 
@@ -662,20 +688,20 @@ with name C<FROM>. For example:
 
 =head1 METHODS
 
-=head2 dispatch_declare($opts, $callpack, PRAGMA...)
+=head2 dispatch_declare($opts, PRAGMA...)
 X<dispatch_declare>
 
 This implements C<MOP4Import::Declare> style type-based pragma dispatching.
 
-  YourExporter->dispatch_declare($opts, $callpack, -foo, [bar => 'baz'], '*FOO');
+  YourExporter->dispatch_declare($opts, -foo, [bar => 'baz'], '*FOO');
 
 is same as
 
-  YourExporter->declare_foo($opts, $callpack);
-  YourExporter->declare_bar($opts, $callpack, 'baz');
-  YourExporter->dispatch_import($opts, $callpack, '*FOO');
+  YourExporter->declare_foo($opts);
+  YourExporter->declare_bar($opts, 'baz');
+  YourExporter->dispatch_import($opts, '*FOO');
 
-=head2 dispatch_import($opts, $callpack, $STRING)
+=head2 dispatch_import($opts, $STRING)
 X<dispatch_import>
 
 This mimics L<Exporter> like sigil based import.
@@ -688,11 +714,11 @@ If C<$STRING> has no sigil, L</import_NAME> will be called.
 is same as
 
   BEGIN {
-    YourExporter->import_GLOB(+{},   $callpack, GLOB   => 'FOO');
-    YourExporter->import_SCALAR(+{}, $callpack, SCALAR => 'BAR');
-    YourExporter->import_ARRAY(+{},  $callpack, ARRAY  => 'BAZ');
-    YourExporter->import_HASH(+{},   $callpack, HASH   => 'QUX');
-    YourExporter->import_CODE(+{},   $callpack, CODE   => 'QUUX');
+    YourExporter->import_GLOB($callpack,   GLOB   => 'FOO');
+    YourExporter->import_SCALAR($callpack, SCALAR => 'BAR');
+    YourExporter->import_ARRAY($callpack,  ARRAY  => 'BAZ');
+    YourExporter->import_HASH($callpack,   HASH   => 'QUX');
+    YourExporter->import_CODE($callpack,   CODE   => 'QUUX');
   }
 
 Note: some complex features like export list C<@EXPORT>, C<@EXPORT_OK>
@@ -702,7 +728,7 @@ If you really want to implement those features, you can inherit this module and
 simply override C<dispatch_import>. It will be called for all non reference
 pragmas.
 
-=head2 import_NAME($opts, $callpack, $name)
+=head2 import_NAME($opts, $name)
 X<import_NAME>
 
 This method (hook) is called when simple word (matches C</^\w+$/>) is given
@@ -716,7 +742,7 @@ is same as:
     YourExporter->import_NAME(+{}, __PACKAGE__, 'Foo');
   }
 
-=head2 import_SIGIL($opts, $callpack, $type, $name)
+=head2 import_SIGIL($opts, $type, $name)
 X<import_SIGIL>
 
 Actual implementation of C<import_GLOB>, C<import_SCALAR>, C<import_ARRAY>, C<import_CODE>.
@@ -727,12 +753,7 @@ Actual implementation of C<import_GLOB>, C<import_SCALAR>, C<import_ARRAY>, C<im
 =head2 Opts
 
 This type of object is always given as a second argument of
-each invocation of C<declare_PRAGMA>.
-This object carries complex info such as caller filename, lineno
-to each pragma handlers. In simple cases, you don't need to care about these.
-
-Note: field names of this type are about to change, so please do not
-rely them for now.
+each invocation of C<declare_PRAGMA>. For more details, see L<MOP4Import::Opts>.
 
 =head2 FieldSpec
 
@@ -748,12 +769,14 @@ But you can extend FieldSpec in your exporter like following:
   
   package MyApp {
     use YourBaseObject -as_base,
-        [fields => [app_name => readonly => 1, required => 1]]
+        [fields => [app_name =>
+                      readonly => 1,
+                      required => 1]]
   }
 
 =head1 AUTHOR
 
-KOBAYASHI, Hiroaki E<lt>hkoba@cpan.orgE<gt>
+Kobayashi, Hiroaki E<lt>hkoba@cpan.orgE<gt>
 
 =head1 LICENSE
 
