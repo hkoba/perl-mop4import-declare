@@ -176,7 +176,8 @@ sub run {
 
 sub _hyphen2underscore {
     my ($v) = @_;
-    $v =~ tr/-/_/r;
+    $v =~ tr/-/_/;
+    return $v;
 }
 
 
