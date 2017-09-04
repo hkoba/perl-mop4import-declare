@@ -33,9 +33,7 @@ sub import {
 
   @decls = $myPack->default_exports unless @decls;
 
-  $myPack->declare_strict($opts);
-
-  $myPack->dispatch_declare($opts, @decls);
+  $myPack->dispatch_declare($opts, $myPack->always_exports, @decls);
 
   m4i_log_end($opts->{callpack}) if DEBUG;
 }
@@ -50,6 +48,10 @@ sub file_line_of {
 #
 sub default_exports {
   ();
+}
+
+sub always_exports {
+  qw(-strict);
 }
 
 sub dispatch_declare {

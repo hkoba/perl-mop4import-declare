@@ -12,6 +12,13 @@ use constant DEBUG_WEAK => $ENV{DEBUG_MOP4IMPORT_WEAKREF};
 
 our %FIELDS;
 
+#---------
+sub always_exports {
+    qw(-as_base);
+}
+
+#---------
+
 sub new {
   my MY $self = fields::new(shift);
   $self->configure(@_);
