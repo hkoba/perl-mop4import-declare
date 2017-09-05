@@ -12,7 +12,7 @@ use Data::Dumper;
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
 use MOP4Import::Types::Extend
-      FieldSpec => [[fields => qw/type alias command/]];
+      FieldSpec => [[fields => qw/type alias command real_name/]];
 
 print STDERR "FieldSpec = ", FieldSpec, "\n" if DEBUG;
 
@@ -90,6 +90,7 @@ sub declare_options {
             print STDERR " = $type";
             print "\n";
         }
+        push @$o, real_name => $name;
         $name =~ s/-/_/g;
         $o->[0] = $name;
         push @$o, alias => $alias if defined $alias;
@@ -232,29 +233,50 @@ sub cmd_version {
 }
 
 sub cmd_help { # From  MOP4Import::Base::CLI, original cmd_help do 'die'
-  my $self   = shift;
-  my $pack   = ref $self || $self;
-  my $fields = MOP4Import::Declare::fields_hash($self);
-  my $names  = MOP4Import::Declare::fields_array($self);
+    my $self   = shift;
+    my $pack   = ref $self || $self;
+    my $fields = MOP4Import::Declare::fields_hash($self);
+    my $names  = MOP4Import::Declare::fields_array($self);
 
-  require MOP4Import::Util::FindMethods;
+    require MOP4Import::Util::FindMethods;
 
-  my @methods = MOP4Import::Util::FindMethods::FindMethods($pack, sub {s/^cmd_//});
-  print join("\n", <<END);
+    my @methods = MOP4Import::Util::FindMethods::FindMethods($pack, sub {s/^cmd_//});
+
+    print join("\n", <<END);
 Usage: @{[File::Basename::basename($0)]} [--opt=value].. <command> [--opt=value].. ARGS...
 
 Commands:
   @{[join("\n  ", @methods)]}
+END
+
+    my $max_len  = 0;
+    my @opts = map {
+        my FieldSpec $fs = $fields->{$_};
+        my $str = do {
+            if (ref $fs) {
+                (do{ '  --' . (UNIVERSAL::isa($fs, FieldSpec) ? $fs->{real_name} : $_) } .
+                    do{ UNIVERSAL::isa($fs, FieldSpec) and $fs->{ alias } ? ', -' . $fs->{ alias } : ''  },
+                );
+            }
+            else {
+                $_
+            }
+        };
+        $max_len = length $str if length $str > $max_len;
+        [ $str, $fs->{doc} ? $fs->{doc} : '' ];
+    } grep {/^[a-z]/} @$names;
+
+    $max_len += 2;
+
+    print join("\n", <<END);
 
 Options:
-  --@{[join "\n  --", map {
-  if (ref (my FieldSpec $fs = $fields->{$_})) {
-    join("\t  ", $_, ($fs->{doc} ? $fs->{doc} : ()));
-  } else {
-    $_
-  }
-} grep {/^[a-z]/} @$names]}
 END
+
+    for my $opt ( @opts ) {
+        printf( "%-${max_len}s%s\n", @$opt );
+    }
+
     exit();
 }
 
