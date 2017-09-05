@@ -12,7 +12,7 @@ use Data::Dumper;
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
 use MOP4Import::Types::Extend
-      FieldSpec => [[fields => qw/type alias command real_name/]];
+      FieldSpec => [[fields => qw/type alias command real_name required/]];
 
 print STDERR "FieldSpec = ", FieldSpec, "\n" if DEBUG;
 
@@ -181,6 +181,14 @@ sub configure {
     my @res;
     my %map;
     my $command;
+
+    my (%required, %default);
+    for my $spec ( values %$fields ) {
+        next unless UNIVERSAL::isa($spec, FieldSpec);
+        $required{ $spec->{name} } = $spec->{required} if exists $spec->{required};
+        $default{ $spec->{name} }  = $spec->{default}  if exists $spec->{default};
+    }
+
     while ( defined(my $name = shift @args) ) {
         my $type = $fields->{$name}->{type};
         my $val  = shift(@args);
@@ -217,8 +225,20 @@ sub configure {
             next;
         }
 
+        delete $required{$name};
+        delete $default{$name};
+
         push @res, $name;
         push @res, $val;
+    }
+
+    for my $key (keys %default) {
+        push @res, $key, $default{$key};
+        delete $required{$key};
+    }
+    if (%required) {
+        my $opt = (sort keys %required)[0];
+        Carp::croak("$opt is required.");
     }
     #print Dumper([@res]);
     $self->SUPER::configure(@res);

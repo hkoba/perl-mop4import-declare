@@ -47,6 +47,28 @@ my $result = {};
 }
 
 
+{
+    package CLI_Opts::Test2;
+    use MOP4Import::Base::CLI_Opts -as_base,
+        [options =>
+            [
+                'foo|f=s' => doc => "foo!", required => 1,
+            ],
+            [
+                'bar|b=s' => doc => "bar!", required => 1, default => 'a',
+            ],
+            [
+                'baz|z=i' => doc => "baz!", default => 123,
+            ],
+        ],
+    ;
+    sub cmd_default {
+        my ( $c ) = @_;
+        $cli = $c;
+    }
+}
+
+
 CLI_Opts::Test->run([qw/-fb/]);
 is_deeply( $cli, default_state(foo => 1, bar => 1) );
 
@@ -70,6 +92,12 @@ is_deeply( $cli, default_state(nums => [qw/123 456/]) );
 
 eval { CLI_Opts::Test->run([qw/--nums 123 --nums abc/]) };
 like($@, qr/option `nums` takes integer/);
+
+eval { CLI_Opts::Test2->run([qw//]) };
+like($@, qr/foo is required./);
+
+CLI_Opts::Test2->run([qw/--foo hoge/]);
+is_deeply( $cli, default_state(foo => 'hoge', bar => 'a', baz => 123) );
 
 
 done_testing;
