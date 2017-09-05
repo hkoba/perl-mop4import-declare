@@ -1,6 +1,7 @@
 package MOP4Import::Base::CLI_Opts;
 use MOP4Import::Base::CLI -as_base
 #  , [extend => FieldSpec => qw/type alias/]
+  , [fields => qw/__cmd/]
 ;
 use MOP4Import::Opts;
 use Carp ();
@@ -9,12 +10,70 @@ use Data::Dumper;
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
 use MOP4Import::Types::Extend
-      FieldSpec => [[fields => qw/type alias/]];
+      FieldSpec => [[fields => qw/type alias command/]];
 
 print STDERR "FieldSpec = ", FieldSpec, "\n" if DEBUG;
 
+
+sub default_exports {
+    my ($myPack) = @_;
+    return (
+      $myPack->SUPER::default_exports, [
+            options =>
+                ['help|h', 'command', 'help'],
+                ['version', 'command', 'version'],
+        ]
+    );
+}
+
+sub default_options {
+    return (
+        help    => ['command' => 'help', 'type' => 'flag', 'alias' => 'h'],
+        version => ['command' => 'version', 'type' => 'flag'],
+        h       => ['command' => 'help', 'type' => 'flag'],
+    );
+}
+
+
+sub _default_opt {
+    my ( $myPack, $decls ) = @_;
+    my %auto      = $myPack->default_options;
+    my %rev_alias = map { # aliasの逆リンクをつくる
+        my %pair = @{ $auto{$_} };
+        defined $pair{alias} ? ($pair{alias} => $_) : ();
+    } keys %auto;
+
+    for my $dec (@$decls) {
+        if ( $dec->[0] =~ /^([-a-zA-Z0-9]+)(?:\|([a-zA-Z0-9]))?(?:=[is]@?)?$/ ) {
+            my $optname = $1;
+            my $alias   = $2 // '';
+            for my $k ( $optname, $alias ) {
+                my $rev_alias = $rev_alias{$k};
+                my %opt = @{$auto{$k}};
+                if ( exists $opt{alias} ) { # オプションがユーザー定義されているならaliasも不要
+                    delete $auto{$opt{alias}};
+                }
+                if ( $rev_alias ) {
+                   my %pair = @{ $auto{$rev_alias} };
+                   delete $pair{alias};
+                   $auto{$rev_alias} = [%pair] if exists $auto{$rev_alias};
+                }
+                delete $auto{$k};
+            }
+        }
+    }
+
+    for my $k ( sort keys %auto ) {
+        push @$decls, [$k, @{$auto{$k}}];
+    }
+    #print "decls:", Dumper($decls);
+}
+
 sub declare_options {
     (my $myPack, my Opts $opts, my (@decls)) = m4i_args(@_);
+
+    $myPack->_default_opt(\@decls);
+
     $myPack->declare_fields($opts, map {
         my $o = ref $_ ? $_ : [$_];
 
@@ -119,7 +178,7 @@ sub configure {
     my $fields = MOP4Import::Declare::fields_hash($self);
     my @res;
     my %map;
-    #print Dumper([@args]);
+    my $command;
     while ( defined(my $name = shift @args) ) {
         my $type = $fields->{$name}->{type};
         my $val  = shift(@args);
@@ -147,6 +206,15 @@ sub configure {
             }
         }
 
+        if ( $fields->{$name}->{command} ) {
+            if ( defined $command ) {
+                Carp::croak("command invoking option was already called before `$name`.");
+            }
+            $command = $fields->{$name}->{command};
+            $self->{__cmd} = [$command, $val];
+            next;
+        }
+
         push @res, $name;
         push @res, $val;
     }
@@ -155,14 +223,50 @@ sub configure {
 }
 
 
+sub cmd_default { }
+
+sub cmd_version {
+    my $v = shift->VERSION // '0.0';
+    print "$v\n";
+}
+
+sub cmd_help { # From  MOP4Import::Base::CLI, original cmd_help do 'die'
+  my $self   = shift;
+  my $pack   = ref $self || $self;
+  my $fields = MOP4Import::Declare::fields_hash($self);
+  my $names  = MOP4Import::Declare::fields_array($self);
+
+  require MOP4Import::Util::FindMethods;
+
+  my @methods = MOP4Import::Util::FindMethods::FindMethods($pack, sub {s/^cmd_//});
+  print join("\n", <<END);
+Usage: @{[File::Basename::basename($0)]} [--opt=value].. <command> [--opt=value].. ARGS...
+
+Commands:
+  @{[join("\n  ", @methods)]}
+
+Options:
+  --@{[join "\n  --", map {
+  if (ref (my FieldSpec $fs = $fields->{$_})) {
+    join("\t  ", $_, ($fs->{doc} ? $fs->{doc} : ()));
+  } else {
+    $_
+  }
+} grep {/^[a-z]/} @$names]}
+END
+    exit();
+}
+
 sub run {
     my ($class, $arglist) = @_;
+    my $default_cmd = 'default';
+    my $fields = MOP4Import::Declare::fields_hash($class);
     # $arglist を parse し、 $class->new 用のパラメータリストを作る
     my @opts = $class->parse_opts($arglist);
     # $class->new する
     my $obj = $class->new(@opts);
     # 次の引数を取り出して、サブコマンドとして解釈を試みる
-    my $cmd = shift @$arglist || "default";
+    my $cmd = shift @$arglist || _set_cmd_by_option($obj, $arglist) || $default_cmd;
     # サブコマンド毎の処理を行う
     # 結果を何らかの形式で出力する
     # 望ましい終了コードを返す（差し当たり、必要ならば各メソッド内で指定する）
@@ -180,5 +284,11 @@ sub _hyphen2underscore {
     return $v;
 }
 
+sub _set_cmd_by_option {
+    my ($obj, $arglist) = @_;
+    return unless $obj->{__cmd};
+    push @$arglist, $obj->{__cmd}->[1];
+    return $obj->{__cmd}->[0];
+}
 
 1;

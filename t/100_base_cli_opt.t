@@ -35,6 +35,9 @@ my $result = {};
             [
                 'config|c=s@' => doc => "config files",
             ],
+            [
+                'proc|p' => doc => "command!", command => 'process',
+            ],
         ],
     ;
 
@@ -48,6 +51,12 @@ my $result = {};
         my ( $c, @args ) = @_;
         $cli = $c;
         $result->{hello} = [@args];
+    }
+
+    sub cmd_process {
+        my ( $c, @args ) = @_;
+        $cli = $c;
+        $result->{process} = 'success';
     }
 
 }
@@ -118,6 +127,9 @@ is_deeply( $cli, default_state( config => [qw/abc def/] ), 'duplicated opts' );
 CLI_Opts::Test->run([qw/-bvc abc -N=123 --config def -r huga hello --megumi makoto/]);
 is_deeply( $result->{hello}, [qw/--megumi makoto/], 'complecated command3');
 is_deeply( $cli, default_state( verbose => 1, bar => 1, root_dir => 'huga', commit_num => 123, config => [qw/abc def/] ) );
+
+CLI_Opts::Test->run([qw/--proc/]);
+is_deeply( $result->{process}, 'success', 'opt = command' );
 
 done_testing;
 
