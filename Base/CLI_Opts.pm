@@ -106,6 +106,7 @@ sub parse_opts {
 
     my %alias;
     my $form = {};
+    unshift @{ $result }, { without_value => {} }; # SUPER::parse_optsで失われると困る情報を保持
     {
         foreach my $name (keys %$fields) {
             my FieldSpec $spec = $fields->{$name};
@@ -122,6 +123,7 @@ sub parse_opts {
     my $key = 1;
     my @stack;
     my $cmd;
+    my $req_value;
     for my $arg ( @$list ) {
         if ( $key ) {
             if ( $arg =~ /^-([^=]+)=(.+)$/ ) { # -f=foo
@@ -139,6 +141,9 @@ sub parse_opts {
                     if ( $form->{$s}->{type} ne 'flag' ) {
                         push @stack, '-' . $s;
                         $key = 0;
+                        if (not $req_value) {
+                            $req_value = $myaby_opts;
+                        }
                     }
                     else {
                         push @stack, '-' . $s;
@@ -152,6 +157,9 @@ sub parse_opts {
                 if ( $form->{_hyphen2underscore($1)}->{type} ne 'flag' ) {
                     push @stack, $arg;
                     $key = 0;
+                    if (not $req_value) {
+                        $req_value = _hyphen2underscore($1);
+                    }
                 }
                 else {
                     push @stack, $arg;
@@ -165,11 +173,16 @@ sub parse_opts {
         else { # change to Base::CLI aware format
             $stack[-1] .= '=' . $arg;
             $key = 1;
+            $req_value = '';
         }
     }
     #print Dumper($list);
     #print Dumper(\@stack);
     @$list = @stack;
+
+    if ($req_value) {
+        $result->[0]->{without_value}->{ $req_value } = 1;
+    }
 
     $class->SUPER::parse_opts($list, $result, \%alias, @rest);
 }
@@ -182,11 +195,17 @@ sub configure {
     my %map;
     my $command;
 
+    my $preserved = shift @args;
+
     my (%required, %default);
     for my $spec ( values %$fields ) {
         next unless UNIVERSAL::isa($spec, FieldSpec);
         $required{ $spec->{name} } = $spec->{required} if exists $spec->{required};
         $default{ $spec->{name} }  = $spec->{default}  if exists $spec->{default};
+        if ( $spec->{alias} && exists $preserved->{without_value}->{ $spec->{alias} } ) {
+            $preserved->{without_value}->{ $spec->{name} } = $preserved->{without_value}->{ $spec->{alias} };
+            delete $preserved->{without_value}->{ $spec->{alias} };
+        }
     }
 
     while ( defined(my $name = shift @args) ) {
@@ -225,7 +244,7 @@ sub configure {
             next;
         }
 
-        delete $required{$name};
+        delete $required{$name} if not exists $preserved->{without_value}->{ $name };
         delete $default{$name};
 
         push @res, $name;
