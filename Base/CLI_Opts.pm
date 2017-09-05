@@ -32,7 +32,6 @@ sub default_options {
     return (
         help    => ['command' => 'help', 'type' => 'flag', 'alias' => 'h'],
         version => ['command' => 'version', 'type' => 'flag'],
-        h       => ['command' => 'help', 'type' => 'flag'],
     );
 }
 
