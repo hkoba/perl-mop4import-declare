@@ -1,4 +1,6 @@
 package MOP4Import::Base::CLI_Opts;
+use strict;
+use warnings;
 use MOP4Import::Base::CLI -as_base
 #  , [extend => FieldSpec => qw/type alias/]
   , [fields => qw/__cmd/]
@@ -49,12 +51,12 @@ sub _default_opt {
             my $alias   = $2 // '';
             for my $k ( $optname, $alias ) {
                 my $rev_alias = $rev_alias{$k};
-                my %opt = @{$auto{$k}};
+                my %opt = @{$auto{$k} || []};
                 if ( exists $opt{alias} ) { # オプションがユーザー定義されているならaliasも不要
                     delete $auto{$opt{alias}};
                 }
                 if ( $rev_alias ) {
-                   my %pair = @{ $auto{$rev_alias} };
+                   my %pair = @{ $auto{$rev_alias} || [] };
                    delete $pair{alias};
                    $auto{$rev_alias} = [%pair] if exists $auto{$rev_alias};
                 }
