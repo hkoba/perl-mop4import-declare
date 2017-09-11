@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use MOP4Import::Base::CLI -as_base
 #  , [extend => FieldSpec => qw/type alias/]
-  , [fields => qw/__cmd/]
+  , [fields => qw/_cmd __cmd/]
 ;
 use MOP4Import::Opts;
 use Carp ();

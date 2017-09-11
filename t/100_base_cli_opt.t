@@ -143,6 +143,7 @@ sub default_state {
         'commit_num' => 1,
         'root_dir' => './',
         'dry_run' => 'foo.db',
+        '_cmd' => ($cli->{_cmd} // 'default'),
         %args,
     };
 }

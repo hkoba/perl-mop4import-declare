@@ -45,5 +45,6 @@ sub default_state {
     my (%args) = @_;
     return {
         %args,
+        '_cmd' => ($cli->{_cmd} // 'default'),
     };
 }

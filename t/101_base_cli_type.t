@@ -108,6 +108,7 @@ sub default_state {
     $result = {};
     return {
         %args,
+        '_cmd' => ($cli->{_cmd} // 'default'),
     };
 }
 
