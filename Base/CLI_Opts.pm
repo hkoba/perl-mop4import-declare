@@ -12,7 +12,7 @@ use Data::Dumper;
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
 use MOP4Import::Types::Extend
-      FieldSpec => [[fields => qw/type alias command real_name required/]];
+      FieldSpec => [[fields => qw/type alias command real_name required for_subcmd/]];
 
 print STDERR "FieldSpec = ", FieldSpec, "\n" if DEBUG;
 
@@ -106,11 +106,16 @@ sub parse_opts {
 
     my %alias;
     my $form = {};
-    unshift @{ $result }, { without_value => {} }; # SUPER::parse_optsで失われると困る情報を保持
+    my $preserve = (ref($result) && scalar(@$result) && $result->[0]) ? shift(@$result) : {};
+    unshift @{ $result }, { %$preserve, without_value => {} }; # SUPER::parse_optsで失われると困る情報を保持
+
     {
         foreach my $name (keys %$fields) {
             my FieldSpec $spec = $fields->{$name};
             if ( UNIVERSAL::isa($spec, FieldSpec) ) {
+                if ($preserve->{for_subcmd} and not $spec->{for_subcmd}) {
+                    next;
+                }
                 $form->{ $name } = $spec if $spec->{type};
                 if ( $spec->{alias} ) {
                     $alias{$spec->{alias}} = $name;
@@ -200,6 +205,7 @@ sub configure {
     my (%required, %default);
     for my $spec ( values %$fields ) {
         next unless UNIVERSAL::isa($spec, FieldSpec);
+        next if ( $preserved->{for_subcmd} && !$spec->{for_subcmd} );
         $required{ $spec->{name} } = $spec->{required} if exists $spec->{required};
         $default{ $spec->{name} }  = $spec->{default}  if exists $spec->{default};
         if ( $spec->{alias} && exists $preserved->{without_value}->{ $spec->{alias} } ) {
@@ -329,6 +335,9 @@ sub run {
     my $obj = $class->new(@opts);
     # 次の引数を取り出して、サブコマンドとして解釈を試みる
     my $cmd = shift @$arglist || _set_cmd_by_option($obj, $arglist) || $default_cmd;
+    $obj->{_cmd} = $cmd;
+    my $result = [ { for_subcmd => 1 } ];
+    $obj->configure(@{ $obj->parse_opts($arglist, $result) });
     # サブコマンド毎の処理を行う
     # 結果を何らかの形式で出力する
     # 望ましい終了コードを返す（差し当たり、必要ならば各メソッド内で指定する）

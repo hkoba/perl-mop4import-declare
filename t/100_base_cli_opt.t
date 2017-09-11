@@ -30,6 +30,12 @@ my $result = {};
                 'bar|b' => doc => "bar flag!",
             ],
             [
+                'nya=s' => doc => "subcmd nya flag!", for_subcmd => 1,
+            ],
+            [
+                'megumi|M=s' => doc => "subcmd imas flag!", for_subcmd => 1,
+            ],
+            [
                 'verbose|v' => doc => "print extra stuff",
             ],
             [
@@ -81,8 +87,8 @@ is_deeply( $result->{default}, 'default', 'call cmd_default when no subcommand s
 is_deeply( $cli, default_state( dbname => 'data' ) );
 
 
-CLI_Opts::Test->run([qw/-d=hoge --root-dir=path --commit-num 3 hello --foo --bar/]);
-is_deeply( $result->{hello}, [qw/--foo --bar/], 'subcommand and option' );
+CLI_Opts::Test->run([qw/-d=hoge --root-dir=path --commit-num 3 hello foooo baaar/]);
+is_deeply( $result->{hello}, [qw/foooo baaar/], 'subcommand and option' );
 is_deeply( $cli, default_state( dbname => 'hoge', root_dir => 'path', commit_num => 3 ) );
 
 
@@ -92,22 +98,22 @@ is_deeply( $cli, default_state( dbname => 'hoge', root_dir => 'path', commit_num
 
 
 CLI_Opts::Test->run([qw/-bf hello --nya wan/]);
-is_deeply($result->{hello}, [qw/--nya wan/], 'combined flag');
-is_deeply( $cli, default_state( foo => 1, bar => 1, ) );
+is_deeply($result->{hello}, [], 'subcmd');
+is_deeply( $cli, default_state( foo => 1, bar => 1, nya => 'wan' ) );
 
 
-CLI_Opts::Test->run([qw/-bfd hoge hello --megumi makoto/]);
-is_deeply( $result->{hello}, [qw/--megumi makoto/], 'combined flag and value' );
-is_deeply( $cli, default_state( foo => 1, bar => 1, dbname => 'hoge' ) );
+CLI_Opts::Test->run([qw/-bfd hoge hello -M makoto/]);
+is_deeply( $result->{hello}, [], 'subcmd' );
+is_deeply( $cli, default_state( foo => 1, bar => 1, dbname => 'hoge', megumi => 'makoto' ) );
 
 
 CLI_Opts::Test->run([qw/-bvd hoge --dry-run -N=123 -r huga/]);
 is_deeply( $result->{default}, 'default', 'complecated command' );
 is_deeply( $cli, default_state( verbose => 1, bar => 1, dbname => 'hoge', dry_run => 1, root_dir => 'huga', commit_num => 123 ) );
 
-CLI_Opts::Test->run([qw/-bvd hoge --dry-run -N=123 -r huga hello --megumi makoto/]);
-is_deeply( $result->{hello}, [qw/--megumi makoto/], 'complecated command2');
-is_deeply( $cli, default_state( verbose => 1, bar => 1, dbname => 'hoge', dry_run => 1, root_dir => 'huga', commit_num => 123 ) );
+CLI_Opts::Test->run([qw/-bvd hoge --dry-run -N=123 -r huga hello --megumi makoto anya/]);
+is_deeply( $result->{hello}, [qw/anya/], 'complecated command2');
+is_deeply( $cli, default_state( verbose => 1, bar => 1, dbname => 'hoge', dry_run => 1, root_dir => 'huga', commit_num => 123, megumi => 'makoto' ) );
 
 
 eval { CLI_Opts::Test->run([qw/--nothing/]) };
@@ -124,9 +130,9 @@ CLI_Opts::Test->run([qw/-c abc -c def/]);
 is_deeply( $result->{default}, 'default', 'complecated command' );
 is_deeply( $cli, default_state( config => [qw/abc def/] ), 'duplicated opts' );
 
-CLI_Opts::Test->run([qw/-bvc abc -N=123 --config def -r huga hello --megumi makoto/]);
-is_deeply( $result->{hello}, [qw/--megumi makoto/], 'complecated command3');
-is_deeply( $cli, default_state( verbose => 1, bar => 1, root_dir => 'huga', commit_num => 123, config => [qw/abc def/] ) );
+CLI_Opts::Test->run([qw/-bvc abc -N=123 --config def -r huga hello --megumi makoto anya/]);
+is_deeply( $result->{hello}, [qw/anya/], 'complecated command3');
+is_deeply( $cli, default_state( verbose => 1, bar => 1, root_dir => 'huga', commit_num => 123, megumi => 'makoto', config => [qw/abc def/] ) );
 
 CLI_Opts::Test->run([qw/--proc/]);
 is_deeply( $result->{process}, 'success', 'opt = command' );
