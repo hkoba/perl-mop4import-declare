@@ -71,6 +71,26 @@ my $cli;
 }
 
 
+{
+    package CLI_Opts::TestE;
+    use MOP4Import::Base::CLI_Opts
+        [options =>
+            [
+                'foo|f' => doc => "Foo!", command => 'foo',
+            ],
+        ],
+    ;
+    sub cmd_help {
+        my ( $c, @args ) = @_;
+        print "Usage";
+    }
+    sub cmd_foo {
+        my ( $c, @args ) = @_;
+        $cli = $c;
+        print "foo";
+    }
+}
+
 stdout_is( sub { CLI_Opts::TestA->run([qw//]); }, '' );
 stdout_is( sub { CLI_Opts::TestB->run([qw//]); }, '' );
 stdout_is( sub { CLI_Opts::TestC->run([qw//]); }, '' );
@@ -93,6 +113,10 @@ is_deeply( $cli->{__cmd}, [qw/foo abc/] );
 
 eval { CLI_Opts::TestD->run([qw/-h abc -h def/]) };
 like($@, qr/command invoking option was already called/, 'duplicated call');
+
+stdout_is( sub { CLI_Opts::TestE->run([qw/--help/]); }, 'Usage' );
+stdout_is( sub { CLI_Opts::TestE->run([qw/-h/]); }, 'Usage' );
+stdout_is( sub { CLI_Opts::TestE->run([qw/--foo/]); }, 'foo' );
 
 
 done_testing;
