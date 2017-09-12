@@ -324,31 +324,50 @@ Commands:
 END
 
     my $max_len  = 0;
-    my @opts = map {
-        my FieldSpec $fs = $fields->{$_};
-        my $str = do {
-            if (ref $fs) {
-                (do{ '  --' . (UNIVERSAL::isa($fs, FieldSpec) ? $fs->{real_name} : $_) } .
-                    do{ UNIVERSAL::isa($fs, FieldSpec) and $fs->{ alias } ? ', -' . $fs->{ alias } : ''  },
-                );
+    my %opt;
+    for my $name ( grep {/^[a-z]/} @$names ) {
+        my FieldSpec $fs = $fields->{$name};
+        my $cmds = ['__common__'];
+        my $str;
+        if (ref $fs) {
+            $str =
+                do{ '  --' . (UNIVERSAL::isa($fs, FieldSpec) ? ($fs->{real_name} // '') : $name) } .
+                do{ UNIVERSAL::isa($fs, FieldSpec) and $fs->{ alias } ? ', -' . $fs->{ alias } : ''  },
+            ;
+            if ( exists $fs->{for_subcmd} ) {
+                if ( ref $fs->{for_subcmd} ) {
+                    $cmds = [ sort keys %{ $fs->{for_subcmd} } ];
+                }
             }
-            else {
-                $_
-            }
-        };
+        }
+        else {
+            $str = $name;
+        }
         $max_len = length $str if length $str > $max_len;
-        [ $str, $fs->{doc} ? $fs->{doc} : '' ];
-    } grep {/^[a-z]/} @$names;
 
-    $max_len += 2;
+        next if $str eq '  --';
+
+        for my $name ( @$cmds ) {
+            push @{ $opt{ $name } }, [$str, $fs->{doc} ? $fs->{doc} : ''];
+        }
+    }
+
+    my @opts = [ 'common option', delete $opt{'__common__'} ];
+    push @opts, map { [ 'for ' . $_ => $opt{$_} ] } sort keys %opt;
 
     print join("\n", <<END);
 
 Options:
 END
 
-    for my $opt ( @opts ) {
-        printf( "%-${max_len}s%s\n", @$opt );
+    $max_len += 2;
+    for my $optset ( @opts ) {
+        my ( $subcmd, $opts ) = @$optset;
+        print " [$subcmd]\n";
+        for my $opt (@$opts) {
+            printf( "%-${max_len}s%s\n", @$opt );
+        }
+        print "\n";
     }
 
     exit();
