@@ -16,6 +16,13 @@ use MOP4Import::Types::Extend
 
 print STDERR "FieldSpec = ", FieldSpec, "\n" if DEBUG;
 
+sub new {
+  my MY $self = fields::new(shift);
+  $self->configure(@_);
+  $self->after_new;
+  $self;
+}
+
 
 sub default_exports {
     my ($myPack) = @_;
