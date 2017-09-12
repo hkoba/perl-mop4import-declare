@@ -82,6 +82,17 @@ sub declare_options {
             Carp::croak("Invalid option format - " . $o->[0]);
         }
 
+        my ($optline, %pair) = @$o;
+        if (exists $pair{'for_subcmd'}) {
+            if ( ref $pair{'for_subcmd'} ) {
+                $pair{'for_subcmd'} = +{ map { $_ => 1 } @{ $pair{'for_subcmd'} } };
+            }
+            elsif ( $pair{'for_subcmd'} ne '1' ) {
+                $pair{'for_subcmd'} =  { $pair{'for_subcmd'} => 1 };
+            }
+            @$o = ($optline, %pair);
+        }
+
         my ($name, $alias, $type) = ($1, $2, $3);
         $type ||= 'flag';
         if (DEBUG) {
@@ -113,9 +124,16 @@ sub parse_opts {
         foreach my $name (keys %$fields) {
             my FieldSpec $spec = $fields->{$name};
             if ( UNIVERSAL::isa($spec, FieldSpec) ) {
-                if ($preserve->{for_subcmd} and not $spec->{for_subcmd}) {
+                if ( $preserve->{for_subcmd} ) { # at this time, $class is a created object.
+                    next if not $spec->{for_subcmd};
+                    if ( ref $spec->{for_subcmd} ) {
+                        next unless $spec->{for_subcmd}->{ $class->{_cmd} };
+                    }
+                }
+                elsif ( $spec->{for_subcmd} ) {
                     next;
                 }
+
                 $form->{ $name } = $spec if $spec->{type};
                 if ( $spec->{alias} ) {
                     $alias{$spec->{alias}} = $name;
@@ -205,7 +223,11 @@ sub configure {
     my (%required, %default);
     for my $spec ( values %$fields ) {
         next unless UNIVERSAL::isa($spec, FieldSpec);
-        next if ( $preserved->{for_subcmd} && !$spec->{for_subcmd} );
+        next if ( $preserved->{for_subcmd} and not $spec->{for_subcmd} );
+        next if ( not $preserved->{for_subcmd} and $spec->{for_subcmd} );
+        if ( $preserved->{for_subcmd} and ref($spec->{for_subcmd}) and not $spec->{for_subcmd}->{ $self->{_cmd} } ) {
+            next;
+        }
         $required{ $spec->{name} } = $spec->{required} if exists $spec->{required};
         $default{ $spec->{name} }  = $spec->{default}  if exists $spec->{default};
         if ( $spec->{alias} && exists $preserved->{without_value}->{ $spec->{alias} } ) {
