@@ -17,12 +17,24 @@ use MOP4Import::Types::Extend
 print STDERR "FieldSpec = ", FieldSpec, "\n" if DEBUG;
 
 sub new {
-  my MY $self = fields::new(shift);
-  $self->configure(@_);
-  $self->after_new;
-  $self;
+    my MY $self = fields::new(shift);
+    my $pre = {};
+    $self->configure_for_cli_opts($pre, @_);
+    $self->after_new;
+    $self;
 }
 
+sub invoke {
+    my ( $self, $cmd, @args ) = @_;
+    $self->{_cmd} = $cmd;
+    if ( my $subref = $self->can("cmd_$cmd") ) {
+        $self->configure_for_cli_opts({for_subcmd => 1}, @args);
+        $subref->($self, @args);
+    }
+    else {
+        Carp::croak("Cmd `$cmd` is not implemented.\n");
+    }
+}
 
 sub default_exports {
     my ($myPack) = @_;
@@ -117,7 +129,7 @@ sub declare_options {
     } @decls);
 }
 
-sub parse_opts {
+sub parse_opts_for_cli_opts {
     my ($class, $list, $result, @rest) = @_;
     my $fields = MOP4Import::Declare::fields_hash($class);
     print STDERR "fields for $class : ", Data::Dumper->new([$fields])->Dump, "\n" if DEBUG;
@@ -214,11 +226,11 @@ sub parse_opts {
         $result->[0]->{without_value}->{ $req_value } = 1;
     }
 
-    $class->SUPER::parse_opts($list, $result, \%alias, @rest);
+    $class->parse_opts($list, $result, \%alias, @rest);
 }
 
 
-sub configure {
+sub configure_for_cli_opts {
     my ( $self, @args ) = @_;
     my $fields = MOP4Import::Declare::fields_hash($self);
     my @res;
@@ -295,7 +307,7 @@ sub configure {
         Carp::croak("$opt is required.");
     }
     #print Dumper([@res]);
-    $self->SUPER::configure(@res);
+    $self->configure(@res);
 }
 
 
@@ -378,14 +390,15 @@ sub run {
     my $default_cmd = 'default';
     my $fields = MOP4Import::Declare::fields_hash($class);
     # $arglist を parse し、 $class->new 用のパラメータリストを作る
-    my @opts = $class->parse_opts($arglist);
-    # $class->new する
-    my $obj = $class->new(@opts);
+    my @opts = $class->parse_opts_for_cli_opts($arglist);
+    my MY $obj = fields::new($class);
+    $obj->configure_for_cli_opts(@opts);
+    $obj->after_new;
     # 次の引数を取り出して、サブコマンドとして解釈を試みる
     my $cmd = shift @$arglist || _set_cmd_by_option($obj, $arglist) || $default_cmd;
     $obj->{_cmd} = $cmd;
     my $result = [ { for_subcmd => 1 } ];
-    $obj->configure(@{ $obj->parse_opts($arglist, $result) });
+    $obj->configure_for_cli_opts(@{ $obj->parse_opts_for_cli_opts($arglist, $result) });
     # サブコマンド毎の処理を行う
     # 結果を何らかの形式で出力する
     # 望ましい終了コードを返す（差し当たり、必要ならば各メソッド内で指定する）
