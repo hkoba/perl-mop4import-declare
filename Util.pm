@@ -120,15 +120,23 @@ sub take_hash_opts_maybe {
 # posix_style long option.
 #
 sub parse_opts {
-  my ($pack, $list, $result, $alias, $converter) = @_;
+  my ($pack, $list, $result, $alias, $converter, %opts) = @_;
   my $wantarray = wantarray;
   unless (defined $result) {
     $result = $wantarray ? [] : {};
+  }
+  my $preserve_hyphen = delete $opts{preserve_hyphen} // do {
+    my $sub = $pack->can("parse_opts__preserve_hyphen");
+    $sub && $sub->($pack);
+  };
+  if (keys %opts) {
+      Carp::croak("Unknown option for parse_opts(): ".join(", ", keys %opts));
   }
   while (@$list and defined $list->[0] and my ($n, $v) = $list->[0]
 	 =~ m{^--$ | ^(?:--? ([\w:\-\.]+) (?: =(.*))?)$}xs) {
     shift @$list;
     last unless defined $n;
+    $n =~ s/-/_/g unless $preserve_hyphen;
     $n = $alias->{$n} if $alias and $alias->{$n};
     $v = 1 unless defined $v;
     if (ref $result eq 'HASH') {
@@ -198,10 +206,25 @@ sub function_names {
   @result;
 }
 
+sub m4i_log_start {
+  my $m4i_meta = caller;
+  my $m4i_dest = caller(1);
+  print STDERR "\n", "START of $m4i_meta->import() for $m4i_dest.\n";
+}
+
+sub m4i_log_end {
+  my ($m4i_dest) = @_;
+  my $m4i_meta = caller;
+  $m4i_dest //= caller(1);
+  print STDERR "END of $m4i_meta->import() for $m4i_dest.\n\n";
+}
+
 our @EXPORT = qw/globref
 		 safe_globref
 		 fields_hash fields_symbol lexpand terse_dump
 		 fields_array
+                 m4i_log_start
+                 m4i_log_end
 		/;
 our @EXPORT_OK = function_names(from => __PACKAGE__
 		   , except => qr/^(import|c\w*)$/

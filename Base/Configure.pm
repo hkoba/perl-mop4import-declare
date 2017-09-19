@@ -12,6 +12,13 @@ use constant DEBUG_WEAK => $ENV{DEBUG_MOP4IMPORT_WEAKREF};
 
 our %FIELDS;
 
+#---------
+sub always_exports {
+    qw(-as_base);
+}
+
+#---------
+
 sub new {
   my MY $self = fields::new(shift);
   $self->configure(@_);
@@ -67,7 +74,7 @@ sub configure {
 }
 
 sub declare___field_with_weakref {
-  (my $myPack, my Opts $opts, my $callpack, my FieldSpec $fs, my ($k, $v)) = @_;
+  (my $myPack, my Opts $opts, my FieldSpec $fs, my ($k, $v)) = m4i_args(@_);
 
   $fs->{$k} = $v;
 

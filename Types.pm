@@ -4,17 +4,22 @@ use strict;
 use warnings qw(FATAL all NONFATAL misc);
 use Carp;
 
-use MOP4Import::Pairs -as_base, qw/Opts/;
+use MOP4Import::Pairs -as_base, qw/Opts m4i_opts/;
 use MOP4Import::Declare::Type -as_base;
+use MOP4Import::Util;
 
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
 sub import {
   my $myPack = shift;
 
-  my Opts $opts = Opts->new([caller])->take_hash_maybe(\@_);
+  m4i_log_start() if DEBUG;
 
-  $myPack->dispatch_pairs_as(type => $opts, $opts->{destpkg}, @_);
+  my Opts $opts = m4i_opts([caller])->take_hash_maybe(\@_);
+
+  $myPack->dispatch_pairs_as_declare(type => $opts, @_);
+
+  m4i_log_end($opts->{callpack}) if DEBUG;
 }
 
 1;
@@ -23,12 +28,12 @@ __END__
 
 =head1 NAME
 
-MOP4Import::Types - create multiple inner-classes at once.
+MOP4Import::Types - fields-aware type builder for inner-type
 
 =head1 SYNOPSIS
 
-Create inner-classes C<MyApp::Artist> and C<MyApp::CD>
-using L<MOP4Import::Types>.
+Create inner-types C<MyApp::Artist> and C<MyApp::CD>
+using B<MOP4Import::Types>.
 
   # Define subtype Artist and CD with their fields.
   package MyApp;
@@ -52,40 +57,85 @@ You can use above types like following with compile-time field name
 typos detection of L<fields>.
 
   sub print_artist_cds {
-    (my $self, my Artist $artist) = @_;
-    my @cds = $self->DB->select(CD => {artistid => $artist->{artistid}});
-    foreach my CD $cd (@cds) {
-      print tsv($cd->{title}, $cd->{year}), "\n";
+    (my $self, my Artist $artist) = @_; # $artist is typed.
+    my @cds = $self->DB->select(
+      CD => {
+        artistid => $artist->{artistid}  # Checked statically
+      }
+    );
+    foreach my CD $cd (@cds) { # $cd is typed.
+      print tsv($cd->{title}, $cd->{year}), "\n"; # Checked statically
     }
   }
 
 =head1 DESCRIPTION
 
 MOP4Import::Types is yet another protocol implementation
-of L<MOP4Import|MOP4Import::Intro> family.
+of L<MOP4Import|MOP4Import::Intro> family, based on L<MOP4Import::Pairs>
+and L<MOP4Import::Declare::Type>.
 
-In contrast to MOP4Import::Declare, which is designed to
+In contrast to L<MOP4Import::Declare>, which is designed to
 modify target module itself,
-this module is designed to add new inner-classes to target module.
+this module is designed to add new inner-types to target module.
 
-With "inner-class", I mean class declared in some module
+With "inner-type", I mean type declared in some module
 and not directly exposed as "require" able module.
 
 =head2 "MetaObject Protocol for Import" in this module
 
-C<import()> method of MOP4Import::Types briefly does following:
+"import()" method of this module takes C<< name => [@pragma_list] >> style
+paired arguments and dispatch them
+as C<< $myPack->declare_type($opts, $name, @pragma_list) >>.
 
-  sub import {
-    my ($myPack, @pairs) = @_;
-  
-    my $callpack = caller;
-    my $opts = +{};
-  
-    while (my ($typename, $pragma_list) = splice @pairs, 0, 2) {
-  
-      my $innerClass = join("::", $callpack, $typename);
-  
-      $myPack->declare___type($opts, $callpack, $typename, $innerClass);
-  
-    }
-  }
+  use MOP4Import::Types
+    (Foo => [[fields => qw/bar baz/]]
+    , Cat => [[fields => qw/name birth_year/]]
+    );
+
+  # Above is equivalent of followings
+
+  use MOP4Import::Declare::Type [type => Foo => [fields => qw/bar baz/]];
+  use MOP4Import::Declare::Type [type => Cat => [fields => qw/name birth_year/]];
+
+=head2 Type names can be imported
+
+  package MyProject::Types;
+  use MOP4Import::Types
+    (User => [[fields => qw/uid name .../]]
+    , Product => [[fields => qw/prodid name .../]]
+    , ...
+    );
+
+  #------------
+  # You can import above types in other module like following:
+  #------------
+  package MyProject::Web;
+  use MyProject::Types qw/User Product/;
+
+
+=head2 Extending types in derived class
+
+use L<MOP4Import::Types::Extend> instead.
+
+=head2 Specifying base type
+
+C<use MOP4Import::Types> can recognize first HASH argument as option set
+and you can specify base type via C<basepkg> option.
+
+  use MOP4Import::Types +{basepkg => 'YourBaseObject'}
+    Foo => [[fields => qw/.../]], ...;
+
+=head1 SEE ALSO
+
+L<MOP4Import::Declare>
+
+=head1 AUTHOR
+
+Kobayashi, Hiroaki E<lt>hkoba@cpan.orgE<gt>
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

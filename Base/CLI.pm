@@ -23,7 +23,8 @@ sub run {
 
   unless (@$arglist) {
     # Invoke help command if no arguments are given.
-    $self->cmd_help
+    $self->cmd_help;
+    return;
   }
 
   my $cmd = shift @$arglist;
@@ -35,44 +36,29 @@ sub run {
   } elsif ($sub = $self->can($cmd)) {
     # Invoke internal methods.
 
-    my @res = $sub->($self, @$arglist);
-    print join("\n", map {terse_dump($_)} @res), "\n"
-      if not $self->{quiet} and @res;
-
-    if ($cmd =~ /^has_/) {
-      # If method name starts with 'has_' and result is empty,
-      # exit with 1.
-      exit(@res ? 0 : 1);
-
-    } elsif ($cmd =~ /^is_/) {
-      # If method name starts with 'is_' and first result is false,
-      # exit with 1.
-      exit($res[0] ? 0 : 1);
-    }
+    $self->cli_invoke_sub_for_cmd($cmd, $sub, $self, @$arglist);
 
   } else {
-    $self->cmd_help("Error: No such command '$cmd'\n");
+    $self->cmd_help("Error: No such subcommand '$cmd'\n");
   }
 }
 
-sub run_with_context {
-  my ($class, $arglist, $opt_alias) = @_;
-  my MY $self = $class->new($class->parse_opts($arglist, undef, $opt_alias));
-  unless (@$arglist) {
-    $self->cmd_help
-  }
-  my $cmd = shift @$arglist;
-  if (my $sub = $self->can("cmd_$cmd")) {
-    $sub->($self, $self->parse_opts($arglist, +{}), @$arglist);
-  } elsif ($sub = $self->can($cmd)) {
-    if ($cmd =~ /^is/) {
-      exit($sub->($self, $self->parse_opts($arglist, +{}), @$arglist) ? 0 : 1);
-    } else {
-      my @res = $sub->($self, $self->parse_opts($arglist, +{}), @$arglist);
-      print join("\n", map {terse_dump($_)} @res), "\n" if @res;
-    }
-  } else {
-    die "$0: No such command $cmd\n";
+sub cli_invoke_sub_for_cmd {
+  (my MY $self, my ($cmd, $sub, @args)) = @_;
+
+  my @res = $sub->(@args);
+  print join("\n", map {terse_dump($_)} @res), "\n"
+    if not $self->{quiet} and @res;
+
+  if ($cmd =~ /^has_/) {
+    # If method name starts with 'has_' and result is empty,
+    # exit with 1.
+    exit(@res ? 0 : 1);
+
+  } elsif ($cmd =~ /^is_/) {
+    # If method name starts with 'is_' and first result is false,
+    # exit with 1.
+    exit($res[0] ? 0 : 1);
   }
 }
 
