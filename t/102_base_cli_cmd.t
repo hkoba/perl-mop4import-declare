@@ -8,7 +8,7 @@ my $cli;
 
 {
     package CLI_Opts::TestA;
-    use MOP4Import::Base::CLI_Opts;
+    use MOP4Import::Base::CLI_Opts; # XXX: May harm users of CLI_Opts::TestA too.
     sub cmd_help {
         my ( $c, @args ) = @_;
         print "Usage";
@@ -18,7 +18,7 @@ my $cli;
 
 {
     package CLI_Opts::TestB;
-    use MOP4Import::Base::CLI_Opts
+    use MOP4Import::Base::CLI_Opts -as_base,
         [options =>
             [ 'help|z' => doc => "help!", command => 'help' ],
         ],
@@ -32,7 +32,7 @@ my $cli;
 
 {
     package CLI_Opts::TestC;
-    use MOP4Import::Base::CLI_Opts
+    use MOP4Import::Base::CLI_Opts -as_base,
         [options =>
             [
                 'hello|h=s' => doc => "Hello!", command => 'hello',
@@ -52,7 +52,7 @@ my $cli;
 
 {
     package CLI_Opts::TestD;
-    use MOP4Import::Base::CLI_Opts
+    use MOP4Import::Base::CLI_Opts -as_base,
         [options =>
             [
                 'h=s' => doc => "Hello!", command => 'foo',
@@ -73,7 +73,7 @@ my $cli;
 
 {
     package CLI_Opts::TestE;
-    use MOP4Import::Base::CLI_Opts
+    use MOP4Import::Base::CLI_Opts -as_base,
         [options =>
             [
                 'foo|f' => doc => "Foo!", command => 'foo',

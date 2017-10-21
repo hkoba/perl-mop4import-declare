@@ -7,7 +7,7 @@ my $cli;
 
 {
     package CLI_Opts::Test;
-    use MOP4Import::Base::CLI_Opts
+    use MOP4Import::Base::CLI_Opts -as_base,
         [options =>
             [
                 'foo|f=s' => doc => "Foo!", required => 1, default => "abc",
