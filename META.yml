@@ -3,8 +3,10 @@ abstract: 'Thin Meta-Object Protocol to build extensible exporters'
 author:
   - 'KOBAYASHI, Hiroaki <hkoba@cpan.org>'
 build_requires:
+  Capture::Tiny: '0'
   Module::Build::Pluggable::CPANfile: '0.05'
   Test::Kantan: '0'
+  Test::Output: '0'
   rlib: '0'
 configure_requires:
   Module::Build: '0.42'
@@ -13,7 +15,7 @@ configure_requires:
   Module::CPANfile: '0'
   rlib: '0'
 dynamic_config: 1
-generated_by: 'Module::Build version 0.4214, CPAN::Meta::Converter version 2.150001'
+generated_by: 'Module::Build version 0.4224, CPAN::Meta::Converter version 2.150010'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -22,11 +24,15 @@ name: MOP4Import-Declare
 provides:
   MOP4Import::Base::CLI:
     file: Base/CLI.pm
+  MOP4Import::Base::CLI_JSON:
+    file: Base/CLI_JSON.pm
+  MOP4Import::Base::CLI_Opts:
+    file: Base/CLI_Opts.pm
   MOP4Import::Base::Configure:
     file: Base/Configure.pm
   MOP4Import::Declare:
     file: Declare.pm
-    version: '0.004'
+    version: 0.049_002
   MOP4Import::Declare::Type:
     file: Declare/Type.pm
   MOP4Import::FieldSpec:
@@ -45,9 +51,14 @@ provides:
     file: Util.pm
   MOP4Import::Util::FindMethods:
     file: Util/FindMethods.pm
+recommends:
+  Module::Runtime: '0'
 requires:
+  JSON: '0'
   perl: '5.010'
   rlib: '0'
 resources:
   license: http://dev.perl.org/licenses/
-version: '0.004'
+  repository: https://github.com/hkoba/perl-mop4import-declare
+version: 0.049_002
+x_serialization_backend: 'CPAN::Meta::YAML version 0.018'

@@ -1,5 +1,9 @@
 Revision history for Perl extension MOP4Import::Declare
 
+0.049_002  2017-10-21
+    * [GH #23] - API change. `declare_PRAGMA` arguments are simplified.
+    * And many changes...
+
 0.004    2015-12-16
     * [GH #19] - Add rlib to configure_requires.
     * [GH #18] - Fix Base::CLI->run exit code handling.
