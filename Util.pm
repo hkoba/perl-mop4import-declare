@@ -9,8 +9,7 @@ use Encode ();
 use Exporter qw/import/;
 
 sub globref {
-  my $pack_or_obj = shift;
-  my $pack = ref $pack_or_obj || $pack_or_obj;
+  my $pack = shift;
   my $symname = join("::", $pack, @_);
   no strict 'refs';
   \*{$symname};
@@ -47,7 +46,7 @@ sub fields_array {
 }
 
 sub fields_symbol {
-  globref($_[0], 'FIELDS');
+  globref(ref $_[0] || $_[0], 'FIELDS');
 }
 
 sub isa_array {
