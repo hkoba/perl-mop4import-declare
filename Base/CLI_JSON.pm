@@ -77,7 +77,7 @@ sub cli_parse_subcommand_and_load {
 sub cli_invoke_sub_for_cmd {
   (my MY $primary_opts, my ($cmd, $sub, $self, @args)) = @_;
 
-  my $output = $self->can("output_as_".$primary_opts->{'output'})
+  my $output = $self->can("cli_output_as_".$primary_opts->{'output'})
     or Carp::croak("Unknown output format: $primary_opts->{'output'}");
 
   my @res;
@@ -104,12 +104,12 @@ sub cli_invoke_sub_for_cmd {
 
 #----------------------------------------
 
-sub output_as_json {
+sub cli_output_as_json {
   (my MY $self, my $list) = @_;
   print JSON->new->utf8->canonical->encode($list), "\n";
 }
 
-sub output_as_tsv {
+sub cli_output_as_tsv {
   (my MY $self, my $list) = @_;
   foreach my $item (lexpand($list)) {
     print join("\t", map {
@@ -124,7 +124,7 @@ sub output_as_tsv {
   }
 }
 
-sub output_as_dump {
+sub cli_output_as_dump {
   (my MY $self, my $list) = @_;
   foreach my $item (lexpand($list)) {
     print join("\t", map {
