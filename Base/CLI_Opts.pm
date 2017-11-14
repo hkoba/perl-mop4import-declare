@@ -16,13 +16,6 @@ use MOP4Import::Types::Extend
 
 print STDERR "FieldSpec = ", FieldSpec, "\n" if DEBUG;
 
-#---------
-sub always_exports {
-    qw(-as_base);
-}
-
-#---------
-
 sub new {
     my MY $self = fields::new(shift);
     my $pre = {};
@@ -43,16 +36,33 @@ sub invoke {
     }
 }
 
-sub default_exports {
-    my ($myPack) = @_;
-    return (
-      $myPack->SUPER::default_exports, [
+
+use MOP4Import::Opts qw/Opts m4i_args m4i_opts/;
+use MOP4Import::Util;
+
+sub import {
+    my ($myPack, @decls) = @_;
+
+    m4i_log_start() if DEBUG;
+
+    unless ( grep { $_ eq 'options' } map { ref($_) ? @$_ : $_ } @decls ) {
+        DEBUG && print STDERR "Because of no 'options', we set 'help' and 'version' automatically.\n";
+        push @decls, [
             options =>
                 ['help|h', 'command', 'help'],
                 ['version', 'command', 'version'],
-        ]
-    );
+        ];
+    }
+
+    my Opts $opts = m4i_opts([caller]);
+
+    @decls = $myPack->default_exports unless @decls;
+
+    $myPack->dispatch_declare($opts, $myPack->always_exports, @decls);
+
+    m4i_log_end($opts->{callpack}) if DEBUG;
 }
+
 
 sub default_options {
     return (
