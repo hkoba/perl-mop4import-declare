@@ -8,7 +8,7 @@ my $cli;
 
 {
     package CLI_Opts::TestA;
-    use MOP4Import::Base::CLI_Opts; # XXX: May harm users of CLI_Opts::TestA too.
+    use MOP4Import::Base::CLI_Opts -as_base;
     sub cmd_help {
         my ( $c, @args ) = @_;
         print "Usage";
