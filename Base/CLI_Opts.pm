@@ -45,7 +45,7 @@ sub import {
 
     m4i_log_start() if DEBUG;
 
-    unless ( grep { $_ eq 'options' } map { ref($_) ? @$_ : $_ } @decls ) {
+    if (  (grep { $_ eq '-as_base' } @decls) && not (grep { $_ eq 'options' } map { ref($_) ? @$_ : $_ } @decls) ) {
         DEBUG && print STDERR "Because of no 'options', we set 'help' and 'version' automatically.\n";
         push @decls, [
             options =>
