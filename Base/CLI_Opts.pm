@@ -273,7 +273,7 @@ sub configure_for_cli_opts {
     }
 
     while ( defined(my $name = shift @args) ) {
-        my $type = $fields->{$name}->{type};
+        my $type = $fields->{$name}->{type} // '';
         my $val  = shift(@args);
 
         if ( $type =~ /(.)@/ ) {
