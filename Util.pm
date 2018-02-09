@@ -10,6 +10,9 @@ use Exporter qw/import/;
 
 sub globref {
   my $pack = shift;
+  unless (defined $pack) {
+    Carp::croak "undef is given to globref()";
+  }
   my $symname = join("::", $pack, @_);
   no strict 'refs';
   \*{$symname};
