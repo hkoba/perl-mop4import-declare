@@ -102,6 +102,12 @@ sub m4i_args {
   ($_[0], m4i_opts($_[1]), @_[2..$#_]);
 }
 
+sub m4i_fake {
+  my ($fakedCallpack) = @_;
+  (undef, my (@callerTail)) = caller;
+  Opts->new(caller => [$fakedCallpack, @callerTail]);
+}
+
 sub as_string {
   (my Opts $opts) = @_;
   $opts->{callpack};
