@@ -396,6 +396,32 @@ sub declare_map_methods {
   }
 }
 
+sub declare_carp_not {
+  (my $myPack, my Opts $opts, my (@carp_not)) = m4i_args(@_);
+
+  unless (@carp_not) {
+    push @carp_not, $myPack;
+  }
+
+  my $name = 'CARP_NOT';
+
+  print STDERR "Declaring \@$opts->{objpkg}.$name = ".terse_dump(@carp_not)
+    if DEBUG;
+
+  *{globref($opts->{objpkg}, $name)} = \@carp_not;
+}
+
+BEGIN {
+  #
+  # Below does equiv of `our @CARP_NOT = qw/ MOP4Import::Util /;`
+  #
+  __PACKAGE__->declare_carp_not(MOP4Import::Opts::m4i_fake(__PACKAGE__),
+                                qw/
+                                   MOP4Import::Util
+                                   /
+                                 );
+}
+
 1;
 
 
