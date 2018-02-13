@@ -3,7 +3,6 @@ use strict;
 use warnings qw(FATAL all NONFATAL misc);
 use Carp;
 use Data::Dumper;
-use Carp;
 use Encode ();
 
 use Exporter qw/import/;
