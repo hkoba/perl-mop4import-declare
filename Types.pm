@@ -5,6 +5,7 @@ use warnings qw(FATAL all NONFATAL misc);
 use Carp;
 
 use MOP4Import::Pairs -as_base, qw/Opts m4i_opts/;
+# XXX: [carp_not => MOP4Import::Util]
 use MOP4Import::Declare::Type -as_base;
 use MOP4Import::Util;
 
