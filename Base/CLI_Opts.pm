@@ -36,6 +36,16 @@ sub invoke {
     }
 }
 
+sub apply { # bypass configure_for_cli_opts!
+    my ( $self, $method, @args ) = @_;
+    if ( my $subref = $self->can("cmd_$method") ) {
+        $subref->($self, @args);
+    }
+    else {
+        Carp::croak("Cmd `$method` is not implemented.\n");
+    }
+}
+
 
 use MOP4Import::Opts qw/Opts m4i_args m4i_opts/;
 use MOP4Import::Util;
