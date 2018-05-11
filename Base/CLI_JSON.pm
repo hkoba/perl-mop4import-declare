@@ -105,14 +105,16 @@ sub cli_invoke_sub_for_cmd {
 #----------------------------------------
 
 sub cli_output_as_json {
-  (my MY $self, my $list) = @_;
-  print JSON->new->utf8->canonical->encode($list), "\n";
+  (my MY $self, my ($list, $outFH)) = @_;
+  $outFH //= \*STDOUT;
+  print $outFH JSON->new->utf8->canonical->encode($list), "\n";
 }
 
 sub cli_output_as_tsv {
-  (my MY $self, my $list) = @_;
+  (my MY $self, my ($list, $outFH)) = @_;
+  $outFH //= \*STDOUT;
   foreach my $item (lexpand($list)) {
-    print join("\t", map {
+    print $outFH join("\t", map {
       if (not defined $_) {
         $self->{'undef-as'}
       } elsif (ref $_) {
@@ -125,9 +127,10 @@ sub cli_output_as_tsv {
 }
 
 sub cli_output_as_dump {
-  (my MY $self, my $list) = @_;
+  (my MY $self, my ($list, $outFH)) = @_;
+  $outFH //= \*STDOUT;
   foreach my $item (lexpand($list)) {
-    print join("\t", map {
+    print $outFH join("\t", map {
       if (not defined $_) {
         $self->{'undef-as'}
       } elsif (ref $_) {
