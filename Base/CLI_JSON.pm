@@ -4,6 +4,7 @@ use MOP4Import::Base::CLI -as_base
   , [fields =>
      , ['scalar' => doc => "evaluate subcommand in scalar context"]
      , ['output' => default => 'json']
+     , ['flatten' => doc => "output each result separately (instead of single json array)"]
      , ['undef-as' => default => 'null']
      , ['no-exit-code']
    ];
@@ -90,7 +91,11 @@ sub cli_invoke_sub_for_cmd {
   if (not $primary_opts->{quiet}
         and ($primary_opts->{scalar} ? $res[0] : @res)) {
 
-    $output->($self, \@res);
+    if ($primary_opts->{flatten}) {
+      $output->($self, $_) for @res;
+    } else {
+      $output->($self, \@res);
+    }
   }
 
   if ($primary_opts->{'no-exit-code'}) {
