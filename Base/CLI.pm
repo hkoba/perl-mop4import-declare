@@ -31,6 +31,8 @@ sub run {
   if (my $sub = $self->can("cmd_$cmd")) {
     # Invoke official command.
 
+    $self->cli_precmd($cmd);
+
     $sub->($self, @$arglist);
 
   } elsif ($sub = $self->can($cmd)) {
@@ -43,8 +45,12 @@ sub run {
   }
 }
 
+sub cli_precmd {} # hook called just before cmd_zzz
+
 sub cli_invoke_sub_for_cmd {
   (my MY $self, my ($cmd, $sub, @args)) = @_;
+
+  $self->cli_precmd($cmd);
 
   my @res = $sub->(@args);
   print join("\n", map {terse_dump($_)} @res), "\n"

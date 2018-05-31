@@ -50,6 +50,8 @@ sub run {
   if (my $sub = $self->can("cmd_$cmd")) {
     # Invoke official command.
 
+    $self->cli_precmd($cmd);
+
     $sub->($self, @$arglist);
 
   } elsif ($sub = $self->can($cmd)) {
@@ -77,6 +79,8 @@ sub cli_parse_subcommand_and_load {
 
 sub cli_invoke_sub_for_cmd {
   (my MY $primary_opts, my ($cmd, $sub, $self, @args)) = @_;
+
+  $self->cli_precmd($cmd);
 
   my $output = $self->can("cli_output_as_".$primary_opts->{'output'})
     or Carp::croak("Unknown output format: $primary_opts->{'output'}");
