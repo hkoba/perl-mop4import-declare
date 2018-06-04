@@ -7,6 +7,8 @@ use MOP4Import::Base::CLI -as_base
      , ['flatten' => doc => "output each result separately (instead of single json array)"]
      , ['undef-as' => default => 'null']
      , ['no-exit-code']
+     , ['binary' => default => 0, doc => "keep STDIN/OUT/ERR binary friendly"]
+     , '_cli_json'
    ];
 use MOP4Import::Opts;
 use MOP4Import::Util qw/parse_json_opts
@@ -14,6 +16,14 @@ use MOP4Import::Util qw/parse_json_opts
                        /;
 
 use JSON;
+use open ();
+
+sub cli_precmd {
+  (my MY $self) = @_;
+  unless ($self->{binary}) {
+    'open'->import(qw/:locale :std/);
+  }
+}
 
 # Rewrite field names from kebab-case to snake_case.
 sub declare_options {
@@ -113,10 +123,17 @@ sub cli_invoke_sub_for_cmd {
 
 #----------------------------------------
 
+sub cli_encode_json {
+  (my MY $self, my $obj) = @_;
+  my $codec = $self->{_cli_json} //= JSON->new->utf8->canonical;
+  Encode::_utf8_on(my $json = $codec->encode($obj));
+  $json;
+}
+
 sub cli_output_as_json {
   (my MY $self, my ($list, $outFH)) = @_;
   $outFH //= \*STDOUT;
-  print $outFH JSON->new->utf8->canonical->encode($list), "\n";
+  print $outFH $self->cli_encode_json($list), "\n";
 }
 
 sub cli_output_as_tsv {
@@ -127,7 +144,7 @@ sub cli_output_as_tsv {
       if (not defined $_) {
         $self->{'undef-as'}
       } elsif (ref $_) {
-        JSON->new->utf8->canonical->encode($_)
+        $self->cli_encode_json($_)
       } else {
         $_
       }
