@@ -165,7 +165,7 @@ sub parse_json_opts {
       # Arguments might be already decoded.
       my $copy = $_[0];
       Encode::_utf8_off($copy) if Encode::is_utf8($copy);
-      JSON::from_json($copy, {relaxed => 1});
+      JSON::from_json($copy, {relaxed => 1, utf8 => 1});
     } elsif (not Encode::is_utf8($_[0]) and $_[0] =~ /\P{ASCII}/) {
       Encode::decode(utf8 => $_[0]);
     } else {
