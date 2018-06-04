@@ -125,8 +125,13 @@ sub cli_invoke_sub_for_cmd {
 
 sub cli_encode_json {
   (my MY $self, my $obj) = @_;
-  my $codec = $self->{_cli_json} //= JSON->new->utf8->canonical;
-  Encode::_utf8_on(my $json = $codec->encode($obj));
+  my $codec = $self->{_cli_json} //= do {
+    my $js = JSON->new->canonical;
+    $js->utf8 unless $self->{binary};
+    $js;
+  };
+  my $json = $codec->encode($obj);
+  Encode::_utf8_on($json) unless $self->{binary};
   $json;
 }
 
