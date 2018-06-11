@@ -1,0 +1,48 @@
+=encoding utf-8
+
+=head1 NAME
+
+intro_runnable_module - A brief introduction to Runnable-Module design pattern
+
+=head1 DESCRIPTION
+
+This document briefly describes a well-found design
+pattern/programming idiom which I call as I<Runnable-Module>. I'm not
+sure it already has better name. If you know about it, please tell me.
+
+Note: original version of this document (written in Japanese) can be found at
+my blog post: L<https://hkoba.hatenablog.com/entry/2017/09/06/185029>
+日本語版もあるよ！.
+
+=head2 Write F<*.pm> with C<#!perl> (shbang), C<chmod a+x> and C<unless caller>
+
+=head3 What is C<unless caller>?
+
+Have you ever read perl code which ends with something like following:
+
+    unless (caller) {
+      ...Some interesting code...
+    }
+
+This C<unless (caller) {...}> guards C<...> portion of code to run
+only when this program file is directly executed.
+When the same file is C<require>d as a module, the C<...> portion is not executed. I knew this idiom on comp.lang.perl.tk IIRC and used it
+in L<my post|https://groups.google.com/d/msg/comp.lang.perl.tk/qFyt08fZhGo/uzI1QmL9ZKkJ> too. At that time, it was used like:
+
+
+    MainLoop unless caller;
+
+and achieved following tricks:
+
+=over 4
+
+=item * When this script is executed directly, run C<Tk::MainLoop()>
+so that correctly start GUI drawing and event loop.
+
+=item * Otherwise (i.e. C<eval()>ed from clipboard and/or C<do "script">, do nothing.
+
+=back
+
+=head3 Let's write F<MyScript.pm> instead of F<myscript.pl>
+
+This C<unless caller> idiom is also useful in general perl scriptings other than writing L<Tk> scripts.
