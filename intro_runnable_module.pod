@@ -4,21 +4,28 @@
 
 intro_runnable_module - A brief introduction to Runnable-Module design pattern
 
-=head1 DESCRIPTION
+=head1 INTRO
 
-This document briefly describes a well-found design
-pattern/programming idiom which I call as I<Runnable-Module>. I'm not
+This document briefly describes a programming idiom (or design
+pattern, maybe) which I call it as I<Runnable-Module>.
+It seems to me that it is not so well known in perl community
+but I can find L<some|https://www.perlmonks.org/?node_id=621378> L<articles|https://www.perlmonks.org/?node_id=396759> for it. Same pattern can also be found in other dynamic scripting language like L<python|https://stackoverflow.com/questions/419163/what-does-if-name-main-do>. I'm not
 sure it already has better name. If you know about it, please tell me.
 
 Note: original version of this document (written in Japanese) can be found at
 my blog post: L<https://hkoba.hatenablog.com/entry/2017/09/06/185029>
 日本語版もあるよ！.
 
-=head2 Write F<*.pm> with C<#!perl> (shbang), C<chmod a+x> and C<unless caller>
+=head1 Runnable module - What, Why and How
 
-=head3 What is C<unless caller>?
+I<Runnable module> is a programming idiom which allows you to write
+a script to be used both as a standalone program and as a library file
+(can be used via C<use>, C<require>). In perl, it is usually implemented using
+C<unless caller> block.
 
-Have you ever read perl code which ends with something like following:
+=head2 What is C<unless caller>?
+
+Have you ever read perl code which ends with something like following?:
 
     unless (caller) {
       ...Some interesting code...
@@ -26,8 +33,9 @@ Have you ever read perl code which ends with something like following:
 
 This C<unless (caller) {...}> guards C<...> portion of code to run
 only when this program file is directly executed.
-When the same file is C<require>d as a module, the C<...> portion is not executed. I knew this idiom on comp.lang.perl.tk IIRC and used it
-in L<my post|https://groups.google.com/d/msg/comp.lang.perl.tk/qFyt08fZhGo/uzI1QmL9ZKkJ> too. At that time, it was used like:
+When the same script is C<eval()>ed as a string or C<require()>d as a module, the C<...> portion is not executed. I knew this idiom in context of L<Tk>
+on comp.lang.perl.tk IIRC and used it
+like L<this post|https://groups.google.com/d/msg/comp.lang.perl.tk/qFyt08fZhGo/uzI1QmL9ZKkJ>. At that time, it was used like:
 
 
     MainLoop unless caller;
@@ -39,10 +47,113 @@ and achieved following tricks:
 =item * When this script is executed directly, run C<Tk::MainLoop()>
 so that correctly start GUI drawing and event loop.
 
-=item * Otherwise (i.e. C<eval()>ed from clipboard and/or C<do "script">, do nothing.
+=item * Otherwise (i.e. C<eval()>ed from clipboard and/or C<do "script">) do nothing.
 
 =back
 
-=head3 Let's write F<MyScript.pm> instead of F<myscript.pl>
+=head2 Let's write F<MyScript.pm> instead of F<myscript.pl>
 
-This C<unless caller> idiom is also useful in general perl scriptings other than writing L<Tk> scripts.
+This C<unless caller> idiom is useful not only in Tk scripts,
+but also in normal perl scriptings because it enables you
+to write dual purpose script: your script can be used as a module
+and also as a standalone script.
+
+To achieve it, what you need is
+
+=over 4
+
+=item 1
+Name your script like F<MyScript.pm> instead of F<myscript.pl>.
+
+=item 2
+Do C<chmod a+x MyScript.pm> from shell.
+
+=item 3
+Add shbang C<#!/usr/bin/env perl> at first line of it.
+
+=item 4
+Add C<package MyScript;> declaration and also C<1;> at the end of this script.
+
+=back
+
+And finally, you can write some codes guarded in C<unless (caller) {...}> block
+for standalone mode. Here is typical skeleton of such script.
+
+    #!/usr/bin/env perl
+    package MyScript;
+    
+    ...
+    
+    unless (caller) {
+       my @opts; 
+       push @opts, split /=/, $_, 2 while @ARGV and $ARGV[0] =~ /=/; # XXX:minimum!
+       my $app = MyScript->new(@opts);
+       $app->main(@ARGV);
+    }
+    
+    1;
+
+Now, your script became a I<Runnable-Module>. You can use this F<MyScript.pm>
+not only as a CLI tool (don't forget C<chmod a+x>;-), but also as a module
+and call some internal functions/methods freely.
+
+
+    # Invoke as a command and execute MyScript->new(x=>100,y=>100)->main('foo','bar')
+    % ./MyScript.pm x=100 y=100 foo bar
+    
+    # Use as a module, instantiate and call method foo
+    % perl -I. -MMyScript -le 'print MyScript->new->foo'
+
+
+=head2 Mapping methods to subcommands turns your script into multi-role editor
+
+In above example, C<unless (caller) {...}> block is hard-wired to call
+C<< MyScript->new->main >>. But you can write here more useful behavior
+which could be similar to typical CLI programs with subcommands (i.e. git),
+like following:
+
+=over 4
+
+=item *
+Take a series of posix style long options C<--name=value> and use them as
+arguments of C<new()>.
+
+=over 4
+
+=item *
+If the option is name only (C<--name>), treat it as C<--name=1>.
+C<--debug> is treated as C<--debug=1>.
+
+=back
+
+=item *
+After that, treat next remaining argument as a subcommand name
+and dispatch it to specific method.
+
+=back
+
+Typical CLI usage can be imagined like following:
+
+    # Parse some textfiles and load it into SQLite DB
+    % ./MyScript.pm  --dbname=foo.db  import journal.tsv
+    
+    # Search and list something from above DB
+    % ./MyScript.pm  --dbname=foo.db  list_accounts
+
+
+To achieve above behavior, we can write C<unless (caller) {...}> block like following:
+
+  unless (caller) {
+     my @opts = parse_opts(\@ARGV);
+  
+     my $self = __PACKAGE__->new(@opts);
+     
+     my $cmd = shift @ARGV || "help";
+  
+     my $method = "cmd_$cmd"; # Map $cmd to a method cmd_$cmd
+  
+     $self->can($method) or die "No such subcommand: $cmd";
+  
+     $self->$method(@ARGV);
+  }
+
