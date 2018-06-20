@@ -1,0 +1,141 @@
+=encoding utf-8
+
+=head1 NAME
+
+C<< "--name <SPC> value" >> style options considered harmful for end-user scripting.
+
+=head1 INTRODUCTION
+
+This document describes my opinion about design of CLI option handling
+for end-user scripting area. My opinion is:
+let's advertise C<< "--name=value" >> over C<< "--name <SPC> value" >>
+and make later unofficial, especially when you are at field of end-user scripting.
+
+Original version of this document (in Japanese) can be found at
+L<here|https://hkoba.hatenablog.com/entry/2017/09/13/125924>. 日本語版もあるよ！
+
+=head1 STORY
+
+=head2 In the beginning
+
+=over 4
+
+=item *
+
+Some months ago, you wrote a CLI program, called B<A>.
+It is used by your colleagues almost everyday.
+It has 5 CLI options for now, and is likely to have more options next few months.
+
+=for code sh
+
+  % A --debug --port 5050 --dbname master.db --log var/log/foo.log --type XYZ
+
+
+=item *
+
+Basically your colleaues have their own specialty other than programming,
+but some of them can program too (not so good at it than you;-).
+They too love automating boring tasks.
+
+Eventually, one of your colleague wrote another program B<B> (which might be
+a daily batch or a wrapper to simplify frequently used options)
+start calling your program B<A>.
+
+  % B
+  # => calls: A --port 5050 --dbname master.db --log var/log/foo.log --type ABC
+
+Since his/her program B<B> heavily relies on your program B<A>,
+users of B<B> often want to pass options to B<A>. So, B<B> delegates
+most of options to B<A> as-is.
+
+  % B --dbname devel.db --port 8080
+  # => calls: A --port 8080 --dbname devel.db --log var/log/foo.log --type ABC
+
+But of course as usual, B<B> itself has own options too.
+
+  % B --company ZZZ
+  # => calls: A --port 5050 --dbname master_ZZZ.db --log var/log/foo.log --type ABC-ZZZ
+
+=item *
+
+Your colleagues are already familiar with usage manual of B<A>, written by you on corporate wiki. If you write options of B<A> as C<< --name value >>
+(space separated form) than  C<< --name=value >> (equal concatenated form)
+in the manual, your colleagues may start thinking former C<< --name value >> is better than later and mimic it in their programs like B<B>.
+
+It is very likely that the author of B<B> describes option C<--company>
+as C<--company ZZZ> than C<--company=ZZZ> in its manual, because his/her
+mental model prefers it.
+
+=back
+
+=head2 Parsing of C<"--name value"> requires options dictionary
+
+=over 4
+
+=item *
+
+If your program B<A> takes C<--name value> (space separated form) options,
+it must have complete dictionary of option names to parse CLI
+arguments correctly. Because there is no way than the dictionary to determine
+next coming arguments are the value of preceding option.
+
+Note: This dictionary is usually appears implicitly as arguments of
+L<Getopt::Long::GetOptions()|Getopt::Long>.
+
+=item *
+
+Same applies to program B<B> by your colleague. It must have same entries in
+the dictionary and may have own options too.
+
+=back
+
+=head2 Chain of dictionaries introduces endless chain of maintainances
+
+=over 4
+
+=item *
+
+Now it is very easy to imagine another colleague starts writing yet another
+program B<C>, which calls B<B>, which calls B<A>.
+
+=for code sh
+
+  % C --port 18000
+  # => calls: B --company ZZZ --port 18000
+  # => calls: A --port 18000 --dbname master_ZZZ.db --log var/log/foo.log --type ABC-ZZZ
+
+To achive above desirable behavior, B<C> must know the option
+dictionary of B<B>. And then another program B<D> arrives, followed by
+B<E>... you can't prohibit others to write a wrapper for your program,
+can you?
+
+=item *
+
+Biggest annoyance comes when you add new option to B<A>, starting
+point of the chain. The authors of B<B>, B<C>, B<D>... must update the
+option dictionaries too, usually by-hand.
+This is very similar to L<fire fighting with bucket relay|https://www.google.com/search?q=fire+fighting+bucket+relay&source=lnms&tbm=isch&sa=X>
+which IMHO is very inefficient and only acceptable when there is no better ways.
+
+=back
+
+How can we cut off this I<chain of maintainances by-hand>?
+
+You may imagine, if B<A> has a subcommand (like C<info-options>) to emit
+the options dictionary as machine-readable form, B<B> can process and use it
+to parse its options, so all problem will be vanished.
+Brilliant! You can write such program. But how about the author of B<B>,
+B<C>...? Could they write such systematic code? IMHO, raising the bar for
+end-user scripting does not always work, especially when
+they have their own priority from their specialty.
+
+What I want is a Poorman's approach (or some kind of Zen).
+
+Which should be written easily and correctly even by novice programmers.
+
+Which should not involve chains of maintainances.
+
+Could we have such way?
+
+=head1 PROPOSAL
+
