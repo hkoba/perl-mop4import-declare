@@ -14,39 +14,38 @@ and make later unofficial, especially when you are at field of end-user scriptin
 Original version of this document (in Japanese) can be found at
 L<here|https://hkoba.hatenablog.com/entry/2017/09/13/125924>. 日本語版もあるよ！
 
-=head1 STORY
+=head1 A STORY
 
-=head2 In the beginning
+=head2 Imagine your job is to support a team of other specialists by your programs
 
 =over 4
 
 =item *
 
-Some months ago, you wrote a CLI program, called B<A>.
-It is used by your colleagues almost everyday.
-It has 5 CLI options for now, and is likely to have more options next few months.
+Some months ago, you wrote a CLI program, called B<A>. It has 5 CLI
+options for now, and is likely to have more options next few
+months. To describe its typical usage, you wrote its manual and put a
+synopsis like following:
 
 =for code sh
 
   % A --debug --port 5050 --dbname master.db --log var/log/foo.log --type XYZ
 
+Your colleagues uses this program B<A> almost everyday. Although they
+are employed as specialists other than about programming, some of them can
+program too (not so good at it than you;-).  And importantly, they too
+love automating boring tasks like you does.
 
 =item *
 
-Basically your colleaues have their own specialty other than programming,
-but some of them can program too (not so good at it than you;-).
-They too love automating boring tasks.
-
 Eventually, one of your colleague wrote another program B<B> (which might be
-a daily batch or a wrapper to simplify frequently used options)
+a daily batch or a wrapper just to give typical options by default)
 start calling your program B<A>.
 
   % B
   # => calls: A --port 5050 --dbname master.db --log var/log/foo.log --type ABC
 
-Since his/her program B<B> heavily relies on your program B<A>,
-users of B<B> often want to pass options to B<A>. So, B<B> delegates
-most of options to B<A> as-is.
+B<B> delegates most of options to B<A> as-is.
 
   % B --dbname devel.db --port 8080
   # => calls: A --port 8080 --dbname devel.db --log var/log/foo.log --type ABC
@@ -58,34 +57,63 @@ But of course as usual, B<B> itself has own options too.
 
 =item *
 
-Your colleagues are already familiar with usage manual of B<A>, written by you on corporate wiki. If you write options of B<A> as C<< --name value >>
-(space separated form) than  C<< --name=value >> (equal concatenated form)
-in the manual, your colleagues may start thinking former C<< --name value >> is better than later and mimic it in their programs like B<B>.
+In the synopsis of B<B> in its manual, the author of B<B> wrote its
+additional option as C<--company ZZZ> than C<--company=ZZZ> like above.
+This is because you implicitly taught him/her to do so through your manual of B<A>.
 
-It is very likely that the author of B<B> describes option C<--company>
-as C<--company ZZZ> than C<--company=ZZZ> in its manual, because his/her
-mental model prefers it.
+Since your colleagues respect your programming experiences, they have
+strong motive to copy your coding styles/CLI designs. As you wrote
+options of B<A> as C<< --name value >> (space separated form) than C<<
+--name=value >> (equal concatenated form) in the manual, your
+colleagues are very likely to start thinking former C<< --name value
+>> is better than later and mimic it in their programs and manuals.
 
 =back
 
-=head2 Parsing of C<"--name value"> requires options dictionary
+=head2 Parsing of C<< "--name <SPC> value" >> requires options dictionary
 
 =over 4
 
 =item *
 
-If your program B<A> takes C<--name value> (space separated form) options,
-it must have complete dictionary of option names to parse CLI
+If your program B<A> takes space separated form options C<--name value>
+(which means value is given as another argument),
+it must have complete dictionary of option names anyway to parse CLI
 arguments correctly. Because there is no way than the dictionary to determine
 next coming arguments are the value of preceding option.
 
-Note: This dictionary is usually appears implicitly as arguments of
-L<Getopt::Long::GetOptions()|Getopt::Long>.
+Note: This dictionary usually appears implicitly as arguments of
+L<Getopt::Long::GetOptions()|Getopt::Long> like following:
+
+=for code perl
+
+   use Getopt::Long;
+   ...
+   GetOptions(
+     "debug"    => \ my $o_debug,
+     "port=i"   => \ my $o_port,
+     "dbname=s" => \ my $o_dbname,
+     "log=s"    => \ my $o_logfile,
+     "type=s"   => \ my $o_type,
+   ) or die("Error in command line arguments\n");
+
 
 =item *
 
 Same applies to program B<B> by your colleague. It must have same entries in
 the dictionary and may have own options too.
+
+   use Getopt::Long;
+   ...
+   GetOptions(
+     "debug"    => \ my $o_debug,
+     "port=i"   => \ my $o_port,
+     "dbname=s" => \ my $o_dbname,
+     "log=s"    => \ my $o_logfile,
+     "type=s"   => \ my $o_type,
+     "company=s"=> \ my $o_company, # New option
+   ) or die("Error in command line arguments\n");
+
 
 =back
 
@@ -113,25 +141,23 @@ can you?
 
 Biggest annoyance comes when you add new option to B<A>, starting
 point of the chain. The authors of B<B>, B<C>, B<D>... must update the
-option dictionaries too, usually by-hand.
+option dictionaries too, usually by-hand. Otherwise, they can't get benefit
+from your new feature in B<A>.
+
 This is very similar to L<fire fighting with bucket relay|https://www.google.com/search?q=fire+fighting+bucket+relay&source=lnms&tbm=isch&sa=X>
 which IMHO is very inefficient and only acceptable when there is no better ways.
 
 =back
 
-How can we cut off this I<chain of maintainances by-hand>?
+How can we end this I<chain of maintainances by-hand>? Probably, there
+could be a systematic approach to maintain these chains of option
+specifications. But I don't know such implementation and even if there
+is such thing, IMHO, it is too much for casual automation by
+end-users.
 
-You may imagine, if B<A> has a subcommand (like C<info-options>) to emit
-the options dictionary as machine-readable form, B<B> can process and use it
-to parse its options, so all problem will be vanished.
-Brilliant! You can write such program. But how about the author of B<B>,
-B<C>...? Could they write such systematic code? IMHO, raising the bar for
-end-user scripting does not always work, especially when
-they have their own priority from their specialty.
+Instead, I want is a Poorman's approach (or some kind of Zen).
 
-What I want is a Poorman's approach (or some kind of Zen).
-
-Which should be written easily and correctly even by novice programmers.
+Which should be written easily and correctly even by novice end-users.
 
 Which should not involve chains of maintainances.
 
