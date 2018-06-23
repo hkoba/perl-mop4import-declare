@@ -117,7 +117,7 @@ the dictionary and may have own options too.
 
 =back
 
-=head2 Chain of dictionaries introduces endless chain of maintainances
+=head2 Chain of dictionaries introduces endless maintainances
 
 =over 4
 
@@ -139,7 +139,7 @@ can you?
 
 =item *
 
-Biggest annoyance comes when you add new option to B<A>, starting
+Biggest annoyance comes when you add new option to B<A>, the starting
 point of the chain. The authors of B<B>, B<C>, B<D>... must update the
 option dictionaries too, usually by-hand. Otherwise, they can't get benefit
 from your new feature in B<A>.
@@ -151,17 +151,64 @@ which IMHO is very inefficient and only acceptable when there is no better ways.
 
 How can we end this I<chain of maintainances by-hand>? Probably, there
 could be a systematic approach to maintain these chains of option
-specifications. But I don't know such implementation and even if there
-is such thing, IMHO, it is too much for casual automation by
-end-users.
+specifications. But I don't know such implementation widely accepted in Perl
+and even if there is such thing, IMHO, it is too much for casual automation by
+end-users. Especially if you want to encourage them to write more scripts.
 
-Instead, I want is a Poorman's approach (or some kind of Zen).
+So instead, I want a Poorman's approach
+
+(Or some kind of Zen)
+
+To remove chains of maintainances completely
 
 Which should be written easily and correctly even by novice end-users.
 
-Which should not involve chains of maintainances.
-
-Could we have such way?
+Could we have such a way?
 
 =head1 PROPOSAL
+
+Forget about existing inferior programs written by others. They are
+uncontrollable.  Instead focus on programs you and your collegues are
+going to write for your team. Establish some kind of
+descipline/standard about option specification to enable
+dictionary-less option delegation.  For example, officially recommend
+only following 3 styles of options:
+
+=over 4
+
+=item C<--name=value>
+
+I<Equal-concatenated> pair of option name and its value.
+
+=item C<--name>
+
+Option name without a value.
+
+=item C<-c>
+
+Single letter option(without a value).
+
+=back
+
+And treat C<--> as an end of option parsing as usual.
+
+This way, all options are regularized to start with C<-> regardless of
+having a value or not.  So any arguments starting with C<-> can be
+gathered and passed through another program without predefined
+dictionary. Unlike dictionary based approach, this option processing
+is I<write once and use forever>. If programs like B<B>, B<C>..., written
+by your colleagues, follow this descipline too, they can delegate all
+forthcoming options to program B<A>. Of course other problems like
+option name collision can still remain, but it is smaller than
+original one.
+
+=head2 Standardization/Regualization is your friend for automation
+
+Folks, I strongly fond of automation. Yes, I actually love it.
+If traditional style of option handling can curse future programs
+written by my colleagues, I can't advocate it anymore.
+This is why I don't implement C<< "--name <SPC> value" >> style options
+in my code.
+
+Thank you for reading!
 
