@@ -31,7 +31,7 @@ synopsis like following:
 
   % A --debug --port 5050 --dbname master.db --log var/log/foo.log --type XYZ
 
-Your colleagues uses this program B<A> almost everyday. Although they
+Your colleagues use this program B<A> almost everyday. Although they
 are employed as specialists other than about programming, some of them can
 program too (not so good at it than you;-).  And importantly, they too
 love automating boring tasks like you does.
@@ -132,7 +132,7 @@ program B<C>, which calls B<B>, which calls B<A>.
   # => calls: B --company ZZZ --port 18000
   # => calls: A --port 18000 --dbname master_ZZZ.db --log var/log/foo.log --type ABC-ZZZ
 
-To achive above desirable behavior, B<C> must know the option
+To achieve option delegation of C<--port> like above B<C> must know the options
 dictionary of B<B>. And then another program B<D> arrives, followed by
 B<E>... you can't prohibit others to write a wrapper for your program,
 can you?
@@ -208,7 +208,7 @@ Folks, I strongly fond of automation. Yes, I actually love it.
 If traditional style of option handling can curse future programs
 written by my colleagues, I can't advocate it anymore.
 This is why I don't implement C<< "--name <SPC> value" >> style options
-in my code.
+in my important products.
 
 Thank you for reading!
 
