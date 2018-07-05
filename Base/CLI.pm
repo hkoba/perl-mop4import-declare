@@ -14,6 +14,8 @@ use MOP4Import::Util qw/parse_opts terse_dump fields_hash fields_array
 			take_hash_opts_maybe/;
 use MOP4Import::Util::FindMethods;
 
+use List::Util ();
+
 #========================================
 
 sub run {
@@ -71,24 +73,69 @@ sub cli_invoke_sub_for_cmd {
 sub cmd_help {
   my $self = shift;
   my $pack = ref $self || $self;
-  my $fields = fields_hash($self);
-  my $names = fields_array($self);
-  my @methods = FindMethods($pack, sub {s/^cmd_//});
-  die join("\n", @_, <<END);
-Usage: @{[File::Basename::basename($0)]} [--opt=value].. <command> [--opt=value].. ARGS...
+
+  my @msg = (join("\n", @_, <<END));
+Usage: @{[File::Basename::basename($0)]} [--opt=value].. <Command> ARGS...
 
 Commands:
-  @{[join("\n  ", @methods)]}
-
-Options: 
-  --@{[join "\n  --", map {
-  if (ref (my FieldSpec $fs = $fields->{$_})) {
-    join("\t  ", $_, ($fs->{doc} ? $fs->{doc} : ()));
-  } else {
-    $_
-  }
-} grep {/^[a-z]/} @$names]}
 END
+
+  push @msg, map {$self->cli_format_command($_)} $self->cli_list_commands;
+
+  my @options = reverse $self->cli_group_options;
+  my $maxlen = $self->cli_max_option_length;
+
+  foreach my $group (@options) {
+    my ($pkg, @fields) = @$group;
+    push @msg, <<END;
+
+Options from $pkg:
+END
+    foreach my FieldSpec $fs (@fields) {
+      push @msg, $self->cli_format_option($fs, $maxlen);
+    }
+  }
+
+  die join("", @msg);
+}
+
+sub cli_list_commands {
+  my $self = shift;
+  my $pack = ref $self || $self;
+  FindMethods($pack, sub {s/^cmd_//});
+}
+
+sub cli_format_command {
+  my ($self, $name) = @_;
+  "  $name\n";
+}
+
+sub cli_group_options {
+  my $self = shift;
+  my $fields = fields_hash($self);
+  my @package;
+  foreach my $name (@{fields_array($self)}) {
+    next unless $name =~ /^[a-z]/;
+    my FieldSpec $spec = $fields->{$name};
+    if (not @package or $package[-1][0] ne $spec->{package}) {
+      push @package, [$spec->{package}];
+    }
+    push @{$package[-1]}, $spec;
+  }
+  @package;
+}
+
+sub cli_max_option_length {
+  my $self = shift;
+  my $fields = fields_hash($self);
+  my @name = grep {/^[a-z]/} @{fields_array($self)};
+  List::Util::max(map {length} @name);
+}
+
+sub cli_format_option {
+  (my MY $self, my FieldSpec $fs, my $maxlen) = @_;
+  my $len = ($maxlen // 16);
+  sprintf "  --%-${len}s  %s\n", $fs->{name}, $fs->{doc} // "";
 }
 
 1;
