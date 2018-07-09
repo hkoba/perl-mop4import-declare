@@ -12,6 +12,7 @@ use fields
    , 'doc' # documentation
    , 'default'
    , 'no_getter'
+   , 'package'
    # file? line? package?
  );
 

@@ -346,6 +346,7 @@ sub declare___field {
 
   my FieldSpec $obj = $extended->{$name}
     = $field_class->new(@early, name => $name);
+  $obj->{package} = $opts->{objpkg};
   print STDERR " with $myPack $field_class => ", terse_dump($obj), "\n"
     if DEBUG;
   push @$fields_array, $name;
