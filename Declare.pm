@@ -153,7 +153,7 @@ sub dispatch_declare_pragma {
       and my $sub = $myPack->can("declare_$pragma")) {
     $sub->($myPack, $opts, @args);
   } else {
-    croak "Unknown pragma ".terse_dump($pragma)." in $opts->{destpkg}"
+    croak "No such pragma: \`use $myPack\ [".terse_dump($pragma)."]`"
       . $myPack->file_line_of($opts);
   }
 }

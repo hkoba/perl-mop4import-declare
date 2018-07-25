@@ -90,7 +90,7 @@ END
 
     it "should detect unknown pragma", expect_script_error
       q{package SpecError4; use MOP4Import::Declare '-foo';}
-      , to_match => qr/^Unknown pragma 'foo' in SpecError4/;
+      , to_match => qr/^No such pragma: \`use MOP4Import::Declare \['foo'\]\`/;
   };
 
   my @cards = qw(Ace Chariot Cup Death Devil Emperor Empress Fool Hanged_Man
