@@ -32,20 +32,6 @@ sub cli_precmd {
   }
 }
 
-# Rewrite field names from kebab-case to snake_case.
-sub declare_options {
-    (my $myPack, my Opts $opts, my (@decls)) = m4i_args(@_);
-    $myPack->declare_fields($opts, map {
-        if (ref $_ and (my $name = $_->[0]) =~ s/-/_/g) {
-            [$name, @{$_}[1..$#$_]];
-        } elsif (not ref $_ and ($name = $_) =~ s/-/_/g) {
-            $name;
-        } else {
-            $_;
-        }
-    } @decls);
-}
-
 sub onconfigure_help {
   (my MY $self, my $val) = @_;
   $self->cmd_help;
