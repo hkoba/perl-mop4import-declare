@@ -1,7 +1,7 @@
 
 =head1 NAME
 
-MOP4Import::Base::CLI - Base class for Command Line Interface app.
+MOP4Import::Base::CLI - Boilerplate base class for Runnable Module
 
 =head1 SYNOPSIS
 
@@ -9,43 +9,9 @@ F<MyCLI.pm>  (chmod a+x this!).
 
   #!/usr/bin/env perl
   package MyCLI;
-  use MOP4Import::Base::CLI -as_base, qw/terse_dump/,
-      [fields =>
-         qw/verbose debug _dbh/,
-         [dbname =>
-             doc => "filename of sqlite3 database",
-             default => "myapp.db"]
-      ];
-  
-  use MOP4Import::Types
-    TableInfo => [[fields => qw/
-  			       TABLE_SCHEM
-  			       TABLE_NAME
-  			       TABLE_CAT
-  			       TABLE_TYPE
-  			       REMARKS
-  			     /]];
-  
-  sub cmd_tables {
-    (my MY $self, my ($pattern, $type)) = @_;
-    my $sth = $self->DBH->table_info(undef, undef
-  				   , $pattern // '%'
-  				   , $type // 'TABLE');
-    while (my TableInfo $row = $sth->fetchrow_hashref) {
-      print $self->{verbose} ? terse_dump($row) : $row->{TABLE_NAME}, "\n";
-    }
-  }
-  
-  use DBI;
-  sub DBH {
-    (my MY $self) = @_;
-    $self->{_dbh} //= do {
-      DBI->connect("dbi:SQLite:dbname=$self->{dbname}", undef, undef
-  		 , {PrintError => 0, RaiseError => 1, AutoCommit => 1});
-    };
-  }
-  
-  MY->run(\@ARGV) unless caller;
+  use MOP4Import::Base::CLI -as_base;
+  ...
+  __PACKAGE__->run(\@ARGV) unless caller;
   1;
 
 Then from command line:
@@ -63,18 +29,25 @@ Then from command line:
     --verbose
     --debug
     --dbname        filename of sqlite3 database
-  % sqlite3 myapp.db "create table foo(x,y)"
-  % ./MyCLI.pm tables
-  foo
-  % ./MyCLI.pm --verbose tables
-  {'REMARKS' => undef,'TABLE_NAME' => 'foo','TABLE_SCHEM' => 'main','sqlite_sql' => 'CREATE TABLE foo(x,y)','TABLE_TYPE' => 'TABLE','TABLE_CAT' => undef}
   % 
 
 =head1 DESCRIPTION
 
 MOP4Import::Base::CLI is a
-L<MOP4Import|MOP4Import::Intro> family
-and an easy-to-start base class for Command Line Interface applications.
+base class for L<Runnable Module|MOP4Import::intro_runnable_module>.
+You may prefer 
+
+You can make your module Runnable from CLI by just adding followings:
+
+=for code perl
+
+  use MOP4Import::Base::CLI -as_base;
+  ...
+  __PACKAGE__->run(\@ARGV) unless caller;
+
+
+Also, this module is implemented using L<MOP4Import|MOP4Import::Declare>
+so that you can implement your own C<import()> pragmas.
 
 =head1 METHODS
 
@@ -90,7 +63,7 @@ your object will be invoked with first word argument.
 
 =head1 SEE ALSO
 
-L<MOP4Import::Base::CLI_JSON>
+L<MOP4Import::Base::CLI_JSON>,
 L<MOP4Import::Base::Configure>
 
 =head1 AUTHOR
