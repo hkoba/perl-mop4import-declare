@@ -39,6 +39,12 @@ sub declare_options {
     } @decls);
 }
 
+sub onconfigure_help {
+  (my MY $self, my $val) = @_;
+  $self->cmd_help;
+  exit;
+}
+
 sub run {
   my ($class, $arglist, $opt_alias) = @_;
 
