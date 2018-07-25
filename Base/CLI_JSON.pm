@@ -127,6 +127,15 @@ sub cli_encode_json {
   $json;
 }
 
+sub cli_output {
+  (my MY $self, my ($list, $outFH)) = @_;
+
+  my $output = $self->can("cli_output_as_".$self->{'output'})
+    or Carp::croak("Unknown output format: $self->{'output'}");
+
+  $output->($self, $list, $outFH);
+}
+
 sub cli_output_as_json {
   (my MY $self, my ($list, $outFH)) = @_;
   $outFH //= \*STDOUT;
