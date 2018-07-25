@@ -123,7 +123,7 @@ MOP4Import::Base::Configure - OO Base class (based on MOP4Import)
 =head1 DESCRIPTION
 
 MOP4Import::Base::Configure is a
-L<MOP4Import|MOP4Import::Intro> family
+L<MOP4Import|MOP4Import::Declare> family
 and is my latest implementation of
 L<Tk-like configure based object|MOP4Import::whyfields>
 base classs. This class also inherits L<MOP4Import::Declare>,

@@ -104,7 +104,7 @@ MOP4Import::PSGIEnv - define Env class for PSGI, with extensions.
 =head1 DESCRIPTION
 
 MOP4Import::PSGIEnv is yet another protocol implementation
-of L<MOP4Import|MOP4Import::Intro> family.
+of L<MOP4Import|MOP4Import::Declare> family.
 
 This module simply defines C<Env> class.
 Standard L<PSGI $env|PSGI/The Environment> is already defined.

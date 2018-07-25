@@ -43,7 +43,7 @@ typos detection of L<fields>.
 =head1 DESCRIPTION
 
 MOP4Import::Types is yet another protocol implementation
-of L<MOP4Import|MOP4Import::Intro> family, based on L<MOP4Import::Pairs>
+of L<MOP4Import|MOP4Import::Declare> family, based on L<MOP4Import::Pairs>
 and L<MOP4Import::Declare::Type>.
 
 In contrast to L<MOP4Import::Declare>, which is designed to
