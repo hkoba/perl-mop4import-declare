@@ -81,10 +81,25 @@ and an easy-to-start base class for Command Line Interface applications.
 =head2 run (\@ARGV)
 
   MY->run(\@ARGV) unless caller;
-  1;
+
 
 This parses minimum posix style options (C<--name> or C<--name=value>)
 and create your object with them.
 Then C<cmd_...> entry method of
 your object will be invoked with first word argument.
 
+=head1 SEE ALSO
+
+L<MOP4Import::Base::CLI_JSON>
+L<MOP4Import::Base::Configure>
+
+=head1 AUTHOR
+
+Kobayashi, Hiroaki E<lt>hkoba@cpan.orgE<gt>
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

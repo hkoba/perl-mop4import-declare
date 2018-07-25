@@ -170,3 +170,18 @@ This defines C<default_FIELDNAME> method with given VALUE.
 
 This generates set hook (onconfigure_FIELDNAME) wrapped with
 L<Scalar::Util/weaken>.
+
+=head1 SEE ALSO
+
+L<MOP4Import::Declare>
+
+=head1 AUTHOR
+
+Kobayashi, Hiroaki E<lt>hkoba@cpan.orgE<gt>
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
