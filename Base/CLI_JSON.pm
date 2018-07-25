@@ -82,18 +82,6 @@ sub run {
   }
 }
 
-sub cli_parse_subcommand_and_load {
-  my ($class, $cmd) = @_;
-  if ($cmd =~ m{^\w+$}) {
-    ($class, $cmd);
-  } else {
-    my ($mod, $modcmd) = $cmd =~ m{^(.*?)::(\w+)$}
-      or Carp::croak("Syntax error in subcommand name! $cmd");
-    require Module::Runtime;
-    Module::Runtime::require_module($mod);
-    ($mod, $modcmd);
-  }
-}
 
 sub cli_invoke_sub_for_cmd {
   (my MY $primary_opts, my ($cmd, $sub, $self, @args)) = @_;
