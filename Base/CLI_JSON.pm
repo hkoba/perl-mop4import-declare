@@ -42,8 +42,7 @@ sub declare_options {
 sub run {
   my ($class, $arglist, $opt_alias) = @_;
 
-  my @opts = $class->parse_json_opts($arglist, undef, $opt_alias);
-  my MY $primary_opts = bless($class->configure_default(+{@opts}), $class);
+  my MY $self = $class->new($class->parse_json_opts($arglist, undef, $opt_alias));
 
   unless (@$arglist) {
     # Invoke help command if no arguments are given.
@@ -52,10 +51,6 @@ sub run {
   }
 
   my $cmd = shift @$arglist;
-
-  my ($actual_class, $actual_cmd) = $class->cli_parse_subcommand_and_load($cmd);
-
-  my $self = $actual_class->new(@opts);
 
   if (my $sub = $self->can("cmd_$cmd")) {
     # Invoke official command.
@@ -67,7 +62,7 @@ sub run {
   } elsif ($sub = $self->can($cmd)) {
     # Invoke internal methods. Development aid.
 
-    $primary_opts->cli_invoke_sub_for_cmd($cmd, $sub, $self, @$arglist);
+    $self->cli_invoke_sub_for_cmd($cmd, $sub, $self, @$arglist);
 
   } else {
     $self->cmd_help("Error: No such subcommand '$cmd'\n");
