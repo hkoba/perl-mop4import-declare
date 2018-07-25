@@ -72,45 +72,41 @@ sub run {
 
     $sub->($self, @$arglist);
 
-  } elsif ($sub = $self->can($cmd)) {
+  } elsif ($self->can($cmd)) {
     # Invoke internal methods. Development aid.
 
-    $self->cli_invoke_sub_for_cmd($cmd, $sub, $self, @$arglist);
+    $self->cli_invoke($cmd, @$arglist);
 
   } else {
     $self->cmd_help("Error: No such subcommand '$cmd'\n");
   }
 }
 
+sub cli_invoke {
+  (my MY $self, my ($method, @args)) = @_;
 
-sub cli_invoke_sub_for_cmd {
-  (my MY $primary_opts, my ($cmd, $sub, $self, @args)) = @_;
-
-  $self->cli_precmd($cmd);
-
-  my $output = $self->can("cli_output_as_".$primary_opts->{'output'})
-    or Carp::croak("Unknown output format: $primary_opts->{'output'}");
+  $self->cli_precmd($method);
 
   my @res;
-  if ($primary_opts->{scalar}) {
-    $res[0] = $sub->($self, @args);
+  if ($self->{scalar}) {
+    $res[0] = $self->$method(@args);
   } else {
-    @res = $sub->($self, @args);
+    @res = $self->$method(@args);
   }
 
-  if (not $primary_opts->{quiet}
-        and ($primary_opts->{scalar} ? $res[0] : @res)) {
+  if (not $self->{quiet}
+        and ($self->{scalar} ? $res[0] : @res)) {
 
-    if ($primary_opts->{flatten}) {
-      $output->($self, $_) for @res;
+    if ($self->{flatten}) {
+      $self->cli_output($_) for @res;
     } else {
-      $output->($self, \@res);
+      $self->cli_output(\@res);
     }
   }
 
-  if ($primary_opts->{'no-exit-code'}) {
+  if ($self->{'no-exit-code'}) {
     return;
-  } elsif ($primary_opts->{scalar}) {
+  } elsif ($self->{scalar}) {
     exit($res[0] ? 0 : 1);
   } else {
     exit(@res ? 0 : 1);
