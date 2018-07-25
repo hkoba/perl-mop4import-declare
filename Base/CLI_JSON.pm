@@ -2,11 +2,18 @@ package MOP4Import::Base::CLI_JSON;
 use MOP4Import::Base::CLI -as_base
   , [constant => parse_opts__preserve_hyphen => 1]
   , [fields =>
+     , ['help' => doc => "show this help message"]
      , ['scalar' => doc => "evaluate subcommand in scalar context"]
-     , ['output' => default => 'json']
+     , ['output' => default => 'json'
+        , doc => "choose output serializer (json/tsv/dump)"
+      ]
      , ['flatten' => doc => "output each result separately (instead of single json array)"]
-     , ['undef-as' => default => 'null']
-     , ['no-exit-code']
+     , ['undef-as' => default => 'null'
+        , doc => "serialize undef as this value. used in tsv output"
+      ]
+     , ['no-exit-code'
+        , doc => "exit with 0(EXIT_SUCCESS) even when result was falsy/empty"
+      ]
      , ['binary' => default => 0, doc => "keep STDIN/OUT/ERR binary friendly"]
      , '_cli_json'
    ];
