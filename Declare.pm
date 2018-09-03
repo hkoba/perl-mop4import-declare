@@ -264,7 +264,15 @@ sub declare___add_isa {
   }
 }
 
-# XXX: previously was [as].
+# I'm afraid this 'as' pragma could invite ambiguous interpretation.
+# But in following case, I can't find any other pragma name.
+#
+#   use XXX [as => 'YYY']
+#
+# So, let's define `declare_as` as an alias of `declare_naming`.
+#
+*declare_as = *declare_naming; *declare_as = *declare_naming;
+
 sub declare_naming {
   (my $myPack, my Opts $opts, my ($name)) = m4i_args(@_);
 
