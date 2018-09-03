@@ -105,7 +105,7 @@ END
 
   push @msg, map {$self->cli_format_command($_)} $self->cli_list_commands;
 
-  my @options = reverse $self->cli_group_options;
+  my @options = $self->cli_group_options;
   my $maxlen = $self->cli_max_option_length;
 
   foreach my $group (@options) {
@@ -136,16 +136,18 @@ sub cli_format_command {
 sub cli_group_options {
   my $self = shift;
   my $fields = fields_hash($self);
-  my @package;
+  my %package;
   foreach my $name (@{fields_array($self)}) {
     next unless $name =~ /^[a-z]/;
     my FieldSpec $spec = $fields->{$name};
-    if (not @package or $package[-1][0] ne $spec->{package}) {
-      push @package, [$spec->{package}];
-    }
-    push @{$package[-1]}, $spec;
+    push @{$package{$spec->{package}}}, $spec;
   }
-  @package;
+
+  my $isa = mro::get_linear_isa(ref $self);
+
+  map {
+    $package{$_} ? [$_, @{$package{$_}}] : ();
+  } @$isa;
 }
 
 sub cli_max_option_length {
