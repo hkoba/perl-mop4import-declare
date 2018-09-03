@@ -176,7 +176,7 @@ sub parse_opts {
 sub parse_json_opts {
   my ($pack, $list, $result, $alias) = @_;
   require JSON;
-  $pack->parse_opts($list, $result, $alias, sub {
+  parse_opts($pack, $list, $result, $alias, sub {
     if (not defined $_[0]) {
       undef
     } elsif ($_[0] =~ /^(?:\[.*?\]|\{.*?\})\z/s) {
