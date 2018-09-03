@@ -94,17 +94,26 @@ sub dispatch_import {
 
     return $myPack->dispatch_declare_pragma($opts, $1);
 
-  } elsif ($declSpec =~ /^([\*\$\%\@\&])?([A-Za-z]\w*)$/) {
-
-    if ($1) {
-      my $kind = $SIGIL_MAP{$1};
-      $myPack->can("import_$kind")
-	->($myPack, $opts, $1, $kind, $2);
-    } else {
-      $myPack->import_NAME($opts => $2);
-    }
   } else {
-    croak "Invalid import spec: $declSpec";
+
+    $myPack->dispatch_import_no_pragma($opts, $declSpec);
+  }
+}
+
+sub dispatch_import_no_pragma {
+  (my $myPack, my Opts $opts, my (@declSpec)) = m4i_args(@_);
+  foreach my $declSpec (@declSpec) {
+    if ($declSpec =~ /^([\*\$\%\@\&])?([A-Za-z]\w*)$/) {
+      if ($1) {
+        my $kind = $SIGIL_MAP{$1};
+        $myPack->can("import_$kind")
+          ->($myPack, $opts, $1, $kind, $2);
+      } else {
+        $myPack->import_NAME($opts => $2);
+      }
+    } else {
+      croak "Invalid import spec: $declSpec";
+    }
   }
 }
 
