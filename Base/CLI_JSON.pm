@@ -18,9 +18,7 @@ use MOP4Import::Base::CLI -as_base
      , '_cli_json'
    ];
 use MOP4Import::Opts;
-use MOP4Import::Util qw/parse_json_opts
-                        lexpand
-                       /;
+use MOP4Import::Util qw/lexpand/;
 
 use JSON;
 use open ();
@@ -38,34 +36,13 @@ sub onconfigure_help {
   exit;
 }
 
-sub run {
-  my ($class, $arglist, $opt_alias) = @_;
+#
+# Replace parse_opts to use parse_json_opts
+#
+sub parse_opts {
+  my ($pack, $list, $result, $opt_alias, $converter, %opts) = @_;
 
-  my MY $self = $class->new($class->parse_json_opts($arglist, undef, $opt_alias));
-
-  unless (@$arglist) {
-    # Invoke help command if no arguments are given.
-    $class->cmd_help;
-    return;
-  }
-
-  my $cmd = shift @$arglist;
-
-  if (my $sub = $self->can("cmd_$cmd")) {
-    # Invoke official command.
-
-    $self->cli_precmd($cmd);
-
-    $sub->($self, @$arglist);
-
-  } elsif ($self->can($cmd)) {
-    # Invoke internal methods. Development aid.
-
-    $self->cli_invoke($cmd, @$arglist);
-
-  } else {
-    $self->cmd_help("Error: No such subcommand '$cmd'\n");
-  }
+  MOP4Import::Util::parse_json_opts($pack, $list, $result, $opt_alias);
 }
 
 sub cli_invoke {
