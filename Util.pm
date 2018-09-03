@@ -82,6 +82,24 @@ sub extract_fields_as ($$) {
 }
 
 #
+# For (shallow) copy constructor.
+#
+sub shallow_copy {
+  if (ref $_[0] eq 'HASH') {
+    +{%{$_[0]}};
+  } elsif (ref $_[0] eq 'ARRAY') {
+    +[@{$_[0]}];
+  } elsif (not ref $_[0]) {
+    my $copy = $_[0];
+  } elsif ($_[1]) {
+    # Pass thru unknown refs if 2nd arg is true.
+    $_[0];
+  } else {
+    croak "Unsupported data type for shallow_copy: " . ref $_[0];
+  }
+}
+
+#
 # Expand given item as list.
 #
 sub lexpand {
