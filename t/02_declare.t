@@ -240,6 +240,17 @@ use Tarot2 qw/CARDS/;
     };
   };
 
+  describe "[import => IMPORT_SPECS...]", sub {
+    it "should have no error", no_error q{
+package TarotImportViaPragma;
+use Tarot2 [import => qw/CARDS/];
+};
+
+    it 'should import @CARDS', sub {
+      expect(eval q{package TarotImportViaPragma; \@CARDS})->to_be(\@cards);
+    };
+  };
+
   describe "[parent => CLASS] pragma", sub {
     it "should raise error for unknown class"
       , expect_script_error q{package Error10; use MOP4Import::Declare [parent => 'UnknownMissingModuleZZZZZ'];}

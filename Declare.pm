@@ -167,6 +167,8 @@ sub dispatch_declare_pragma {
   }
 }
 
+#========================================
+
 # You may want to override these pragrams.
 sub declare_default_pragma {
   (my $myPack, my Opts $opts) = m4i_args(@_);
@@ -188,6 +190,21 @@ sub declare_c3 {
   (my $myPack, my Opts $opts) = m4i_args(@_);
   mro::set_mro($opts->{destpkg}, 'c3');
 }
+
+#========================================
+
+#
+# Just for readability
+#
+#   use XXX [import => qw/X Y Z/];
+#
+sub declare_import {
+  (my $myPack, my Opts $opts, my (@import)) = m4i_args(@_);
+
+  $myPack->dispatch_import_no_pragma($opts, @import);
+}
+
+#========================================
 
 sub declare_fileless_base {
   (my $myPack, my Opts $opts, my (@base)) = m4i_args(@_);
