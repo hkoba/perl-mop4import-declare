@@ -123,10 +123,14 @@ package MyZodiac; use Zodiac1 -as_base;
   describe "use .. [fields [f => \@spec],...]", sub {
     describe "spec: default => 'value'", sub {
       it "should be accepted"
-	, no_error q{package F_def; use Zodiac1 -as_base, [fields => [f => default => 'defval']]};
+	, no_error q{package F_def; use Zodiac1 -as_base, [fields => [fmt => default => 'tsv']]};
 
       it "should be set as default value", sub {
-	ok {F_def->new->f eq 'defval'};
+	ok {F_def->new->fmt eq 'tsv'};
+      };
+
+      it "should be changed in regular manner", sub {
+	ok {F_def->new(fmt => 'xlsx')->fmt eq 'xlsx'};
       }
     };
 
