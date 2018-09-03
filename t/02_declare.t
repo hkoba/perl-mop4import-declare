@@ -156,6 +156,17 @@ END
 
   };
 
+  describe "use YOUR_CLASS [as => 'MyAlias']", sub {
+    it "should anve no error", no_error q{
+package TarotImport2;
+use Tarot1 [as => 'MyTarot'];
+};
+
+    it "should create alias for YOUR_CLASS", sub {
+      expect(TarotImport2->MyTarot)->to_be('Tarot1');
+    };
+  };
+
   describe "Exporter like sigil based import for \$, \@, \% and &", sub {
     it "should have no error", no_error q{
 package TarotImport1;
