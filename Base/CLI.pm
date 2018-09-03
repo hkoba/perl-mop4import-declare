@@ -10,7 +10,7 @@ use MOP4Import::Base::Configure -as_base, qw/FieldSpec/
   , [fields =>
      [quiet => doc => 'to be (somewhat) quiet']
    ];
-use MOP4Import::Util qw/parse_opts terse_dump fields_hash fields_array
+use MOP4Import::Util qw/terse_dump fields_hash fields_array
 			take_hash_opts_maybe/;
 use MOP4Import::Util::FindMethods;
 
@@ -37,33 +37,46 @@ sub run {
 
     $sub->($self, @$arglist);
 
-  } elsif ($sub = $self->can($cmd)) {
-    # Invoke internal methods.
+  } elsif ($self->can($cmd)) {
+    # Invoke unofficial internal methods. Development aid.
 
-    $self->cli_invoke_sub_for_cmd($cmd, $sub, $self, @$arglist);
+    $self->cli_invoke($cmd, @$arglist);
 
   } else {
     $self->cmd_help("Error: No such subcommand '$cmd'\n");
   }
 }
 
+#========================================
+# Hooks and default implementations
+#========================================
+
+#
+# Each class can override parse_opts method.
+#
+sub parse_opts {
+  my ($pack, $list, $result, $opt_alias) = @_;
+
+  MOP4Import::Util::parse_opts($pack, $list, $result, $opt_alias);
+}
+
 sub cli_precmd {} # hook called just before cmd_zzz
 
-sub cli_invoke_sub_for_cmd {
-  (my MY $self, my ($cmd, $sub, @args)) = @_;
+sub cli_invoke {
+  (my MY $self, my ($method, @args)) = @_;
 
-  $self->cli_precmd($cmd);
+  $self->cli_precmd($method);
 
-  my @res = $sub->(@args);
+  my @res = $self->$method(@args);
   print join("\n", map {terse_dump($_)} @res), "\n"
     if not $self->{quiet} and @res;
 
-  if ($cmd =~ /^has_/) {
+  if ($method =~ /^has_/) {
     # If method name starts with 'has_' and result is empty,
     # exit with 1.
     exit(@res ? 0 : 1);
 
-  } elsif ($cmd =~ /^is_/) {
+  } elsif ($method =~ /^is_/) {
     # If method name starts with 'is_' and first result is false,
     # exit with 1.
     exit($res[0] ? 0 : 1);
