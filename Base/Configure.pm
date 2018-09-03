@@ -43,7 +43,18 @@ sub configure_default {
 sub configure {
   (my MY $self) = shift;
 
-  my @args = @_ == 1 && ref $_[0] eq 'HASH' ? %{$_[0]} : @_;
+  my @args = do {
+    if (@_ != 1) {
+      @_;
+    } elsif (ref $_[0] eq 'HASH') {
+      %{$_[0]}
+    } elsif (my $sub = UNIVERSAL::can($_[0], "cf_configs")) {
+      # Shallow copy via cf_configs()
+      $sub->($_[0]);
+    } else {
+      Carp::croak "Unknown argument! ".MOP4Import::Util::terse_dump($_[0]);
+    }
+  };
 
   my $fields = MOP4Import::Declare::fields_hash($self);
 
