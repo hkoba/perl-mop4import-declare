@@ -85,6 +85,27 @@ sub declare___field_with_weakref {
   }
 }
 
+sub cf_configs {
+  (my MY $self, my (%opts)) = @_;
+  my $all = delete $opts{all};
+  if (keys %opts) {
+    Carp::croak "Unknown option for cf_configs: ".join(", ", sort keys %opts);
+  }
+  my $fields = MOP4Import::Util::fields_hash($self);
+  my @result;
+  foreach my $key ($self->cf_public_fields) {
+    defined (my $val = $self->{$key})
+      or next;
+    my FieldSpec $spec = $fields->{$key};
+    if (not $all
+          and defined $spec->{default} and $val eq $spec->{default}) {
+      next;
+    }
+    push @result, $key, MOP4Import::Util::shallow_copy($val);
+  }
+  @result;
+}
+
 sub cf_public_fields {
   my $obj_or_class = shift;
   my $fields = MOP4Import::Util::fields_hash($obj_or_class);
