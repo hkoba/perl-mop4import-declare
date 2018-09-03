@@ -13,9 +13,9 @@ sub declare_type {
   if ($opts->{extending}) {
     my $sub = $opts->{destpkg}->can($name)
       or croak "Can't find base class $name in parents of $opts->{destpkg}";
-    unshift @spec, [base => $sub->($opts->{destpkg})];
+    unshift @spec, [fileless_base => $sub->($opts->{destpkg})];
   } elsif ($opts->{basepkg}) {
-    unshift @spec, [base => $opts->{basepkg}];
+    unshift @spec, [fileless_base => $opts->{basepkg}];
   }
 
   $myPack->declare___inner_class_in($opts
@@ -34,7 +34,7 @@ sub declare_extend {
 
   $myPack->declare___inner_class_in($opts
 				    , $opts->{destpkg}, $extended
-				    , [base => $sub->($opts->{destpkg})]
+				    , [fileless_base => $sub->($opts->{destpkg})]
 				    , @spec);
 }
 

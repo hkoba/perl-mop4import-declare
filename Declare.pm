@@ -180,13 +180,15 @@ sub declare_c3 {
   mro::set_mro($opts->{destpkg}, 'c3');
 }
 
-sub declare_base {
+sub declare_fileless_base {
   (my $myPack, my Opts $opts, my (@base)) = m4i_args(@_);
 
   $myPack->declare___add_isa($opts->{objpkg}, @base);
 
   $myPack->declare_fields($opts);
 }
+
+*declare_base = *declare_parent; *declare_base = *declare_parent;
 
 sub declare_parent {
   (my $myPack, my Opts $opts, my (@base)) = m4i_args(@_);
@@ -196,7 +198,7 @@ sub declare_parent {
     require "$cp.pm";
   }
 
-  $myPack->declare_base($opts, @base);
+  $myPack->declare_fileless_base($opts, @base);
 }
 
 sub declare_as_base {
