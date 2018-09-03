@@ -43,7 +43,9 @@ sub run {
     $self->cli_invoke($cmd, @$arglist);
 
   } else {
-    $self->cmd_help("Error: No such subcommand '$cmd'\n");
+    # Last resort. You can implement your own subcommand interpretations here.
+
+    $self->cli_unknown_subcommand($cmd, $arglist);
   }
 }
 
@@ -82,6 +84,14 @@ sub cli_invoke {
     exit($res[0] ? 0 : 1);
   }
 }
+
+sub cli_unknown_subcommand {
+  (my MY $self, my ($cmd, $arglist)) = @_;
+
+  $self->cmd_help("Error: No such subcommand '$cmd'\n");
+}
+
+#========================================
 
 sub cmd_help {
   my $self = shift;

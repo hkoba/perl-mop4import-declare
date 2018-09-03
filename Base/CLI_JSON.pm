@@ -50,11 +50,20 @@ sub cli_invoke {
 
   $self->cli_precmd($method);
 
+  my $sub = $self->can($method)
+    or Carp::croak "No such method: $method";
+
+  $self->cli_invoke_sub($sub, $self, @args);
+}
+
+sub cli_invoke_sub {
+  (my MY $self, my ($sub, $receiver, @args)) = @_;
+
   my @res;
   if ($self->{scalar}) {
-    $res[0] = $self->$method(@args);
+    $res[0] = $sub->($receiver, @args);
   } else {
-    @res = $self->$method(@args);
+    @res = $sub->($receiver, @args);
   }
 
   if (not $self->{quiet}
