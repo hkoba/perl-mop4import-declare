@@ -85,6 +85,11 @@ sub declare___field_with_weakref {
   }
 }
 
+sub cf_public_fields {
+  my $obj_or_class = shift;
+  my $fields = MOP4Import::Util::fields_hash($obj_or_class);
+  sort grep {/^[a-z]/i} keys %$fields;
+}
 
 1;
 
