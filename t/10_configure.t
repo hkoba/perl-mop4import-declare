@@ -145,6 +145,58 @@ package MyZodiac; use Zodiac1 -as_base;
     };
     
   };
+
+  describe 'copy constructor and such', sub {
+
+    describe 'cf_configs()', sub {
+
+      it "should list configured value only", sub {
+        my $obj = F_def->new(aquarius => 1, scorpio => 2);
+
+        expect([$obj->cf_configs])->to_be([aquarius => 1, scorpio => 2]);
+      };
+    };
+
+    describe 'cf_public_fields()', sub {
+      my $obj = F_def->new(aquarius => 1, scorpio => 2);
+
+      it "should list all public fields", sub {
+        expect([$obj->cf_public_fields])->to_be([qw/aquarius fmt gemini scorpio/]);
+      };
+
+      it "should be applicable to class too", sub {
+        expect([ref($obj)->cf_public_fields])->to_be([qw/aquarius fmt gemini scorpio/]);
+      };
+    };
+
+    describe 'my $clone = $original->new($original)', sub {
+      my $original = Zodiac1->new
+        (aquarius => ["foo"], scorpio => {bar => 1}, gemini => "baz");
+
+      my $clone = $original->new($original);
+
+      describe 'modification to clone', sub {
+
+        push @{$clone->{aquarius}}, 'FOO';
+
+        expect($clone->{aquarius})->to_be(['foo', 'FOO']);
+
+        it "should not affect to original", sub {
+          expect($original->{aquarius})->to_be(['foo']);
+        };
+      };
+
+      describe 'modification to original', sub {
+        $original->{scorpio}{BAR} = 2;
+
+        expect($original->{scorpio})->to_be({bar => 1, BAR => 2});
+
+        it "should not affect to clone", sub {
+          expect($clone->{scorpio})->to_be({bar => 1});
+        };
+      }
+    };
+  };
 };
 
 done_testing();
