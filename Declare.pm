@@ -344,7 +344,11 @@ sub declare_fields {
       next if defined $extended->{$name};
       print STDERR "  Field $opts->{objpkg}.$name is inherited "
 	. "from $super_class.\n" if DEBUG;
-      $extended->{$name} = $super->{$name}; # XXX: clone?
+      $extended->{$name} = do {
+        my $origin = $super->{$name};
+         # XXX: mark origin in this clone?
+        ref $origin ? $origin->clone : $origin;
+      };
       push @$fields_array, $name;
     }
   }
@@ -420,6 +424,26 @@ sub declare_alias {
     croak "Subroutine (alias) $opts->{destpkg}::$name redefined";
   }
   *$sym = sub () {$alias};
+}
+
+# Set(override) default value for inherited fields
+#
+# [defaults =>
+#    fieldName => defaultValue, ...
+# ]
+#
+sub declare_defaults {
+  (my $myPack, my Opts $opts, my (@kvlist)) = m4i_args(@_);
+
+  my $fields = fields_hash($opts->{objpkg});
+
+  while (my ($k, $v) = splice @kvlist, 0, 2) {
+    my FieldSpec $fs = $fields->{$k}
+      or Carp::croak "No such field: $k";
+    $fs->{default} = $v;
+    my $fn = "default_$k";
+    $myPack->declare_constant($opts, $fn, $v);
+  }
 }
 
 sub declare_map_methods {
