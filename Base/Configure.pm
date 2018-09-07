@@ -79,6 +79,16 @@ sub configure {
   $self;
 }
 
+sub cget {
+  my ($self, $key, $default) = @_;
+  $key =~ s/^--//;
+  my $fields = MOP4Import::Declare::fields_hash($self);
+  if (not exists $fields->{$key}) {
+    confess "No such option: $key"
+  }
+  $self->{$key} // $default;
+}
+
 sub declare___field_with_weakref {
   (my $myPack, my Opts $opts, my FieldSpec $fs, my ($k, $v)) = m4i_args(@_);
 
