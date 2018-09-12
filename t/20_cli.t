@@ -48,14 +48,25 @@ sub qux {
       expect(capture {MyApp1->run(['--foo=ok','qux','quux'])})->to_be("['ok',['quux']]\n");
     };
 
-    describe "cli_... APIs", sub {
+  };
 
-      describe "MyApp1->cli_info_command_doc(bar)", sub {
-        expect(MyApp1->cli_info_command_doc('bar'))->to_be("This prints contents of foo and also args");
-      };
+  describe "--help, -h and help()", sub {
+    my $runner = sub {
+      local $@;
+      eval { MyApp1->run(@_); };
+      $@;
     };
 
+    expect($runner->(['--help']))->to_match(qr/^Usage: /);
+    expect($runner->(['-h'], {h => 'help'}))->to_match(qr/^Usage: /);
+    expect($runner->(['help']))->to_match(qr/^Usage: /);
+  };
 
+  describe "cli_... APIs", sub {
+
+    describe "MyApp1->cli_info_command_doc(bar)", sub {
+      expect(MyApp1->cli_info_command_doc('bar'))->to_be("This prints contents of foo and also args");
+    };
   };
 };
 
