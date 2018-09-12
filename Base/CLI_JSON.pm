@@ -33,12 +33,6 @@ sub cli_precmd {
   }
 }
 
-sub onconfigure_help {
-  (my MY $self, my $val) = @_;
-  $self->cmd_help;
-  exit;
-}
-
 #
 # Replace parse_opts to use parse_json_opts
 #

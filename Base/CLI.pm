@@ -97,6 +97,12 @@ sub cli_unknown_subcommand {
 
 #========================================
 
+sub onconfigure_help {
+  (my MY $self, my $val) = @_;
+  $self->cmd_help;
+  exit;
+}
+
 sub cmd_help {
   my $self = shift;
   my $pack = ref $self || $self;
