@@ -137,7 +137,7 @@ sub cli_list_commands {
 
 sub cli_format_command {
   my ($self, $name) = @_;
-  "  $name\n";
+  "  ".join("        ", $name, $self->cli_info_command_doc($name))."\n";
 }
 
 sub cli_group_options {
@@ -190,6 +190,27 @@ sub cli_format_option {
       }
     } @attrs;
   }
+
+  sub cli_info_command_doc {
+    my ($self, $name) = @_;
+    my $sub = $self->can("cmd_$name")
+      or Carp::croak "No such command: $name";
+    my $doc = $cmd_doc{$sub};
+    return unless defined $doc;
+    $doc;
+  }
+
+  #
+  # Since I'm not sure what can be returned from FETCH_CODE_ATTRIBUTES,
+  # I don't provide it at least for now.
+  #
+  # sub FETCH_CODE_ATTRIBUTES {
+  #   my ($pack, $sub) = @_;
+  #   my @attr;
+  #   if (my $doc = $cmd_doc{$sub}) {
+  #     (Doc => $doc);
+  #   }
+  # }
 }
 
 1;
