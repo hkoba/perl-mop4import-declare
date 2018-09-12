@@ -23,7 +23,7 @@ describe "MOP4Import::Base::CLI", sub {
 package MyApp1;
 use MOP4Import::Base::CLI -as_base, -inc, [fields => qw/foo/];
 
-sub cmd_bar {
+sub cmd_bar : Doc("This prints contents of foo and also args") {
   (my MY $self, my @args) = @_;
   print join(" ", $self->{foo}, @args), "\n";
 }
@@ -47,6 +47,14 @@ sub qux {
     describe "MyApp1->run([--foo=ok,qux,quux])", sub {
       expect(capture {MyApp1->run(['--foo=ok','qux','quux'])})->to_be("['ok',['quux']]\n");
     };
+
+    describe "cli_... APIs", sub {
+
+      describe "MyApp1->cli_info_command_doc(bar)", sub {
+        expect(MyApp1->cli_info_command_doc('bar'))->to_be("This prints contents of foo and also args");
+      };
+    };
+
 
   };
 };
