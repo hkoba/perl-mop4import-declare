@@ -101,6 +101,9 @@ sub cmd_help {
   my $self = shift;
   my $pack = ref $self || $self;
 
+  # Invoke precmd (mainly for binmode handling)
+  $self->cli_precmd();
+
   my @msg = (join("\n", @_, <<END));
 Usage: @{[File::Basename::basename($0)]} [--opt=value].. <Command> ARGS...
 

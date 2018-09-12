@@ -25,7 +25,10 @@ use open ();
 
 sub cli_precmd {
   (my MY $self) = @_;
-  unless ($self->{binary}) {
+  #
+  # cli_precmd() may called from $class->cmd_help.
+  #
+  unless (ref $self and $self->{binary}) {
     'open'->import(qw/:locale :std/);
   }
 }
