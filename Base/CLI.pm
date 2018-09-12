@@ -8,6 +8,8 @@ use Data::Dumper ();
 
 use attributes ();
 
+use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
+
 use MOP4Import::Base::Configure -as_base, qw/FieldSpec/
   , [fields =>
      [quiet => doc => 'to be (somewhat) quiet']
@@ -171,6 +173,7 @@ sub cli_format_option {
 
   sub MODIFY_CODE_ATTRIBUTES {
     my ($pack, $sub, @attrs) = @_;
+    print "Got attrs: @attrs\n" if DEBUG;
     map {
       my $cp = $_;
       if ($cp =~ s/^Doc\(//i) {
