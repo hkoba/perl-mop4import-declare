@@ -6,6 +6,8 @@ use mro qw/c3/;
 use File::Basename ();
 use Data::Dumper ();
 
+use attributes ();
+
 use MOP4Import::Base::Configure -as_base, qw/FieldSpec/
   , [fields =>
      [quiet => doc => 'to be (somewhat) quiet']
@@ -161,6 +163,27 @@ sub cli_format_option {
   (my MY $self, my FieldSpec $fs, my $maxlen) = @_;
   my $len = ($maxlen // 16);
   sprintf "  --%-${len}s  %s\n", $fs->{name}, $fs->{doc} // "";
+}
+
+# Poorman's code attribute handler, only for Doc().
+{
+  my %cmd_doc;
+
+  sub MODIFY_CODE_ATTRIBUTES {
+    my ($pack, $sub, @attrs) = @_;
+    map {
+      my $cp = $_;
+      if ($cp =~ s/^Doc\(//i) {
+        $cp =~ s/\)$//;
+        $cp =~ s/^\"(.*?)\"$/$1/s;
+        $cp =~ s/^\'(.*?)\'$/$1/s;
+        $cmd_doc{$sub} = $cp;
+        ();
+      } else {
+        $_;
+      }
+    } @attrs;
+  }
 }
 
 1;
