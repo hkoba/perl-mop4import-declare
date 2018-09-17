@@ -10,10 +10,8 @@ use attributes ();
 
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
-use MOP4Import::Base::Configure -as_base, qw/FieldSpec/
-  , [fields =>
-     [quiet => doc => 'to be (somewhat) quiet']
-   ];
+use MOP4Import::Base::Configure -as_base, qw/FieldSpec/;
+
 use MOP4Import::Util qw/terse_dump fields_hash fields_array
 			take_hash_opts_maybe/;
 use MOP4Import::Util::FindMethods;
@@ -74,8 +72,7 @@ sub cli_invoke {
   $self->cli_precmd($method);
 
   my @res = $self->$method(@args);
-  print join("\n", map {terse_dump($_)} @res), "\n"
-    if not $self->{quiet} and @res;
+  $self->cli_output(\@res) if @res;
 
   if ($method =~ /^has_/) {
     # If method name starts with 'has_' and result is empty,
@@ -87,6 +84,11 @@ sub cli_invoke {
     # exit with 1.
     exit($res[0] ? 0 : 1);
   }
+}
+
+sub cli_output {
+  (my MY $self, my $res) = @_;
+  print join("\n", map {terse_dump($_)} @$res), "\n";
 }
 
 sub cli_unknown_subcommand {

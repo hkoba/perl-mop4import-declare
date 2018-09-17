@@ -3,6 +3,7 @@ use MOP4Import::Base::CLI -as_base
   , [constant => parse_opts__preserve_hyphen => 1]
   , [fields =>
      , ['help' => doc => "show this help message"]
+     , ['quiet' => doc => 'to be (somewhat) quiet']
      , ['scalar' => doc => "evaluate subcommand in scalar context"]
      , ['output' => default => 'json'
         , doc => "choose output serializer (json/tsv/dump)"
