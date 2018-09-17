@@ -4,7 +4,7 @@ use MOP4Import::Base::CLI -as_base
   , [fields =>
      , ['help' => doc => "show this help message"]
      , ['quiet' => doc => 'to be (somewhat) quiet']
-     , ['scalar' => doc => "evaluate subcommand in scalar context"]
+     , ['scalar' => doc => "evaluate methods in scalar context"]
      , ['output' => default => 'json'
         , doc => "choose output serializer (json/tsv/dump)"
       ]
