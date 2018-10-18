@@ -67,7 +67,7 @@ sub cli_invoke_sub {
   if (not $self->{quiet}
         and ($self->{scalar} ? $res[0] : @res)) {
 
-    if ($self->{flatten}) {
+    if ($self->{scalar} or $self->{flatten}) {
       $self->cli_output($_) for @res;
     } else {
       $self->cli_output(\@res);

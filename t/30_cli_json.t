@@ -50,6 +50,10 @@ sub meth_list {
         expect(capture {MyApp1->run(['--no-exit-code','--foo={"x":3}','meth_scalar','{"y":8}',undef,'[1,"foo",2,3]'])})->to_be(qq|[[{"x":3},{"y":8},null,[1,"foo",2,3]]]\n|);
       };
 
+      describe "--output=json --scalar", sub {
+        expect(capture {MyApp1->run(['--scalar','--no-exit-code','--foo={"x":3}','meth_scalar','{"y":8}',undef,'[1,"foo",2,3]'])})->to_be(qq|[{"x":3},{"y":8},null,[1,"foo",2,3]]\n|);
+      };
+
       describe "--output=dump", sub {
         expect(capture {MyApp1->run(['--no-exit-code','--output=dump','--foo={"x":3}','meth_scalar','{"y":8}',undef,'[1,"foo",2,3]'])})->to_be(qq|{'x' => 3}\t{'y' => 8}\tnull\t[1,'foo',2,3]\n|);
       };
