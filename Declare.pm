@@ -353,6 +353,16 @@ sub declare_fields {
     }
   }
 
+  {
+    my %dup;
+    foreach my $spec (@fields) {
+      my ($name) = ref $spec ? @$spec : $spec;
+      if ($dup{$name}++) {
+        croak "Duplicate field decl! $name";
+      }
+    }
+  }
+
   $myPack->declare___field($opts, ref $_ ? @$_ : $_) for @fields;
 
   $opts->{objpkg}; # XXX:
@@ -393,6 +403,11 @@ sub declare___field {
 
   # Create accessor for all public fields.
   if ($name =~ /^[a-z]/i and not $obj->{no_getter}) {
+    if (my $sym = MOP4Import::Util::symtab($opts->{objpkg})->{$name}) {
+      if (*{$sym}{CODE}) {
+        croak "Accessor $opts->{objpkg}::$name is redefined!\nIf you really want to define the accessor by hand, please specify fields spec like: [$name => no_getter => 1, ...].";
+      }
+    }
     *{globref($opts->{objpkg}, $name)} = sub { $_[0]->{$name} };
   }
 

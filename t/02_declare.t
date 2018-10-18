@@ -91,6 +91,14 @@ END
     it "should detect unknown pragma", expect_script_error
       q{package SpecError4; use MOP4Import::Declare '-foo';}
       , to_match => qr/^No such pragma: \`use MOP4Import::Declare \['foo'\]\`/;
+
+    it "should detect duplicate fields", expect_script_error
+      q{package SpecError5; use MOP4Import::Declare [fields => qw/foo foo/];}
+      , to_match => qr/^Duplicate field decl! foo/;
+
+    it "should detect accessor redefinition", expect_script_error
+      q{package SpecError6; sub foo {'FOO'}; use MOP4Import::Declare [fields => qw/foo/];}
+      , to_match => qr/^Accessor SpecError6::foo is redefined!/;
   };
 
   my @cards = qw(Ace Chariot Cup Death Devil Emperor Empress Fool Hanged_Man
