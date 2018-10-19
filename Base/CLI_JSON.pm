@@ -88,7 +88,7 @@ sub cli_invoke_sub {
 sub cli_encode_json {
   (my MY $self, my $obj) = @_;
   my $codec = $self->{_cli_json} //= do {
-    my $js = JSON->new->canonical;
+    my $js = JSON->new->canonical->allow_nonref;
     $js->utf8 unless $self->{binary};
     $js;
   };
