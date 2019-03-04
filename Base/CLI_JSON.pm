@@ -144,4 +144,70 @@ sub cli_output_as_dump {
   }
 }
 
+#========================================
+
+sub cli_create_from_file {
+  my ($class, $configFn, @moreOpts) = @_;
+  my $realConfigFn = File::Spec->rel2abs($configFn);
+  my $oldcwd = $ENV{PWD} || do {require Cwd; Cwd::getcwd()};
+  my $realDir = File::Basename::dirname($realConfigFn);
+  chdir($realDir)
+    or Carp::croak "Can't chdir to $realDir: $!";
+
+  # Read $configFn with scalar context.
+  my $opts = $class->cli_read_file($realConfigFn);
+
+  my $object = $class->new(
+    ref $opts eq 'HASH' ? %$opts : @$opts,
+    @moreOpts
+  );
+  chdir($oldcwd)
+    or Carp::croak "Can't chdir back to $oldcwd: $!";
+  $object;
+}
+
+sub cli_read_file {
+  my ($classOrObj, $fileName) = @_;
+  my ($ftype) = $fileName =~ m{\.(\w+)$};
+  $ftype //= "";
+
+  my $sub = $classOrObj->can("cli_read_file__$ftype")
+    or Carp::croak "Unsupported file type '$ftype': $fileName";
+
+  $sub->($classOrObj, $fileName);
+}
+
+# No filename extension => read entire content except last \n.
+sub cli_read_file__ {
+  my ($classOrObj, $fileName) = @_;
+  open my $fh, '<:utf8', $fileName
+    or Carp::croak "Can't open $fileName: $!";
+  my $all = do {local $/; <$fh>};
+  chomp($all);
+  $all;
+}
+
+# .txt => array of lines
+sub cli_read_file__txt {
+  my ($classOrObj, $fileName) = @_;
+  my $all = $classOrObj->cli_read_file__($fileName);
+  my @list = split "\n", $all;
+  wantarray ? @list : \@list;
+}
+
+# .yml
+sub cli_read_file__yml {
+  my ($classOrObj, $fileName) = @_;
+  require YAML::Syck;
+  YAML::Syck::LoadFile($fileName);
+}
+
+# .json
+sub cli_read_file__json {
+  my ($classOrObj, $fileName) = @_;
+  open my $fh, '<', $fileName
+    or Carp::croak "Can't open $fileName: $!";
+  JSON::decode_json(do {local $/; <$fh>});
+}
+
 1;
