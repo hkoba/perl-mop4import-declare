@@ -33,18 +33,12 @@ sub safe_globref {
 sub fields_hash {
   my $sym = fields_symbol(@_);
   # XXX: return \%{*$sym}; # If we use this, we get "used only once" warning.
-  unless (*{$sym}{HASH}) {
-    *$sym = {};
-  }
-  *{$sym}{HASH};
+  ensure_symbol_has_hash($sym);
 }
 
 sub fields_array {
   my $sym = fields_symbol(@_);
-  unless (*{$sym}{ARRAY}) {
-    *$sym = [];
-  }
-  *{$sym}{ARRAY};
+  ensure_symbol_has_array($sym);
 }
 
 sub fields_symbol {
@@ -53,10 +47,23 @@ sub fields_symbol {
 
 sub isa_array {
   my $sym = globref($_[0], 'ISA');
+  ensure_symbol_has_array($sym);
+}
+
+sub ensure_symbol_has_array {
+  my ($sym) = @_;
   unless (*{$sym}{ARRAY}) {
     *$sym = [];
   }
   *{$sym}{ARRAY};
+}
+
+sub ensure_symbol_has_hash {
+  my ($sym) = @_;
+  unless (*{$sym}{HASH}) {
+    *$sym = {};
+  }
+  *{$sym}{HASH};
 }
 
 # sub define_const {
