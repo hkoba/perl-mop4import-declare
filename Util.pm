@@ -89,7 +89,8 @@ sub shallow_copy {
     +{%{$_[0]}};
   } elsif (ref $_[0] eq 'ARRAY') {
     +[@{$_[0]}];
-  } elsif (not ref $_[0]) {
+  } elsif (ref $_[0] eq 'Regexp'
+             or not ref $_[0]) {
     my $copy = $_[0];
   } elsif ($_[1]) {
     # Pass thru unknown refs if 2nd arg is true.
