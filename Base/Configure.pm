@@ -19,10 +19,12 @@ sub new {
   $self->configure(@_);
   $self->after_new;
   $self->configure_default;
+  $self->after_after_new;
   $self;
 }
 
 sub after_new {}
+sub after_after_new {}
 
 sub configure_default {
   (my MY $self, my $target) = @_;
