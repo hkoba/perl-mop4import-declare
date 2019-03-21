@@ -83,7 +83,19 @@ sub cli_invoke_sub {
   }
 }
 
-#----------------------------------------
+#========================================
+
+sub cli_array {
+  (my MY $self, my @args) = @_;
+  wantarray ? @args : \@args;
+}
+
+sub cli_object {
+  (my MY $self, my %args) = @_;
+  \%args;
+}
+
+#========================================
 
 sub cli_encode_json {
   (my MY $self, my $obj) = @_;
