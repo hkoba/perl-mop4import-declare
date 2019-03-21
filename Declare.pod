@@ -104,7 +104,7 @@ C<declare_PRAGMA()> pragma handlers for each pragma, based on argument types
 
 C<-Identifier>, word starting with C<->, is dispatched as:
 
-  $myPack->declare_PRAGMA($opts);
+  YourExporter->declare_PRAGMA($opts);
 
 Note: You don't need to quote this pragma because perl has special support
 for this kind of syntax (bareword lead by C<->).
@@ -115,7 +115,7 @@ for this kind of syntax (bareword lead by C<->).
 
 ARRAY ref is dispatched as:
 
-  $myPack->declare_PRAGMA($opts, @ARGS);
+  YourExporter->declare_PRAGMA($opts, @ARGS);
 
 =item NAME, *NAME, $NAME, %NAME, @NAME, &NAME
 
@@ -181,7 +181,7 @@ X<fatal> X<declare_fatal>
 
 This pragma turns on C<use warnings qw(FATAL all NONFATAL misc);>.
 
-=head2 C<< [base => CLASS...] >>
+=head2 [base => CLASS...]
 X<base> X<declare_base>
 
 Establish an ISA relationship with base classes at compile time.
@@ -190,14 +190,14 @@ Like L<base>, this imports C<%FIELDS> from base classes too.
 Note: when target module uses L<c3 mro|mro/"The C3 MRO">,
 this pragma adds given classes in front of C<@ISA>.
 
-=head2 C<< [parent => CLASS...] >>
+=head2 [parent => CLASS...]
 X<parent> X<declare_parent>
 
 Establish an ISA relationship with base classes at compile time.
 In addition to L</base>,
 this loads requested classes at compile time, like L<parent>.
 
-=head2 -as_base,  C<< [as_base => FIELD_SPECs...] >>
+=head2 -as_base, [as_base => FIELD_SPECs...]
 X<as_base> X<declare_as_base>
 
 This pragma sets YourExporter as base class of target module.
@@ -206,7 +206,7 @@ Optional arguments are passed to L<fields pragma/fields>.
 Note: as noted in L</base>, this pragma cares mro of target module.
 You can simply inherit classes with "generic" to "specific" order.
 
-=head2 C<< [fields => SPEC...] >>
+=head2 [fields => SPEC...]
 X<fields> X<declare_fields>
 
 This pragma adds C<%FIELDS> definitions to target module, based on
@@ -261,7 +261,7 @@ but are not restricted to it.
 Anyway MOP4Import::Declare itself will be kept constructor agnostic.
 
 
-=head2 C<< [constant => NAME => VALUE] >>
+=head2 [constant => NAME => VALUE, @OPTIONS]
 X<constant> X<declare_constant>
 
   use YourExporter [constant => FOO => 'BAR', or_ignore => 1];
@@ -271,6 +271,7 @@ This pragma adds constant sub C<NAME> to target module.
 =over 4
 
 =item C<< or_ignore => BOOL >>
+X<declare_constant__or_ignore>
 
 If this option is given and given NAME already defined in target module,
 skip adding.
@@ -283,7 +284,7 @@ X<inc> X<declare_inc>
 This pragma adds target module to C<%INC>
 so that make the module C<require> safe.
 
-=head2 C<< [map_methods => [FROM => TO]...] >>
+=head2 [map_methods => [FROM => TO]...]
 X<map_methods> X<declare_map_methods>
 
 This pragma looks up actual sub of C<TO> and set it to target module
