@@ -98,49 +98,64 @@ sub cli_encode_json {
 }
 
 sub cli_output {
-  (my MY $self, my ($list, $outFH)) = @_;
+  (my MY $self, my ($list)) = @_;
 
-  my $output = $self->can("cli_output_as_".$self->{'output'})
+  $self->cli_write_fh(\*STDOUT, $list);
+}
+
+sub cli_write_fh {
+  (my MY $self, my ($outFH, @args)) = @_;
+  my $output = $self->can("cli_write_fh_as_".$self->{'output'})
     or Carp::croak("Unknown output format: $self->{'output'}");
 
-  $output->($self, $list, $outFH);
+  $output->($self, $outFH, @args);
 }
 
-sub cli_output_as_json {
-  (my MY $self, my ($list, $outFH)) = @_;
-  $outFH //= \*STDOUT;
-  print $outFH $self->cli_encode_json($list), "\n";
-}
-
-sub cli_output_as_tsv {
-  (my MY $self, my ($list, $outFH)) = @_;
-  $outFH //= \*STDOUT;
-  foreach my $item (lexpand($list)) {
-    print $outFH join("\t", map {
-      if (not defined $_) {
-        $self->{'undef-as'}
-      } elsif (ref $_) {
-        $self->cli_encode_json($_)
-      } else {
-        $_
-      }
-    } lexpand($item)), "\n";
+sub cli_write_fh_as_json {
+  (my MY $self, my ($outFH, @args)) = @_;
+  foreach my $list (@args) {
+    print $outFH $self->cli_encode_json($list), "\n";
   }
 }
 
-sub cli_output_as_dump {
-  (my MY $self, my ($list, $outFH)) = @_;
-  $outFH //= \*STDOUT;
-  foreach my $item (lexpand($list)) {
-    print $outFH join("\t", map {
-      if (not defined $_) {
-        $self->{'undef-as'}
-      } elsif (ref $_) {
-        MOP4Import::Util::terse_dump($_)
-      } else {
-        $_
-      }
-    } lexpand($item)), "\n";
+sub cli_write_fh_as_tsv {
+  (my MY $self, my ($outFH, @args)) = @_;
+  foreach my $list (@args) {
+    foreach my $item (lexpand($list)) {
+      print $outFH join("\t", map {
+        if (not defined $_) {
+          $self->{'undef-as'}
+        } elsif (ref $_) {
+          $self->cli_encode_json($_)
+        } else {
+          $_
+        }
+      } lexpand($item)), "\n";
+    }
+  }
+}
+
+sub cli_write_fh_as_dump {
+  (my MY $self, my ($outFH, @args)) = @_;
+  foreach my $list (@args) {
+    foreach my $item (lexpand($list)) {
+      print $outFH join("\t", map {
+        if (not defined $_) {
+          $self->{'undef-as'}
+        } elsif (ref $_) {
+          MOP4Import::Util::terse_dump($_)
+        } else {
+          $_
+        }
+      } lexpand($item)), "\n";
+    }
+  }
+}
+
+sub cli_write_fh_as_raw {
+  (my MY $self, my ($outFH, @args)) = @_;
+  foreach my $list (@args) {
+    print $outFH $list;
   }
 }
 
