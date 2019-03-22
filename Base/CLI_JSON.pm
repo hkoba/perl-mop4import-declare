@@ -20,7 +20,7 @@ use MOP4Import::Base::CLI -as_base
      , '_cli_json'
    ];
 use MOP4Import::Opts;
-use MOP4Import::Util qw/lexpand/;
+use MOP4Import::Util qw/lexpand globref/;
 
 use JSON;
 use open ();
@@ -98,16 +98,26 @@ sub cli_object {
 
 #========================================
 
-sub cli_encode_json {
-  (my MY $self, my $obj) = @_;
-  my $codec = $self->{_cli_json} //= do {
-    my $js = JSON->new->canonical->allow_nonref;
-    $js->utf8 unless $self->{binary};
-    $js;
-  };
-  my $json = $codec->encode($obj);
-  Encode::_utf8_on($json) unless $self->{binary};
-  $json;
+sub declare_output_format {
+  (my $myPack, my Opts $opts, my ($formatName, $sub)) = m4i_args(@_);
+  my $writeFuncName = "cli_write_fh_as_$formatName";
+  my $outputFuncName = "cli_output_as_$formatName";
+  if (ref $sub eq 'CODE') {
+    *{globref($opts->{destpkg}, $writeFuncName)} = $sub;
+    *{globref($opts->{destpkg}, $outputFuncName)} = sub {
+      shift->$writeFuncName(\*STDOUT, $_[0]);
+    };
+  } elsif (not defined $sub) {
+    unless ($opts->{destpkg}->can($writeFuncName)) {
+      Carp::croak "output_format $formatName doesn't have method '$writeFuncName'";
+    }
+    *{globref($opts->{destpkg}, $outputFuncName)} = sub {
+      shift->$writeFuncName(\*STDOUT, $_[0]);
+    };
+  } else {
+    Carp::croak "Invalid argument for output_format: "
+      . MOP4Import::Util::terse_dump($sub);
+  }
 }
 
 sub cli_output {
@@ -124,6 +134,21 @@ sub cli_write_fh {
   $output->($self, $outFH, @args);
 }
 
+sub cli_encode_json {
+  (my MY $self, my $obj) = @_;
+  my $codec = $self->{_cli_json} //= do {
+    my $js = JSON->new->canonical->allow_nonref;
+    $js->utf8 unless $self->{binary};
+    $js;
+  };
+  my $json = $codec->encode($obj);
+  Encode::_utf8_on($json) unless $self->{binary};
+  $json;
+}
+
+#----------------------------------------
+
+MY->declare_output_format(MY, 'json');
 sub cli_write_fh_as_json {
   (my MY $self, my ($outFH, @args)) = @_;
   foreach my $list (@args) {
@@ -131,6 +156,7 @@ sub cli_write_fh_as_json {
   }
 }
 
+MY->declare_output_format(MY, 'tsv');
 sub cli_write_fh_as_tsv {
   (my MY $self, my ($outFH, @args)) = @_;
   foreach my $list (@args) {
@@ -148,6 +174,7 @@ sub cli_write_fh_as_tsv {
   }
 }
 
+MY->declare_output_format(MY, 'dump');
 sub cli_write_fh_as_dump {
   (my MY $self, my ($outFH, @args)) = @_;
   foreach my $list (@args) {
@@ -165,6 +192,7 @@ sub cli_write_fh_as_dump {
   }
 }
 
+MY->declare_output_format(MY, 'raw');
 sub cli_write_fh_as_raw {
   (my MY $self, my ($outFH, @args)) = @_;
   foreach my $list (@args) {
