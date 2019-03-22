@@ -1,3 +1,4 @@
+#!/usr/bin/env perl
 package MOP4Import::Base::CLI;
 use strict;
 use warnings qw(FATAL all NONFATAL misc);
@@ -220,5 +221,7 @@ sub cli_format_option {
   #   }
   # }
 }
+
+MY->run(\@ARGV) unless caller;
 
 1;

@@ -1,3 +1,4 @@
+#!/usr/bin/env perl
 package MOP4Import::Base::CLI_JSON;
 use MOP4Import::Base::CLI -as_base
   , [constant => parse_opts__preserve_hyphen => 1]
@@ -236,5 +237,7 @@ sub cli_read_file__json {
     or Carp::croak "Can't open $fileName: $!";
   JSON::decode_json(do {local $/; <$fh>});
 }
+
+MY->run(\@ARGV) unless caller;
 
 1;
