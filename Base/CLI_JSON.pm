@@ -96,6 +96,35 @@ sub cli_object {
   \%args;
 }
 
+sub cli_map_apply {
+  (my MY $self, my ($subOrArray, @args)) = @_;
+  map {
+    $self->cli_apply($subOrArray, $_);
+  } @args;
+}
+
+sub cli_grep_apply {
+  (my MY $self, my ($subOrArray, @args)) = @_;
+  grep {
+    $self->cli_apply($subOrArray, $_);
+  } @args;
+}
+
+# XXX: How about cli_reduce_apply?
+
+sub cli_apply {
+  (my MY $self, my ($subOrArray, @args)) = @_;
+  if (ref $subOrArray eq 'CODE') {
+    $subOrArray->(@args);
+  } elsif (ref $subOrArray eq 'ARRAY') {
+    my ($meth, @opts) = @$subOrArray;
+    $self->$meth(@opts, @args);
+  } else {
+    Carp::croak "Invalid argument for cli_apply: "
+      . MOP4Import::Util::terse_dump($subOrArray);
+  }
+}
+
 #========================================
 
 sub declare_output_format {
