@@ -113,15 +113,17 @@ sub cli_grep_apply {
 # XXX: How about cli_reduce_apply?
 
 sub cli_apply {
-  (my MY $self, my ($subOrArray, @args)) = @_;
-  if (ref $subOrArray eq 'CODE') {
-    $subOrArray->(@args);
-  } elsif (ref $subOrArray eq 'ARRAY') {
-    my ($meth, @opts) = @$subOrArray;
+  (my MY $self, my ($subOrArrayOrString, @args)) = @_;
+  if (not defined $subOrArrayOrString) {
+    Carp::croak "undefined sub for cli_apply";
+  } elsif (ref $subOrArrayOrString eq 'CODE') {
+    $subOrArrayOrString->(@args);
+  } elsif (not ref $subOrArrayOrString or ref $subOrArrayOrString eq 'ARRAY') {
+    my ($meth, @opts) = lexpand($subOrArrayOrString);
     $self->$meth(@opts, @args);
   } else {
     Carp::croak "Invalid argument for cli_apply: "
-      . MOP4Import::Util::terse_dump($subOrArray);
+      . MOP4Import::Util::terse_dump($subOrArrayOrString);
   }
 }
 
