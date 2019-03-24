@@ -36,6 +36,11 @@ sub fields_hash {
   ensure_symbol_has_hash($sym);
 }
 
+sub safe_fields_hash {
+  my $sym = safe_globref($_[0], 'FIELDS');
+  ensure_symbol_has_hash($sym);
+}
+
 sub fields_array {
   my $sym = fields_symbol(@_);
   ensure_symbol_has_array($sym);
@@ -45,11 +50,18 @@ sub fields_symbol {
   globref(ref $_[0] || $_[0], 'FIELDS');
 }
 
+#
+# Just lock_keys with fields_hash
+#
 sub lock_keys_as {
   my ($myPack, $typeName, $hash) = @_;
   require Hash::Util;
   $hash //= +{};
-  my $fields = fields_hash($typeName);
+  if (ref $typeName) {
+    Carp::croak "Typename must be a package name: "
+      . terse_dump($typeName);
+  }
+  my $fields = safe_fields_hash($typeName);
   if (not Hash::Util::hashref_locked($hash)) {
     Hash::Util::lock_ref_keys($hash, keys %$fields);
   } else {
@@ -159,6 +171,15 @@ sub take_hash_opts_maybe {
 
     $pack->parse_opts($list, $result, $alias);
   }
+}
+
+sub take_locked_opts_of {
+  my ($myPack, $typeName, $list, $alias, $sink) = @_;
+  $myPack->lock_keys_as($typeName, scalar $myPack->take_hash_opts_maybe(
+    $list,
+    $sink,
+    $alias,
+  ));
 }
 
 #

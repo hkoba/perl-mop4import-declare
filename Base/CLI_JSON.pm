@@ -20,7 +20,7 @@ use MOP4Import::Base::CLI -as_base
      , '_cli_json'
    ];
 use MOP4Import::Opts;
-use MOP4Import::Util qw/lexpand globref lock_keys_as/;
+use MOP4Import::Util qw/lexpand globref take_locked_opts_of lock_keys_as/;
 
 use JSON;
 use open ();
@@ -132,22 +132,18 @@ use MOP4Import::Types
 
 sub cli_xargs_json {
   (my MY $self, my (@args)) = @_;
-  my cliopts__xargs $opts = $self->lock_keys_as(cliopts__xargs, scalar $self->take_hash_opts_maybe(
-    \@args,
-    undef,
-    {0 => 'null'},
-  ));
+  my cliopts__xargs $opts = $self->take_locked_opts_of(
+    cliopts__xargs, \@args, {0 => 'null'},
+  );
   $opts->{json} //= 1;
   $self->cli_xargs($opts, @args);
 }
 
 sub cli_xargs {
   (my MY $self, my (@args)) = @_;
-  my cliopts__xargs $opts = $self->lock_keys_as(cliopts__xargs, scalar $self->take_hash_opts_maybe(
-    \@args,
-    undef,
-    {0 => 'null'},
-  ));
+  my cliopts__xargs $opts = $self->take_locked_opts_of(
+    cliopts__xargs, \@args, {0 => 'null'},
+  );
   my ($subOrArray, @restPrefix) = @args;
   $self->{flatten} //= 1; # xargs should flatten outputs by default.
   local $/ = $opts->{null} ? "\0" : "\n";
