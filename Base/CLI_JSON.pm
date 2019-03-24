@@ -128,14 +128,14 @@ sub cli_apply {
 }
 
 use MOP4Import::Types
-  cliopts__xargs => [[fields => qw/null slurp json/]];
+  cliopts__xargs => [[fields => qw/null slurp json decode/]];
 
 sub cli_xargs_json {
   (my MY $self, my (@args)) = @_;
   my cliopts__xargs $opts = $self->take_locked_opts_of(
-    cliopts__xargs, \@args, {0 => 'null'},
+    cliopts__xargs, \@args, {0 => 'null', input => 'decode'},
   );
-  $opts->{json} //= 1;
+  $opts->{decode} //= (($opts->{json} //=1) ? 'json' : '');
   $self->cli_xargs($opts, @args);
 }
 
@@ -148,16 +148,12 @@ sub cli_xargs {
   $self->{flatten} //= 1; # xargs should flatten outputs by default.
   local $/ = $opts->{null} ? "\0" : "\n";
   local @ARGV;
-  my $decoder = JSON->new->utf8->allow_nonref;
+  my $decoder = defined $opts->{decode}
+    ? $self->cli_decoder_from($opts->{decode}) : undef;
   if ($opts->{slurp}) {
     $self->cli_apply($subOrArray, @restPrefix, [
       map {
-        if ($opts->{json}) {
-          Encode::_utf8_off($_);
-          $decoder->decode($_);
-        } else {
-          $_;
-        }
+        $decoder ? $decoder->($_) : $_
       } <<>>
     ]);
   } else {
@@ -166,16 +162,43 @@ sub cli_xargs {
     while (<<>>) {
       chomp;
       # XXX: yield...
-      push @result, $self->cli_apply($subOrArray, @restPrefix, do {
-        if ($opts->{json}) {
-          Encode::_utf8_off($_);
-          $decoder->decode($_);
-        } else {
-          $_;
-        }
-      })
+      push @result, $self->cli_apply(
+        $subOrArray, @restPrefix,
+        ($decoder ? $decoder->($_) : $_)
+      )
     }
     @result;
+  }
+}
+
+sub cli_decoder_from {
+  (my MY $self, my ($formatSpec, @rest)) = @_;
+  my ($format, @opts) = lexpand($formatSpec);
+  my $sub = $self->can("cli_decoder_from__$format")
+    or Carp::croak "Unknown decorder is requested: $format";
+  $sub->($self, @opts, @rest);
+}
+
+#
+# pass-through decoder.
+#
+sub cli_decoder_from__ {
+  sub {$_[0]}
+}
+
+#
+# json decoder
+#
+sub cli_decoder_from__json {
+  (my MY $self, my @opts) = @_;
+  my $decoder = JSON->new->utf8->allow_nonref;
+  while (my ($k, $v) = splice @opts, 0, 2) {
+    $decoder->$k($v);
+  }
+  sub {
+    my ($str) = @_;
+    Encode::_utf8_off($str);
+    $decoder->decode($str);
   }
 }
 
