@@ -148,15 +148,13 @@ sub cli_xargs {
   $self->{flatten} //= 1; # xargs should flatten outputs by default.
   local $/ = $opts->{null} ? "\0" : "\n";
   local @ARGV;
-  my $decoder = defined $opts->{decode}
-    ? $self->cli_decoder_from($opts->{decode}) : undef;
   if ($opts->{slurp}) {
     $self->cli_apply($subOrArray, @restPrefix, [
-      map {
-        $decoder ? $decoder->($_) : $_
-      } <<>>
+      $self->cli_slurp_xargs($opts)
     ]);
   } else {
+    my $decoder = defined $opts->{decode}
+      ? $self->cli_decoder_from($opts->{decode}) : undef;
     local $_;
     my @result;
     while (<<>>) {
@@ -169,6 +167,30 @@ sub cli_xargs {
     }
     @result;
   }
+}
+
+sub cli_slurp_xargs_json {
+  (my MY $self, my (@args)) = @_;
+  my cliopts__xargs $opts = $self->take_locked_opts_of(
+    cliopts__xargs, \@args, {0 => 'null'},
+  );
+  $opts->{decode} //= (($opts->{json} //=1) ? 'json' : '');
+  $self->cli_slurp_xargs($opts, @args);
+}
+
+sub cli_slurp_xargs {
+  (my MY $self, my (@args)) = @_;
+  my cliopts__xargs $opts = $self->take_locked_opts_of(
+    cliopts__xargs, \@args, {0 => 'null'},
+  );
+
+  local @ARGV = @args;
+  my $decoder = defined $opts->{decode}
+    ? $self->cli_decoder_from($opts->{decode}) : undef;
+
+  map {
+    $decoder ? $decoder->($_) : $_
+  } <<>>
 }
 
 sub cli_decoder_from {
