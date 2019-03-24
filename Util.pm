@@ -45,6 +45,24 @@ sub fields_symbol {
   globref(ref $_[0] || $_[0], 'FIELDS');
 }
 
+sub lock_keys_as {
+  my ($myPack, $typeName, $hash) = @_;
+  require Hash::Util;
+  $hash //= +{};
+  my $fields = fields_hash($typeName);
+  if (not Hash::Util::hashref_locked($hash)) {
+    Hash::Util::lock_ref_keys($hash, keys %$fields);
+  } else {
+    if (my @unk = grep {not exists $fields->{$_}}
+        Hash::Util::legal_ref_keys($hash)) {
+      Carp::croak "HASH contains illegal keys wrt type $typeName: "
+        . join(" ", sort @unk);
+    }
+    # OK;
+  }
+  $hash;
+}
+
 sub isa_array {
   my $sym = globref($_[0], 'ISA');
   ensure_symbol_has_array($sym);
@@ -130,7 +148,7 @@ sub terse_dump {
 # This may be useful to parse/take subcommand option/hash.
 #
 sub take_hash_opts_maybe {
-  my ($pack, $list, $result) = @_;
+  my ($pack, $list, $result, $alias) = @_;
 
   if (@$list and ref $list->[0] eq 'HASH') {
     # If first element of $list is HASH, take it.
@@ -139,7 +157,7 @@ sub take_hash_opts_maybe {
   } else {
     # Otherwise, take --posix_style=options.
 
-    $pack->parse_opts($list, $result);
+    $pack->parse_opts($list, $result, $alias);
   }
 }
 

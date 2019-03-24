@@ -20,7 +20,7 @@ use MOP4Import::Base::CLI -as_base
      , '_cli_json'
    ];
 use MOP4Import::Opts;
-use MOP4Import::Util qw/lexpand globref/;
+use MOP4Import::Util qw/lexpand globref lock_keys_as/;
 
 use JSON;
 use open ();
@@ -124,6 +124,62 @@ sub cli_apply {
   } else {
     Carp::croak "Invalid argument for cli_apply: "
       . MOP4Import::Util::terse_dump($subOrArrayOrString);
+  }
+}
+
+use MOP4Import::Types
+  cliopts__xargs => [[fields => qw/null slurp json/]];
+
+sub cli_xargs_json {
+  (my MY $self, my (@args)) = @_;
+  my cliopts__xargs $opts = $self->lock_keys_as(cliopts__xargs, scalar $self->take_hash_opts_maybe(
+    \@args,
+    undef,
+    {0 => 'null'},
+  ));
+  $opts->{json} //= 1;
+  $self->cli_xargs($opts, @args);
+}
+
+sub cli_xargs {
+  (my MY $self, my (@args)) = @_;
+  my cliopts__xargs $opts = $self->lock_keys_as(cliopts__xargs, scalar $self->take_hash_opts_maybe(
+    \@args,
+    undef,
+    {0 => 'null'},
+  ));
+  my ($subOrArray, @restPrefix) = @args;
+  $self->{flatten} //= 1; # xargs should flatten outputs by default.
+  local $/ = $opts->{null} ? "\0" : "\n";
+  local @ARGV;
+  my $decoder = JSON->new->utf8->allow_nonref;
+  if ($opts->{slurp}) {
+    $self->cli_apply($subOrArray, @restPrefix, [
+      map {
+        if ($opts->{json}) {
+          Encode::_utf8_off($_);
+          $decoder->decode($_);
+        } else {
+          $_;
+        }
+      } <<>>
+    ]);
+  } else {
+    local $_;
+    my @result;
+    while (<<>>) {
+      chomp;
+      # XXX: yield...
+      push @result, $self->cli_apply($subOrArray, @restPrefix, do {
+        if ($opts->{json}) {
+          Encode::_utf8_off($_);
+          $decoder->decode($_);
+        } else {
+          $_;
+        }
+      })
+    }
+    @result;
   }
 }
 
