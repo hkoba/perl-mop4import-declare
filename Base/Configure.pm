@@ -17,14 +17,16 @@ our %FIELDS;
 sub new {
   my MY $self = fields::new(shift);
   $self->configure(@_);
+  $self->before_configure_default;
   $self->after_new;
   $self->configure_default;
-  $self->after_after_new;
+  $self->after_configure_default;
   $self;
 }
 
-sub after_new {}
-sub after_after_new {}
+sub before_configure_default {}
+sub after_new {}; # Should be deprecated near future.
+sub after_configure_default {}
 
 sub configure_default {
   (my MY $self, my $target) = @_;
