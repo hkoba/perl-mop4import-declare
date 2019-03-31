@@ -139,7 +139,7 @@ sub cli_xargs_json {
   $self->cli_xargs($opts, @args);
 }
 
-sub cli_xargs {
+sub _cli_xargs {
   (my MY $self, my (@args)) = @_;
   my cliopts__xargs $opts = $self->take_locked_opts_of(
     cliopts__xargs, \@args, {0 => 'null'},
@@ -157,7 +157,8 @@ sub cli_xargs {
       ? $self->cli_decoder_from($opts->{decode}) : undef;
     local $_;
     my @result;
-    while (<<>>) {
+    # XXX: <<>> requires 5.22, hmm...
+    while (<>) {
       chomp;
       # XXX: yield...
       push @result, $self->cli_apply(
