@@ -191,7 +191,8 @@ sub cli_slurp_xargs {
 
   map {
     $decoder ? $decoder->($_) : $_
-  } <<>>
+  } <>
+  # XXX: <<>> requires 5.22, hmm...
 }
 
 sub cli_decoder_from {
