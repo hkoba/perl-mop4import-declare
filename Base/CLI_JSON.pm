@@ -120,15 +120,35 @@ sub cli_apply {
     $subOrArrayOrString->(@args);
   } elsif (not ref $subOrArrayOrString or ref $subOrArrayOrString eq 'ARRAY') {
     my ($meth, @opts) = lexpand($subOrArrayOrString);
-    $self->$meth(@opts, @args);
+    if (my $sub = $self->can("cmd_$meth")) {
+      $sub->($self, @opts, @args);
+    } else {
+      $self->$meth(@opts, @args);
+    }
   } else {
     Carp::croak "Invalid argument for cli_apply: "
       . MOP4Import::Util::terse_dump($subOrArrayOrString);
   }
 }
 
+sub cli_precheck_apply {
+  (my MY $self, my ($subOrArrayOrString)) = @_;
+  if (not defined $subOrArrayOrString) {
+    Carp::croak "undefined sub for cli_apply";
+  } elsif (ref $subOrArrayOrString eq 'CODE') {
+    1;
+  } else {
+    if (not ref $subOrArrayOrString or ref $subOrArrayOrString eq 'ARRAY') {
+      my ($meth, @opts) = lexpand($subOrArrayOrString);
+      return if $self->can("cmd_$meth") || $self->can($meth);
+    }
+    Carp::croak "Invalid argument for cli_apply: "
+      . MOP4Import::Util::terse_dump($subOrArrayOrString);
+  }
+}
+
 use MOP4Import::Types
-  cliopts__xargs => [[fields => qw/null slurp json decode/]];
+  cliopts__xargs => [[fields => qw/null slurp single json decode/]];
 
 sub cli_xargs_json {
   (my MY $self, my (@args)) = @_;
@@ -136,7 +156,7 @@ sub cli_xargs_json {
     cliopts__xargs, \@args, {0 => 'null', input => 'decode'},
   );
   $opts->{decode} //= (($opts->{json} //=1) ? 'json' : '');
-  $self->cli_xargs($opts, @args);
+  $self->_cli_xargs($opts, @args);
 }
 
 sub _cli_xargs {
@@ -145,28 +165,44 @@ sub _cli_xargs {
     cliopts__xargs, \@args, {0 => 'null'},
   );
   my ($subOrArray, @restPrefix) = @args;
+  $self->cli_precheck_apply($subOrArray);
+
   $self->{flatten} //= 1; # xargs should flatten outputs by default.
   local $/ = $opts->{null} ? "\0" : "\n";
-  local @ARGV;
+  local *ARGV;
   if ($opts->{slurp}) {
-    $self->cli_apply($subOrArray, @restPrefix, [
-      $self->cli_slurp_xargs($opts)
-    ]);
+    my @all = $self->cli_slurp_xargs($opts);
+    $self->cli_apply(
+      $subOrArray, @restPrefix,
+      ($opts->{single} ? \@all : @all)
+    );
   } else {
     my $decoder = defined $opts->{decode}
       ? $self->cli_decoder_from($opts->{decode}) : undef;
     local $_;
-    my @result;
-    # XXX: <<>> requires 5.22, hmm...
-    while (<>) {
-      chomp;
-      # XXX: yield...
-      push @result, $self->cli_apply(
-        $subOrArray, @restPrefix,
-        ($decoder ? $decoder->($_) : $_)
-      )
+    if (not ref $subOrArray and $self->can("cmd_$subOrArray")) {
+      while (<>) {
+        chomp;
+        $self->cli_apply(
+          $subOrArray, @restPrefix,
+          ($decoder ? $decoder->($_) : $_)
+        )
+      }
+      $self->{'no-exit-code'} = 1;
+      ();
+    } else {
+      my @result;
+      # XXX: <<>> requires 5.22, hmm...
+      while (<>) {
+        chomp;
+        # XXX: yield...
+        push @result, $self->cli_apply(
+          $subOrArray, @restPrefix,
+          ($decoder ? $decoder->($_) : $_)
+        )
+      }
+      @result;
     }
-    @result;
   }
 }
 
