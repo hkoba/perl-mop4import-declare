@@ -272,6 +272,14 @@ sub function_names {
   @result;
 }
 
+#========================================
+
+sub has_method_attr {
+  grep {$_ eq 'method'} attributes::get($_[0])
+}
+
+#========================================
+
 sub m4i_log_start {
   my $m4i_meta = caller;
   my $m4i_dest = caller(1);

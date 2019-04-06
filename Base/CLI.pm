@@ -198,6 +198,7 @@ sub cli_info_methods {
 
   my $groupByClass = delete $opts{group};
   my $detail = delete $opts{detail};
+  my $all = delete $opts{all};
 
   unless (keys %opts == 0) {
     Carp::croak "Unknown options: ".join(", ", sort keys %opts);
@@ -227,7 +228,9 @@ sub cli_info_methods {
     my @names = grep {not /\W/ and $_ =~ $re} keys %$symtab;
     my @found = grep {
       my $entry = $symtab->{$_};
-      ref \$entry eq 'GLOB' and *{$entry}{CODE};
+      if (ref \$entry eq 'GLOB' and my $code = *{$entry}{CODE}) {
+        $all || MOP4Import::Util::has_method_attr($code);
+      }
     } @names;
     if (not @found) {
       ()
