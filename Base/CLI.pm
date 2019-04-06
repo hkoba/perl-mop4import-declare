@@ -13,6 +13,8 @@ use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
 use MOP4Import::Base::Configure -as_base, qw/FieldSpec/;
 
+use MOP4Import::NamedCodeAttributes -as_base;
+
 use MOP4Import::Util qw/terse_dump fields_hash fields_array
 			take_hash_opts_maybe/;
 use MOP4Import::Util::FindMethods;
@@ -146,7 +148,7 @@ sub cli_list_commands {
 
 sub cli_format_command {
   my ($self, $name) = @_;
-  "  ".join("        ", $name, $self->cli_info_command_doc($name))."\n";
+  "  ".join("        ", $name, $self->cli_info_command_doc($name) // '')."\n";
 }
 
 sub cli_group_options {
@@ -179,47 +181,16 @@ sub cli_format_option {
   sprintf "  --%-${len}s  %s\n", $fs->{name}, $fs->{doc} // "";
 }
 
-# Poorman's code attribute handler, only for Doc().
-{
-  my %cmd_doc;
+sub cli_info_command_doc {
+  my ($self, $name) = @_;
+  $self->cli_info_method_doc("cmd_$name");
+}
 
-  sub MODIFY_CODE_ATTRIBUTES {
-    my ($pack, $sub, @attrs) = @_;
-    print "Got attrs: @attrs\n" if DEBUG;
-    map {
-      my $cp = $_;
-      if ($cp =~ s/^Doc\(//i) {
-        $cp =~ s/\)$//;
-        $cp =~ s/^\"(.*?)\"$/$1/s;
-        $cp =~ s/^\'(.*?)\'$/$1/s;
-        $cmd_doc{$sub} = $cp;
-        ();
-      } else {
-        $_;
-      }
-    } @attrs;
-  }
-
-  sub cli_info_command_doc {
-    my ($self, $name) = @_;
-    my $sub = $self->can("cmd_$name")
-      or Carp::croak "No such command: $name";
-    my $doc = $cmd_doc{$sub};
-    return unless defined $doc;
-    $doc;
-  }
-
-  #
-  # Since I'm not sure what can be returned from FETCH_CODE_ATTRIBUTES,
-  # I don't provide it at least for now.
-  #
-  # sub FETCH_CODE_ATTRIBUTES {
-  #   my ($pack, $sub) = @_;
-  #   my @attr;
-  #   if (my $doc = $cmd_doc{$sub}) {
-  #     (Doc => $doc);
-  #   }
-  # }
+sub cli_info_method_doc {
+  my ($self, $name) = @_;
+  my $sub = $self->can($name)
+    or Carp::croak "No such method: $name";
+  scalar $self->cli_CODE_ATTR_get(Doc => $sub);
 }
 
 sub cli_info_methods {
