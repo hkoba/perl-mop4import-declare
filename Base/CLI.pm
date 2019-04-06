@@ -204,17 +204,19 @@ sub cli_info_methods {
   }
 
   my $re = do {
-    if (defined $methodPattern and $methodPattern ne '') {
-      if ($methodPattern =~ m{^/(.*)/\z}) {
-        qr{$1}
-      } elsif ($methodPattern =~ /\*/) {
-        require Text::Glob;
-        Text::Glob::glob_to_regex($methodPattern);
-      } else {
-        qr{^$methodPattern};
-      }
-    } else {
+    if (not defined $methodPattern or $methodPattern eq '') {
       qr{^[a-z]\w+\z}
+    }
+    elsif (ref $methodPattern eq 'Regexp') {
+      $methodPattern
+    }
+    elsif ($methodPattern =~ m{^/(.*)/\z}) {
+      qr{$1}
+    } elsif ($methodPattern =~ /\*/) {
+      require Text::Glob;
+      Text::Glob::glob_to_regex($methodPattern);
+    } else {
+      qr{^$methodPattern};
     }
   };
 
