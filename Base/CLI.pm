@@ -23,7 +23,7 @@ use List::Util ();
 
 #========================================
 
-sub run {
+sub run :method {
   my ($class, $arglist, $opt_alias) = @_;
 
   my MY $self = $class->new($class->parse_opts($arglist, undef, $opt_alias));
@@ -61,13 +61,13 @@ sub run {
 #
 # Each class can override parse_opts method.
 #
-sub parse_opts {
+sub parse_opts :method {
   my ($pack, $list, $result, $opt_alias) = @_;
 
   MOP4Import::Util::parse_opts($pack, $list, $result, $opt_alias);
 }
 
-sub cli_precmd {} # hook called just before cmd_zzz
+sub cli_precmd :method {} # hook called just before cmd_zzz
 
 sub cli_invoke {
   (my MY $self, my ($method, @args)) = @_;
@@ -89,12 +89,12 @@ sub cli_invoke {
   }
 }
 
-sub cli_output {
+sub cli_output :method {
   (my MY $self, my $res) = @_;
   print join("\n", map {terse_dump($_)} @$res), "\n";
 }
 
-sub cli_unknown_subcommand {
+sub cli_unknown_subcommand :method {
   (my MY $self, my ($cmd, $arglist)) = @_;
 
   $self->cmd_help("Error: No such subcommand '$cmd'\n");
@@ -102,13 +102,13 @@ sub cli_unknown_subcommand {
 
 #========================================
 
-sub onconfigure_help {
+sub onconfigure_help :method {
   (my MY $self, my $val) = @_;
   $self->cmd_help;
   exit;
 }
 
-sub cmd_help {
+sub cmd_help :method {
   my $self = shift;
   my $pack = ref $self || $self;
 
@@ -193,7 +193,7 @@ sub cli_info_method_doc {
   scalar $self->cli_CODE_ATTR_get(Doc => $sub);
 }
 
-sub cli_info_methods {
+sub cli_info_methods :method {
   (my MY $self, my ($methodPattern, %opts)) = @_;
 
   my $groupByClass = delete $opts{group};

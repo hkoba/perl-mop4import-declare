@@ -408,7 +408,7 @@ sub declare___field {
         croak "Accessor $opts->{objpkg}::$name is redefined!\nIf you really want to define the accessor by hand, please specify fields spec like: [$name => no_getter => 1, ...].";
       }
     }
-    *{globref($opts->{objpkg}, $name)} = sub { $_[0]->{$name} };
+    *{globref($opts->{objpkg}, $name)} = sub :method { $_[0]->{$name} };
   }
 
   foreach my $delayed (@delayed) {

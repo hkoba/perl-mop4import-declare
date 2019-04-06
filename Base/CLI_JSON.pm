@@ -86,24 +86,24 @@ sub cli_invoke_sub {
 
 #========================================
 
-sub cli_array {
+sub cli_array :method {
   (my MY $self, my @args) = @_;
   wantarray ? @args : \@args;
 }
 
-sub cli_object {
+sub cli_object :method {
   (my MY $self, my %args) = @_;
   \%args;
 }
 
-sub cli_map_apply {
+sub cli_map_apply :method {
   (my MY $self, my ($subOrArray, @args)) = @_;
   map {
     $self->cli_apply($subOrArray, $_);
   } @args;
 }
 
-sub cli_grep_apply {
+sub cli_grep_apply :method {
   (my MY $self, my ($subOrArray, @args)) = @_;
   grep {
     $self->cli_apply($subOrArray, $_);
@@ -112,7 +112,7 @@ sub cli_grep_apply {
 
 # XXX: How about cli_reduce_apply?
 
-sub cli_apply {
+sub cli_apply :method {
   (my MY $self, my ($subOrArrayOrString, @args)) = @_;
   if (not defined $subOrArrayOrString) {
     Carp::croak "undefined sub for cli_apply";
@@ -150,7 +150,7 @@ sub cli_precheck_apply {
 use MOP4Import::Types
   cliopts__xargs => [[fields => qw/null slurp single json decode/]];
 
-sub cli_xargs_json {
+sub cli_xargs_json :method {
   (my MY $self, my (@args)) = @_;
   my cliopts__xargs $opts = $self->take_locked_opts_of(
     cliopts__xargs, \@args, {0 => 'null', input => 'decode'},
@@ -286,7 +286,7 @@ sub declare_output_format {
   }
 }
 
-sub cli_output {
+sub cli_output :method {
   (my MY $self, my ($list)) = @_;
 
   $self->cli_write_fh(\*STDOUT, $list);
@@ -368,7 +368,7 @@ sub cli_write_fh_as_raw {
 
 #========================================
 
-sub cli_create_from_file {
+sub cli_create_from_file :method {
   my ($class, $configFn, @moreOpts) = @_;
   my $realConfigFn = File::Spec->rel2abs($configFn);
   my $oldcwd = $ENV{PWD} || do {require Cwd; Cwd::getcwd()};
@@ -379,7 +379,7 @@ sub cli_create_from_file {
   # Read $configFn with scalar context.
   my $opts = $class->cli_read_file($realConfigFn);
 
-  my $object = $class->new(
+  my $object = (ref $class || $class)->new(
     ref $opts eq 'HASH' ? %$opts : @$opts,
     @moreOpts
   );
@@ -388,7 +388,7 @@ sub cli_create_from_file {
   $object;
 }
 
-sub cli_read_file {
+sub cli_read_file :method {
   my ($classOrObj, $fileName) = @_;
   my ($ftype) = $fileName =~ m{\.(\w+)$};
   $ftype //= "";

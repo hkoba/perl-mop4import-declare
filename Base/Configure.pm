@@ -14,7 +14,7 @@ our %FIELDS;
 
 #---------
 
-sub new {
+sub new :method {
   my MY $self = fields::new(shift);
   $self->configure(@_);
   $self->before_configure_default;
@@ -24,11 +24,11 @@ sub new {
   $self;
 }
 
-sub before_configure_default {}
+sub before_configure_default :method {}
 sub after_new {}; # Should be deprecated near future.
-sub after_configure_default {}
+sub after_configure_default :method {}
 
-sub configure_default {
+sub configure_default :method {
   (my MY $self, my $target) = @_;
 
   $target //= $self;
@@ -44,7 +44,7 @@ sub configure_default {
   $target;
 }
 
-sub configure {
+sub configure :method {
   (my MY $self) = shift;
 
   my @args = do {
@@ -83,7 +83,7 @@ sub configure {
   $self;
 }
 
-sub cget {
+sub cget :method {
   my ($self, $key, $default) = @_;
   $key =~ s/^--//;
   my $fields = MOP4Import::Declare::fields_hash($self);
@@ -110,7 +110,7 @@ sub declare___field_with_weakref {
   }
 }
 
-sub cf_configs {
+sub cf_configs :method {
   (my MY $self, my (%opts)) = @_;
   my $all = delete $opts{all};
   if (keys %opts) {
@@ -131,7 +131,7 @@ sub cf_configs {
   @result;
 }
 
-sub cf_public_fields {
+sub cf_public_fields :method {
   my $obj_or_class = shift;
   my $fields = MOP4Import::Util::fields_hash($obj_or_class);
   sort grep {/^[a-z]/i} keys %$fields;
