@@ -222,6 +222,58 @@ sub cli_format_option {
   # }
 }
 
+sub cli_info_methods {
+  (my MY $self, my ($methodPattern, %opts)) = @_;
+
+  my $groupByClass = delete $opts{group};
+  my $detail = delete $opts{detail};
+
+  unless (keys %opts == 0) {
+    Carp::croak "Unknown options: ".join(", ", sort keys %opts);
+  }
+
+  my $re = do {
+    if (defined $methodPattern and $methodPattern ne '') {
+      if ($methodPattern =~ m{^/(.*)/\z}) {
+        qr{$1}
+      } elsif ($methodPattern =~ /\*/) {
+        require Text::Glob;
+        Text::Glob::glob_to_regex($methodPattern);
+      } else {
+        qr{^$methodPattern};
+      }
+    } else {
+      qr{^[a-z]\w+\z}
+    }
+  };
+
+  my $isa = mro::get_linear_isa(ref $self);
+
+  my @all = map {
+    my $symtab = MOP4Import::Util::symtab($_);
+    my @names = grep {not /\W/ and $_ =~ $re} keys %$symtab;
+    my @found = grep {
+      my $entry = $symtab->{$_};
+      ref \$entry eq 'GLOB' and *{$entry}{CODE};
+    } @names;
+    if (not @found) {
+      ()
+    } elsif ($detail) {
+      +{class => $_, methods => [sort @found]}
+    } elsif ($groupByClass) {
+      [$_, sort @found]
+    } else {
+      @found;
+    }
+  } @$isa;
+
+  if (not $detail and not $groupByClass) {
+    sort @all
+  } else {
+    @all;
+  }
+}
+
 MY->run(\@ARGV) unless caller;
 
 1;
