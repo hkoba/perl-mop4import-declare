@@ -244,7 +244,8 @@ sub cli_info_methods {
   } @$isa;
 
   if (not $detail and not $groupByClass) {
-    sort @all
+    my %dup;
+    sort grep {not $dup{$_}++}@all
   } else {
     @all;
   }
