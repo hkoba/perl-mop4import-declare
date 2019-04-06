@@ -159,6 +159,16 @@ sub cli_xargs_json :method {
   $self->_cli_xargs($opts, @args);
 }
 
+BEGIN {
+  if ($] >= 5.022) {
+    require MOP4Import::Util::compat_double_diamond;
+    import MOP4Import::Util::compat_double_diamond;
+  } else {
+    require MOP4Import::Util::compat_double_diamond_5_20;
+    import MOP4Import::Util::compat_double_diamond_5_20;
+  }
+}
+
 sub _cli_xargs {
   (my MY $self, my (@args)) = @_;
   my cliopts__xargs $opts = $self->take_locked_opts_of(
@@ -170,7 +180,7 @@ sub _cli_xargs {
   $self->{flatten} //= 1; # xargs should flatten outputs by default.
   local $/ = $opts->{null} ? "\0" : "\n";
   local *ARGV;
-  if ($opts->{slurp}) {
+  if ($opts->{slurp} || $opts->{single}) {
     my @all = $self->cli_slurp_xargs($opts);
     $self->cli_apply(
       $subOrArray, @restPrefix,
@@ -181,7 +191,7 @@ sub _cli_xargs {
       ? $self->cli_decoder_from($opts->{decode}) : undef;
     local $_;
     if (not ref $subOrArray and $self->can("cmd_$subOrArray")) {
-      while (<>) {
+      while (defined($_ = $self->cli_compat_diamond)) {
         chomp;
         $self->cli_apply(
           $subOrArray, @restPrefix,
@@ -192,8 +202,7 @@ sub _cli_xargs {
       ();
     } else {
       my @result;
-      # XXX: <<>> requires 5.22, hmm...
-      while (<>) {
+      while (defined($_ = $self->cli_compat_diamond)) {
         chomp;
         # XXX: yield...
         push @result, $self->cli_apply(
@@ -227,8 +236,7 @@ sub cli_slurp_xargs {
 
   map {
     $decoder ? $decoder->($_) : $_
-  } <>
-  # XXX: <<>> requires 5.22, hmm...
+  } $self->cli_compat_diamond
 }
 
 sub cli_decoder_from {
