@@ -230,7 +230,10 @@ sub cli_info_methods {
     if (not @found) {
       ()
     } elsif ($detail) {
-      +{class => $_, methods => [sort @found]}
+      +{class => $_, methods => [map {
+        my $doc = $self->cli_info_method_doc($_);
+        [$_, $doc ? $doc : ()];
+      } sort @found]}
     } elsif ($groupByClass) {
       [$_, sort @found]
     } else {
