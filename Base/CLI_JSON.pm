@@ -437,7 +437,12 @@ sub cli_read_file__json {
   my ($classOrObj, $fileName) = @_;
   open my $fh, '<', $fileName
     or Carp::croak "Can't open $fileName: $!";
-  JSON::decode_json(do {local $/; <$fh>});
+  my $all = do {local $/; <$fh>};
+  if (eval {local $@; require JSON::WithComments}) {
+    JSON::WithComments->new->decode($all);
+  } else {
+    JSON::decode_json($all);
+  }
 }
 
 MY->run(\@ARGV) unless caller;

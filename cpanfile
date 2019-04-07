@@ -7,6 +7,7 @@ requires 'rlib'; # XXX:
 requires 'JSON';
 
 recommends 'Module::Runtime';
+recommends 'JSON::WithComments';
 
 on configure => sub {
   requires 'rlib';
@@ -23,4 +24,5 @@ on test => sub {
   requires 'Capture::Tiny';
   requires 'Test::Output';
   requires 'Test::Exit';
+  requires 'JSON::WithComments';
 };
