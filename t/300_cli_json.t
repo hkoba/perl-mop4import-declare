@@ -59,6 +59,13 @@ sub meth_list {
       $test->returns_in_scalar([cli_object => qw(a b 1 2)], +{a => 'b', 1 => '2'});
     };
 
+    subtest "exit code", sub {
+      my $test = CallTester->make_tester('MyApp1');
+
+      $test->exits([run => [qw/cli_array 1/]], 0);
+      $test->exits([run => [qw/cli_array/]], 1);
+    };
+
     my $CT = CallTester->make_tester('MyApp1');
 
     subtest "MyApp1->run([--foo,cmd])", sub {

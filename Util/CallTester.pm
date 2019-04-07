@@ -4,6 +4,7 @@ use warnings;
 
 use Test::More;
 use Capture::Tiny ();
+use Test::Exit;
 
 use MOP4Import::Base::Configure -as_base, [fields => qw/target_object/];
 use MOP4Import::Util qw/terse_dump shallow_copy/;
@@ -47,6 +48,32 @@ sub captures {
                       , $method
                       , join(", ", map(terse_dump($_), @savedArgs))
                       , terse_dump($expect)));
+}
+
+sub exits {
+  (my MY $self, my ($call, $expectSpec)) = @_;
+  my ($method, @args) = @$call;
+  my @savedArgs = map {shallow_copy($_)} @args;
+  my ($stdout, $stderr, @return);
+  my $exit = Test::Exit::exit_code {
+    ($stdout, $stderr, @return) = Capture::Tiny::capture {
+      $self->{target_object}->$method(@args);
+    };
+  };
+
+  if (ref $expectSpec) {
+    is([$exit, $stdout, $stderr, @return], $expectSpec
+       , sprintf("call:%s(%s) expect:%s"
+                 , $method
+                 , join(", ", map(terse_dump($_), @savedArgs))
+                 , terse_dump($expectSpec)));
+  } else {
+    is($exit, $expectSpec
+       , sprintf("call:%s(%s) expect:%s"
+                 , $method
+                 , join(", ", map(terse_dump($_), @savedArgs))
+                 , terse_dump($expectSpec)));
+  }
 }
 
 1;
