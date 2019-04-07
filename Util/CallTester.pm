@@ -6,7 +6,7 @@ use Test::More;
 use Capture::Tiny ();
 
 use MOP4Import::Base::Configure -as_base, [fields => qw/target_object/];
-use MOP4Import::Util qw/terse_dump/;
+use MOP4Import::Util qw/terse_dump shallow_copy/;
 
 sub make_tester {
   my ($pack, $app) = @_;
@@ -18,26 +18,35 @@ sub make_tester {
 sub returns_in_scalar {
   (my MY $self, my ($call, $expect)) = @_;
   my ($method, @args) = @$call;
+  my @savedArgs = map {shallow_copy($_)} @args;
   is_deeply(scalar($self->{target_object}->$method(@args)), $expect
-            , sprintf("scalar call:%s expect:%s", map {terse_dump($_)}
-                      [$method, @args], $expect));
+            , sprintf("scalar call:%s(%s) expect:%s"
+                      , $method
+                      , join(", ", map(terse_dump($_), @savedArgs))
+                      , terse_dump($expect)));
 }
 
 sub returns_in_list {
   (my MY $self, my ($call, $expect)) = @_;
   my ($method, @args) = @$call;
+  my @savedArgs = map {shallow_copy($_)} @args;
   is_deeply([$self->{target_object}->$method(@args)], $expect
-            , sprintf("list call:%s expect:%s", map {terse_dump($_)}
-                      [$method, @args], $expect));
+            , sprintf("list call:%s(%s) expect:%s"
+                      , $method
+                      , join(", ", map(terse_dump($_), @savedArgs))
+                      , terse_dump($expect)));
 }
 
 sub captures {
   (my MY $self, my ($call, $expect)) = @_;
   my ($method, @args) = @$call;
+  my @savedArgs = map {shallow_copy($_)} @args;
   is(Capture::Tiny::capture {
     $self->{target_object}->$method(@args);
-  }, $expect, sprintf("call:%s expect:%s", map {terse_dump($_)}
-                      [$method, @args], $expect));
+  }, $expect, sprintf("call:%s(%s) expect:%s"
+                      , $method
+                      , join(", ", map(terse_dump($_), @savedArgs))
+                      , terse_dump($expect)));
 }
 
 1;
