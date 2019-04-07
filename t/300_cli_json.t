@@ -15,7 +15,7 @@ use Scalar::Util qw/isweak/;
 
 use rlib qw!../..!;
 
-use MOP4Import::Util qw/terse_dump/;
+use MOP4Import::Util::CallTester [as => 'CallTester'];
 
 # use MOP4Import::t::t_lib qw/no_error expect_script_error/;
 
@@ -79,26 +79,11 @@ sub meth_list {
     };
 
 
-    sub app_returns_scalar {
-      my ($app, $req, $exp) = @_;
-      my ($method, @args) = @$req;
-      is_deeply(scalar($app->$method(@args)), $exp
-                , sprintf("API:%s EXPECT:%s", map {terse_dump($_)}
-                          [$method, @args], $exp));
-    }
-
-    sub app_returns_list {
-      my ($app, $req, $exp) = @_;
-      my ($method, @args) = @$req;
-      is_deeply([$app->$method(@args)], $exp
-                , sprintf("API:%s EXPECT:%s", map {terse_dump($_)}
-                          [$method, @args], $exp));
-    }
-
     subtest "cli_... APIs", sub {
-      my $app = MyApp1->new;
-      app_returns_list($app, [cli_array => qw(a b 1 2)], [qw(a b 1 3)]);
-      app_returns_scalar($app, [cli_object => qw(a b 1 2)], +{a => 'b', 1 => '2'});
+      my $test = CallTester->make_tester(MyApp1->new);
+
+      $test->returns_in_list([cli_array => qw(a b 1 2)], [qw(a b 1 2)]);
+      $test->returns_in_scalar([cli_object => qw(a b 1 2)], +{a => 'b', 1 => '2'});
     };
 
   };
