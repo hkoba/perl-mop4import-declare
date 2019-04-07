@@ -32,22 +32,32 @@ subtest "MOP4Import::Base::CLI_JSON", sub {
     subtest "should have no error", sub {
       no_error q{
 package MyApp1;
-use MOP4Import::Base::CLI_JSON -as_base, -inc, [fields => qw/foo/];
+use MOP4Import::Base::CLI_JSON -as_base, -inc, [fields => qw/foo/]
+, [output_format => ltsv => sub {
+  my ($self, $outFH, @args) = @_;
+    foreach my $dict ($self->cli_flatten_if_not_yet(@args)) {
+      print $outFH join("\t", map {
+        my $val = $dict->{$_};
+        _strip_tab($_).":"._strip_tab(defined $val && ref $val ? JSON::encode_json($val) : $val);
+      } sort keys %$dict), "\n";
+    }
+}
+]
+;
 
 sub cmd_cmd {
   (my MY $self, my @args) = @_;
   print join(" ", $self->{foo}, @args), "\n";
 }
 
-sub meth_scalar {
+sub contextual {
   (my MY $self, my @args) = @_;
-  [$self->{foo} => @args];
+  wantarray
+   ? (+{result => $self->{foo}}, +{result => \@args})
+   : [$self->{foo} => \@args]
 }
 
-sub meth_list {
-  (my MY $self, my @args) = @_;
-  ($self->{foo} => @args);
-}
+sub _strip_tab { my ($str) = @_; $str =~ s/\t//g; $str }
 
 1;
 }};
@@ -62,8 +72,11 @@ sub meth_list {
     subtest "exit code", sub {
       my $test = CallTester->make_tester('MyApp1');
 
-      $test->exits([run => [qw/cli_array 1/]], 0);
-      $test->exits([run => [qw/cli_array/]], 1);
+      $test->exits([run => [cli_array =>  1]], 0);
+      $test->exits([run => [cli_array => ()]], 1);
+
+      $test->exits([run => [qw/--scalar cli_string/,  1]], 0);
+      $test->exits([run => [qw/--scalar cli_string/, '']], 1);
     };
 
     my $CT = CallTester->make_tester('MyApp1');
@@ -72,31 +85,64 @@ sub meth_list {
       $CT->captures([run => ['--foo','cmd','baz']], "1 baz\n");
     };
 
-    subtest "MyApp1->run([--foo={x:3},meth_scalar,{y:8},undef,[a,b,c]])", sub {
-      my @args = ('--foo={"x":3}'
-                  , 'meth_scalar'
-                  , '{"y":8}', undef, '[1,"foo",2,3]');
+    subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
+      my @args = ('--no-exit-code', '--foo={"x":3}'
+                  , contextual => '{"y":8}', undef, '[1,"foo",2,3]');
       subtest "default (--output=json)", sub {
-        $CT->captures([run => ['--no-exit-code', @args]]
-                      , qq|[[{"x":3},{"y":8},null,[1,"foo",2,3]]]\n|);
-      };
 
-      subtest "--output=json --scalar", sub {
-        $CT->captures([run => ['--no-exit-code', '--scalar', @args]]
-                      , qq|[{"x":3},{"y":8},null,[1,"foo",2,3]]\n|);
+        $CT->captures([run => [@args]]
+                      , qq|[{"result":{"x":3}},{"result":[{"y":8},null,[1,"foo",2,3]]}]\n|);
+
+        subtest "--flatten", sub {
+          $CT->captures([run => ['--flatten', @args]]
+                        , qq|{"result":{"x":3}}\n{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
+        };
+
+        subtest "--scalar", sub {
+          $CT->captures([run => ['--scalar', @args]]
+                        , qq|[{"x":3},[{"y":8},null,[1,"foo",2,3]]]\n|);
+        };
+
+        subtest "--scalar --flatten", sub {
+          $CT->captures([run => ['--scalar', '--flatten', @args]]
+                        , qq|{"x":3}\n[{"y":8},null,[1,"foo",2,3]]\n|);
+        };
       };
 
       subtest "--output=dump", sub {
-        $CT->captures([run => ['--no-exit-code', '--output=dump', @args]]
-                      , qq|{'x' => 3}\t{'y' => 8}\tnull\t[1,'foo',2,3]\n|);
+        $CT->captures([run => ['--output=dump', @args]]
+                      , qq|[{'result' => {'x' => 3}},{'result' => [{'y' => 8},undef,[1,'foo',2,3]]}]\n|);
+
+        subtest "--flatten", sub {
+          $CT->captures([run => ['--flatten', '--output=dump', @args]]
+                        , qq|{'result' => {'x' => 3}}\n{'result' => [{'y' => 8},undef,[1,'foo',2,3]]}\n|);
+        };
+
+        subtest "--scalar", sub {
+          $CT->captures([run => ['--scalar', '--output=dump', @args]]
+                        , qq|[{'x' => 3},[{'y' => 8},undef,[1,'foo',2,3]]]\n|);
+        };
+
+        subtest "--scalar --flatten", sub {
+          $CT->captures([run => ['--scalar', '--flatten', '--output=dump', @args]]
+                        , qq|{'x' => 3}\n[{'y' => 8},undef,[1,'foo',2,3]]\n|);
+        };
+
       };
 
       subtest "--output=tsv", sub {
-        $CT->captures([run => ['--no-exit-code', '--output=tsv', @args]]
-                      , qq|{"x":3}\t{"y":8}\tnull\t[1,"foo",2,3]\n|);
+        $CT->captures([run => ['--output=tsv', @args]]
+                      , qq|{"result":{"x":3}}\t{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
       };
     };
 
+    subtest "cli_write_fh_as_... APIs", sub {
+
+      $CT->captures([run => [qw/--no-exit-code --output=ltsv cli_array/
+                             , qq|{"a":{"foo":"bar"},"b":[1,"baz"]}|
+                             , qq|{"c":3,"d":8}|
+                           ]]
+                    , qq|a:{"foo":"bar"}\tb:[1,"baz"]\nc:3\td:8\n|);
 
     };
 

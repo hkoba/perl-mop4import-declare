@@ -68,11 +68,7 @@ sub cli_invoke_sub {
   if (not $self->{quiet}
         and ($self->{scalar} ? $res[0] : @res)) {
 
-    if ($self->{scalar} or $self->{flatten}) {
-      $self->cli_output($_) for @res;
-    } else {
-      $self->cli_output(\@res);
-    }
+    $self->cli_output(\@res);
   }
 
   if ($self->{'no-exit-code'}) {
@@ -94,6 +90,11 @@ sub cli_array :method {
 sub cli_object :method {
   (my MY $self, my %args) = @_;
   \%args;
+}
+
+sub cli_string :method {
+  (my MY $self, my ($string)) = @_;
+  $string;
 }
 
 sub cli_map_apply :method {
@@ -297,7 +298,17 @@ sub declare_output_format {
 sub cli_output :method {
   (my MY $self, my ($list)) = @_;
 
-  $self->cli_write_fh(\*STDOUT, $list);
+  if ($self->{scalar}) {
+    $self->cli_write_fh(\*STDOUT, map {
+      $self->{flatten} ? lexpand($_) : $_;
+    } $_) for @$list;
+  } else {
+    if ($self->{flatten}) {
+      $self->cli_write_fh(\*STDOUT, @$list);
+    } else {
+      $self->cli_write_fh(\*STDOUT, $list);
+    }
+  }
 }
 
 sub cli_write_fh {
@@ -322,56 +333,52 @@ sub cli_encode_json {
 
 #----------------------------------------
 
+sub cli_flatten_if_not_yet {
+  (my MY $self, my @args) = @_;
+  # When called via flatten, list is already unwrapped.
+  map {
+    $self->{flatten} ? $_ : @$_
+  } @args;
+}
+
 MY->declare_output_format(MY, 'json');
 sub cli_write_fh_as_json {
   (my MY $self, my ($outFH, @args)) = @_;
-  foreach my $list (@args) {
-    print $outFH $self->cli_encode_json($list), "\n";
+  foreach my $item (@args) {
+    print $outFH $self->cli_encode_json($item), "\n";
   }
 }
 
-MY->declare_output_format(MY, 'tsv');
-sub cli_write_fh_as_tsv {
-  (my MY $self, my ($outFH, @args)) = @_;
-  foreach my $list (@args) {
-    foreach my $item (lexpand($list)) {
-      print $outFH join("\t", map {
-        if (not defined $_) {
-          $self->{'undef-as'}
-        } elsif (ref $_) {
-          $self->cli_encode_json($_)
-        } else {
-          $_
-        }
-      } lexpand($item)), "\n";
-    }
-  }
-}
 
 MY->declare_output_format(MY, 'dump');
 sub cli_write_fh_as_dump {
   (my MY $self, my ($outFH, @args)) = @_;
-  foreach my $list (@args) {
-    foreach my $item (lexpand($list)) {
-      print $outFH join("\t", map {
-        if (not defined $_) {
-          $self->{'undef-as'}
-        } elsif (ref $_) {
-          MOP4Import::Util::terse_dump($_)
-        } else {
-          $_
-        }
-      } lexpand($item)), "\n";
-    }
+  foreach my $item (@args) {
+    print $outFH MOP4Import::Util::terse_dump($item), "\n";
   }
 }
 
 MY->declare_output_format(MY, 'raw');
 sub cli_write_fh_as_raw {
   (my MY $self, my ($outFH, @args)) = @_;
-  foreach my $list (@args) {
-    print $outFH $list;
+  foreach my $item ($self->cli_flatten_if_not_yet(@args)) {
+    print $outFH $item;
   }
+}
+
+MY->declare_output_format(MY, 'tsv');
+sub cli_write_fh_as_tsv {
+  (my MY $self, my ($outFH, @args)) = @_;
+  # Write given \@args as a single record if requested so.
+  print $outFH join("\t", map {
+    if (not defined $_) {
+      $self->{'undef-as'};
+    } elsif (ref $_) {
+      $self->cli_encode_json($_);
+    } else {
+      $_;
+    }
+  } $self->cli_flatten_if_not_yet(@args)), "\n";
 }
 
 #========================================
