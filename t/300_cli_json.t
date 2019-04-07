@@ -52,6 +52,13 @@ sub meth_list {
 1;
 }};
 
+    subtest "cli_array and cli_object", sub {
+      my $test = CallTester->make_tester(MyApp1->new);
+
+      $test->returns_in_list([cli_array => qw(a b 1 2)], [qw(a b 1 2)]);
+      $test->returns_in_scalar([cli_object => qw(a b 1 2)], +{a => 'b', 1 => '2'});
+    };
+
     my $CT = CallTester->make_tester('MyApp1');
 
     subtest "MyApp1->run([--foo,cmd])", sub {
@@ -83,11 +90,7 @@ sub meth_list {
       };
     };
 
-    subtest "cli_... APIs", sub {
-      my $test = CallTester->make_tester(MyApp1->new);
 
-      $test->returns_in_list([cli_array => qw(a b 1 2)], [qw(a b 1 2)]);
-      $test->returns_in_scalar([cli_object => qw(a b 1 2)], +{a => 'b', 1 => '2'});
     };
 
   };
