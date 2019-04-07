@@ -77,8 +77,8 @@ sub _strip_tab { my ($str) = @_; $str =~ s/\t//g; $str }
         $test->exits([run => [cli_array =>  1]], 0);
         $test->exits([run => [cli_array => ()]], 1);
 
-        $test->exits([run => [qw/--scalar cli_string/,  1]], 0);
-        $test->exits([run => [qw/--scalar cli_string/, '']], 1);
+        $test->exits([run => [qw/--scalar cli_identity/,  1]], 0);
+        $test->exits([run => [qw/--scalar cli_identity/, '']], 1);
       }
     };
 

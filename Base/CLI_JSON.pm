@@ -28,7 +28,7 @@ use open ();
 sub cli_precmd {
   (my MY $self) = @_;
   #
-  # cli_precmd() may called from $class->cmd_help.
+  # cli_precmd() may be called from $class->cmd_help.
   #
   unless (ref $self and $self->{binary}) {
     'open'->import(qw/:locale :std/);
@@ -52,7 +52,9 @@ sub cli_invoke {
   my $sub = $self->can($method)
     or Carp::croak "No such method: $method";
 
-  $self->cli_invoke_sub($sub, $self, @args);
+  my $list = $self->cli_invoke_sub($sub, $self, @args);
+
+  $self->cli_exit_for_result($list) unless $self->{'no-exit-code'};
 }
 
 sub cli_invoke_sub {
@@ -65,19 +67,44 @@ sub cli_invoke_sub {
     @res = $sub->($receiver, @args);
   }
 
-  if (not $self->{quiet}
-        and ($self->{scalar} ? $res[0] : @res)) {
+  $self->cli_output(\@res) unless $self->{quiet};
 
-    $self->cli_output(\@res);
-  }
+  \@res;
+}
 
-  if ($self->{'no-exit-code'}) {
+sub cli_output :method {
+  (my MY $self, my ($list)) = @_;
+
+  unless ($self->{scalar} ? $list->[0] : @$list) {
     return;
-  } elsif ($self->{scalar}) {
-    exit($res[0] ? 0 : 1);
-  } else {
-    exit(@res ? 0 : 1);
   }
+
+  if ($self->{scalar}) {
+    $self->cli_write_fh(\*STDOUT, map {
+      $self->{flatten} ? lexpand($_) : $_;
+    } $_) for @$list;
+  } else {
+    if ($self->{flatten}) {
+      $self->cli_write_fh(\*STDOUT, @$list);
+    } else {
+      $self->cli_write_fh(\*STDOUT, $list);
+    }
+  }
+}
+
+sub cli_examine_result {
+  (my MY $self, my $list) = @_;
+  if ($self->{scalar}) {
+    $list->[0];
+  } else {
+    @$list;
+  }
+}
+
+sub cli_exit_for_result {
+  (my MY $self, my $list) = @_;
+
+  exit($self->cli_examine_result($list) ? 0 : 1);
 }
 
 #========================================
@@ -92,9 +119,9 @@ sub cli_object :method {
   \%args;
 }
 
-sub cli_string :method {
-  (my MY $self, my ($string)) = @_;
-  $string;
+sub cli_identity :method {
+  (my MY $self, my ($thing)) = @_;
+  $thing;
 }
 
 sub cli_map_apply :method {
@@ -161,11 +188,12 @@ sub cli_xargs_json :method {
 }
 
 BEGIN {
+  (my $dir = __FILE__) =~ s,[^/]+\z,,;
   if ($] >= 5.022) {
-    require MOP4Import::Util::compat_double_diamond;
+    do "$dir/compat_double_diamond.pm";
     import MOP4Import::Util::compat_double_diamond;
   } else {
-    require MOP4Import::Util::compat_double_diamond_5_20;
+    do "$dir/compat_double_diamond_5_20.pm";
     import MOP4Import::Util::compat_double_diamond_5_20;
   }
 }
@@ -292,22 +320,6 @@ sub declare_output_format {
   } else {
     Carp::croak "Invalid argument for output_format: "
       . MOP4Import::Util::terse_dump($sub);
-  }
-}
-
-sub cli_output :method {
-  (my MY $self, my ($list)) = @_;
-
-  if ($self->{scalar}) {
-    $self->cli_write_fh(\*STDOUT, map {
-      $self->{flatten} ? lexpand($_) : $_;
-    } $_) for @$list;
-  } else {
-    if ($self->{flatten}) {
-      $self->cli_write_fh(\*STDOUT, @$list);
-    } else {
-      $self->cli_write_fh(\*STDOUT, $list);
-    }
   }
 }
 
