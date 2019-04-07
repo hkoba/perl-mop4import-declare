@@ -22,4 +22,5 @@ on test => sub {
   requires 'Test::Kantan';
   requires 'Capture::Tiny';
   requires 'Test::Output';
+  requires 'Test::Exit';
 };
