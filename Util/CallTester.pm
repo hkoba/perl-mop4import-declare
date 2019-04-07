@@ -42,38 +42,32 @@ sub captures {
   (my MY $self, my ($call, $expect)) = @_;
   my ($method, @args) = @$call;
   my @savedArgs = map {shallow_copy($_)} @args;
-  is(Capture::Tiny::capture {
+  my $got = Capture::Tiny::capture {
     $self->{target_object}->$method(@args);
-  }, $expect, sprintf("call:%s(%s) expect:%s"
-                      , $method
-                      , join(", ", map(terse_dump($_), @savedArgs))
-                      , terse_dump($expect)));
+  };
+  is($got, $expect
+     , sprintf("call:%s(%s) expect:%s"
+               , $method
+               , join(", ", map(terse_dump($_), @savedArgs))
+               , terse_dump($expect)));
 }
 
 sub exits {
-  (my MY $self, my ($call, $expectSpec)) = @_;
+  (my MY $self, my ($call, $expect)) = @_;
   my ($method, @args) = @$call;
   my @savedArgs = map {shallow_copy($_)} @args;
-  my ($stdout, $stderr, @return);
+  my ($ignore);
   my $exit = Test::Exit::exit_code {
-    ($stdout, $stderr, @return) = Capture::Tiny::capture {
+    $ignore = Capture::Tiny::capture {
       $self->{target_object}->$method(@args);
     };
   };
 
-  if (ref $expectSpec) {
-    is([$exit, $stdout, $stderr, @return], $expectSpec
-       , sprintf("call:%s(%s) expect:%s"
-                 , $method
-                 , join(", ", map(terse_dump($_), @savedArgs))
-                 , terse_dump($expectSpec)));
-  } else {
-    is($exit, $expectSpec
-       , sprintf("call:%s(%s) expect:%s"
-                 , $method
-                 , join(", ", map(terse_dump($_), @savedArgs))
-                 , terse_dump($expectSpec)));
-  }
+  is($exit, $expect
+     , sprintf("call:%s(%s) expect:%s"
+               , $method
+               , join(", ", map(terse_dump($_), @savedArgs))
+               , $expect));
 }
 
 1;
