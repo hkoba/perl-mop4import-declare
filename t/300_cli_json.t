@@ -52,32 +52,36 @@ sub meth_list {
 1;
 }};
 
+    my $CT = CallTester->make_tester('MyApp1');
+
     subtest "MyApp1->run([--foo,cmd])", sub {
-      is(capture {MyApp1->run(['--foo','cmd','baz'])}, "1 baz\n");
+      $CT->captures([run => ['--foo','cmd','baz']], "1 baz\n");
     };
 
     subtest "MyApp1->run([--foo={x:3},meth_scalar,{y:8},undef,[a,b,c]])", sub {
-      subtest "--output=json", sub {
-        my (@args, $got, $expect);
-        is(capture {MyApp1->run(['--no-exit-code', @args = ('--foo={"x":3}','meth_scalar','{"y":8}',undef,'[1,"foo",2,3]')])}, $expect = qq|[[{"x":3},{"y":8},null,[1,"foo",2,3]]]\n|);
-        subtest "exit code", sub {
-          is(exit_code {capture {MyApp1->run([@args])}}, 0);
-        };
+      my @args = ('--foo={"x":3}'
+                  , 'meth_scalar'
+                  , '{"y":8}', undef, '[1,"foo",2,3]');
+      subtest "default (--output=json)", sub {
+        $CT->captures([run => ['--no-exit-code', @args]]
+                      , qq|[[{"x":3},{"y":8},null,[1,"foo",2,3]]]\n|);
       };
 
       subtest "--output=json --scalar", sub {
-        is(capture {MyApp1->run(['--scalar','--no-exit-code','--foo={"x":3}','meth_scalar','{"y":8}',undef,'[1,"foo",2,3]'])}, qq|[{"x":3},{"y":8},null,[1,"foo",2,3]]\n|);
+        $CT->captures([run => ['--no-exit-code', '--scalar', @args]]
+                      , qq|[{"x":3},{"y":8},null,[1,"foo",2,3]]\n|);
       };
 
       subtest "--output=dump", sub {
-        is(capture {MyApp1->run(['--no-exit-code','--output=dump','--foo={"x":3}','meth_scalar','{"y":8}',undef,'[1,"foo",2,3]'])}, qq|{'x' => 3}\t{'y' => 8}\tnull\t[1,'foo',2,3]\n|);
+        $CT->captures([run => ['--no-exit-code', '--output=dump', @args]]
+                      , qq|{'x' => 3}\t{'y' => 8}\tnull\t[1,'foo',2,3]\n|);
       };
 
       subtest "--output=tsv", sub {
-        is(capture {MyApp1->run(['--no-exit-code','--output=tsv','--foo={"x":3}','meth_scalar','{"y":8}',undef,'[1,"foo",2,3]'])}, qq|{"x":3}\t{"y":8}\tnull\t[1,"foo",2,3]\n|);
+        $CT->captures([run => ['--no-exit-code', '--output=tsv', @args]]
+                      , qq|{"x":3}\t{"y":8}\tnull\t[1,"foo",2,3]\n|);
       };
     };
-
 
     subtest "cli_... APIs", sub {
       my $test = CallTester->make_tester(MyApp1->new);

@@ -3,9 +3,9 @@ use strict;
 use warnings;
 
 use Test::More;
+use Capture::Tiny ();
 
 use MOP4Import::Base::Configure -as_base, [fields => qw/target_object/];
-
 use MOP4Import::Util qw/terse_dump/;
 
 sub make_tester {
@@ -28,6 +28,15 @@ sub returns_in_list {
   my ($method, @args) = @$call;
   is_deeply([$self->{target_object}->$method(@args)], $expect
             , sprintf("list call:%s expect:%s", map {terse_dump($_)}
+                      [$method, @args], $expect));
+}
+
+sub captures {
+  (my MY $self, my ($call, $expect)) = @_;
+  my ($method, @args) = @$call;
+  is(Capture::Tiny::capture {
+    $self->{target_object}->$method(@args);
+  }, $expect, sprintf("call:%s expect:%s", map {terse_dump($_)}
                       [$method, @args], $expect));
 }
 
