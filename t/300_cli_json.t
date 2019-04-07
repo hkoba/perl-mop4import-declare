@@ -70,13 +70,16 @@ sub _strip_tab { my ($str) = @_; $str =~ s/\t//g; $str }
     };
 
     subtest "exit code", sub {
-      my $test = CallTester->make_tester('MyApp1');
+      SKIP: {
+        skip "requires 5.24", 4 unless $] >= 5.024;
+        my $test = CallTester->make_tester('MyApp1');
 
-      $test->exits([run => [cli_array =>  1]], 0);
-      $test->exits([run => [cli_array => ()]], 1);
+        $test->exits([run => [cli_array =>  1]], 0);
+        $test->exits([run => [cli_array => ()]], 1);
 
-      $test->exits([run => [qw/--scalar cli_string/,  1]], 0);
-      $test->exits([run => [qw/--scalar cli_string/, '']], 1);
+        $test->exits([run => [qw/--scalar cli_string/,  1]], 0);
+        $test->exits([run => [qw/--scalar cli_string/, '']], 1);
+      }
     };
 
     my $CT = CallTester->make_tester('MyApp1');
