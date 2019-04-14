@@ -22,17 +22,21 @@ sub cli_CODE_ATTR_dispatch {
     if DEBUG;
   my @unknowns;
   foreach my $attStr (@attrs) {
-    my ($attName, $value) = $attStr =~ m{^([A-Z]\w*)(?:\((.*)\))?\z}s or do {
+    my ($attName, $text) = $attStr =~ m{^([A-Z]\w*)(?:\((.*)\))?\z}s or do {
       push @unknowns, $attStr;
     };
+
+    # If the attribute is value-less (like :method), use 1 as it's value.
+    my $value = defined $text ? _strip_quotes($text) : 1;
+
     if (my $sub = $pack->can(my $method = "cli_CODE_ATTR_declare__$attName")) {
       print STDERR "# calling $method for $pack\n" if DEBUG;
-      $sub->($pack, $code, _strip_quotes($value), $attName, $filename, $lineno);
+      $sub->($pack, $code, $value, $attName, $filename, $lineno);
     } elsif ($sub = $pack->can($method = "cli_CODE_ATTR_build__$attName")) {
       print STDERR "# calling $method for $pack\n" if DEBUG;
       $pack->cli_CODE_ATTR_add(
         $attName, $code,
-        scalar($sub->($pack, $code, _strip_quotes($value), $attName)),
+        scalar($sub->($pack, $code, $value, $attName)),
         $filename, $lineno
       );
     } else {
