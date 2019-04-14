@@ -22,6 +22,11 @@ use MOP4Import::Base::CLI -as_base
 use MOP4Import::Opts;
 use MOP4Import::Util qw/lexpand globref take_locked_opts_of lock_keys_as/;
 
+use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
+print STDERR "Using (file '" . __FILE__ . "')\n"
+  if DEBUG and DEBUG >= 2;
+
+
 use JSON;
 use open ();
 
@@ -188,14 +193,22 @@ sub cli_xargs_json :method {
 }
 
 BEGIN {
-  (my $dir = __FILE__) =~ s,[^/]+\z,,;
-  if ($] >= 5.022) {
-    do "$dir/compat_double_diamond.pm";
-    import MOP4Import::Util::compat_double_diamond;
-  } else {
-    do "$dir/compat_double_diamond_5_20.pm";
-    import MOP4Import::Util::compat_double_diamond_5_20;
+  my ($packSuffix) = do {
+    if ($] >= 5.022) {
+      'compat_double_diamond';
+    } else {
+      'compat_double_diamond_5_20';
+    }
+  };
+  (my $dir = __FILE__) =~ s,/?[^/]+\z,,;
+  my $fn = "$dir/../Util/$packSuffix.pm";
+  unless (-r $fn) {
+    die "Can't load $fn";
   }
+  do $fn;
+  my $pack = 'MOP4Import::Util::'.$packSuffix;
+  $pack->import;
+  print STDERR "compat_diamond is loaded from $fn\n" if DEBUG and DEBUG >= 2;
 }
 
 sub _cli_xargs {
