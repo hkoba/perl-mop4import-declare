@@ -61,7 +61,8 @@ sub dispatch_declare {
 
     croak "Undefined pragma!" unless defined $declSpec;
 
-    if (not ref $declSpec) {
+    if (not ref $declSpec
+        or ref $declSpec eq 'Regexp') {
 
       $myPack->dispatch_import($opts, $declSpec);
 
@@ -90,7 +91,7 @@ sub dispatch_import {
 
   my ($name, $exported);
 
-  if ($declSpec =~ /^-([A-Za-z]\w*)$/) {
+  if (not ref $declSpec and $declSpec =~ /^-([A-Za-z]\w*)$/) {
 
     return $myPack->dispatch_declare_pragma($opts, $1);
 
@@ -103,7 +104,11 @@ sub dispatch_import {
 sub dispatch_import_no_pragma {
   (my $myPack, my Opts $opts, my (@declSpec)) = m4i_args(@_);
   foreach my $declSpec (@declSpec) {
-    if ($declSpec =~ /^([\*\$\%\@\&])?([A-Za-z]\w*)$/) {
+
+    if (ref $declSpec eq 'Regexp') {
+      $myPack->import_by_regexp($opts, $declSpec);
+    }
+    elsif ($declSpec =~ /^([\*\$\%\@\&])?([A-Za-z]\w*)$/) {
       if ($1) {
         my $kind = $SIGIL_MAP{$1};
         $myPack->can("import_$kind")
@@ -114,6 +119,16 @@ sub dispatch_import_no_pragma {
     } else {
       croak "Invalid import spec: $declSpec";
     }
+  }
+}
+
+sub import_by_regexp {
+  (my $myPack, my Opts $opts, my ($pattern)) = m4i_args(@_);
+
+  my $symtab = MOP4Import::Util::symtab($myPack);
+  foreach my $name (keys %$symtab) {
+    next unless $name =~ $pattern;
+    *{globref($opts->{destpkg}, $name)} = $symtab->{$name};
   }
 }
 
