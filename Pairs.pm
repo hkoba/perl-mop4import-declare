@@ -34,11 +34,20 @@ sub dispatch_pairs_as_declare {
     or croak "Unknown declare pragma: $pragma";
 
   while (my ($name, $speclist) = splice @pairs, 0, 2) {
-    print STDERR " dispatching 'declare_$pragma' for pair("
-      , terse_dump($name, $speclist)
-      , $myPack->file_line_of($opts), "\n" if DEBUG;
 
-    $sub->($myPack, $opts, $name, @$speclist);
+    if (defined $name) {
+      print STDERR " dispatching 'declare_$pragma' for pair("
+        , terse_dump($name, $speclist)
+        , $myPack->file_line_of($opts), "\n" if DEBUG;
+
+      $sub->($myPack, $opts, $name, @$speclist);
+    } else {
+      print STDERR " fallback to dispatch_declare for pair of undef => "
+        , terse_dump($speclist)
+        , $myPack->file_line_of($opts), "\n" if DEBUG;
+
+      $myPack->dispatch_declare($opts, @$speclist);
+    }
   }
 }
 
