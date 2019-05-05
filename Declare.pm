@@ -254,7 +254,7 @@ sub declare_as_base {
 
   $myPack->declare_fields($opts, @fields);
 
-  $myPack->declare_constant($opts, MY => $opts->{objpkg}, or_ignore => 1);
+  $myPack->declare_private_constant($opts, MY => $opts->{objpkg}, or_ignore => 1);
 }
 
 sub declare___add_isa {
@@ -334,13 +334,31 @@ sub declare_inc {
 sub declare_constant {
   (my $myPack, my Opts $opts, my ($name, $value, %opts)) = m4i_args(@_);
 
+  $myPack->declare_private_constant($opts, $name, $value, %opts);
+
+  my $export = MOP4Import::Util::ensure_symbol_has_array(
+    globref($opts->{objpkg}, 'EXPORT')
+  );
+  push @$export, $name;
+  print STDERR " constant $name is added to default exports of "
+    . $opts->{objpkg}. "\n" if DEBUG;
+}
+
+sub declare_private_constant {
+  (my $myPack, my Opts $opts, my ($name, $value, %opts)) = m4i_args(@_);
+
+  my $or_ignore = delete $opts{or_ignore};
+  if (keys %opts) {
+    Carp::croak("Unknown options: ". join ", ", sort keys(%opts));
+  }
+
   my $my_sym = globref($opts->{objpkg}, $name);
   if (*{$my_sym}{CODE}) {
-    return if $opts{or_ignore};
+    return if $or_ignore;
     croak "constant $opts->{objpkg}::$name is already defined";
   }
 
-  *$my_sym = sub () {$value};
+  MOP4Import::Util::define_constant($my_sym, $value);
 }
 
 sub declare_fields {
@@ -442,7 +460,7 @@ sub declare___field_with_default {
   if (ref $v eq 'CODE') {
     *{globref($opts->{objpkg}, "default_$fs->{name}")} = $v;
   } else {
-    $myPack->declare_constant($opts, "default_$fs->{name}", $v);
+    $myPack->declare_private_constant($opts, "default_$fs->{name}", $v);
   }
 }
 
@@ -472,7 +490,7 @@ sub declare_defaults {
       or Carp::croak "No such field: $k";
     $fs->{default} = $v;
     my $fn = "default_$k";
-    $myPack->declare_constant($opts, $fn, $v);
+    $myPack->declare_private_constant($opts, $fn, $v);
   }
 }
 
