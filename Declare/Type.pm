@@ -8,6 +8,8 @@ use MOP4Import::Declare -as_base, qw/Opts m4i_args m4i_opts/;
 use MOP4Import::Pairs -as_base;
 use MOP4Import::Util qw/symtab globref ensure_symbol_has_array/;
 
+use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
+
 sub default_exports {
   (my $myPack) = @_;
   my $symtab = symtab($myPack);
@@ -71,6 +73,7 @@ sub declare___inner_class_in {
   my $export = ensure_symbol_has_array(globref($destpkg, 'EXPORT'));
   unless (grep {$_ eq $name} @$export) {
     push @$export, $name;
+    print STDERR " type $name is added to default exports of $destpkg\n" if DEBUG;
   }
 }
 
