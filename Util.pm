@@ -96,12 +96,12 @@ sub ensure_symbol_has_hash {
   *{$sym}{HASH};
 }
 
-# sub define_const {
-#   my ($name_or_glob, $value) = @_;
-#   my $glob = ref $name_or_glob ? $name_or_glob : globref($name_or_glob);
-#   *$glob = my $const_sub = sub () { $value };
-#   $const_sub;
-# }
+sub define_constant {
+  my ($name_or_glob, $value) = @_;
+  my $glob = ref $name_or_glob ? $name_or_glob : globref($name_or_glob);
+  *$glob = my $const_sub = sub () { $value };
+  $const_sub;
+}
 
 # MOP4Import::Util::extract_fields_as(BASE_CLASS => $obj)
 # => returns name, value pairs found in BASE_CLASS and defined in $obj.
