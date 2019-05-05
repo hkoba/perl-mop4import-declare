@@ -44,11 +44,15 @@ package Test0; use MOP4Import::Types Foo => [], Bar => [];
 
     it "should have no error", no_error <<'END';
 package Test1;
+use MOP4Import::Declare::Type -as_base; # to make symbols exportable.
 use MOP4Import::Types
    Foo => [[fields => qw/foo bar baz/]]
   ,Bar => [[fields =>
              [fst => doc => "first field", default => '1st']
-           , [snd => doc => "second field", default => '2nd']]];
+           , [snd => doc => "second field", default => '2nd']]]
+  , undef() => [[constant => OtherConst => 'Qux']]
+;
+$INC{'Test1.pm'} = 1;
 1;
 END
 
@@ -61,6 +65,7 @@ END
 package Test1;
 sub test1 { (my Foo $foo) = @_; }
 sub test_bar1 { (my Bar $bar) = @_; }
+sub test_qux { OtherConst }
 };
 
     it "should define field Foo->{foo,bar,baz}, Bar->{fst,snd}", no_error q{
@@ -98,6 +103,22 @@ package Test1; sub test3 {
 	, to_match =>
 	  qr/^No such class field "foooo" in variable \$foo of type Test1::Foo/
 	    ;
+
+    describe "EXPORT behavior", sub {
+
+      it "should export all types and constants", no_error q{
+package UserOfTest1;
+use Test1;
+sub m1 {Foo}
+sub m2 {Bar}
+sub m3 {OtherConst}
+};
+
+      ok {UserOfTest1->m1 eq "Test1::Foo"};
+      ok {UserOfTest1->m2 eq "Test1::Bar"};
+      ok {UserOfTest1->m3 eq "Qux"};
+    };
+
   };
 
   describe "subtypes", sub {
