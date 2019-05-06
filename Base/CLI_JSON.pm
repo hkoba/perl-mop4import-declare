@@ -49,6 +49,17 @@ sub parse_opts {
   MOP4Import::Util::parse_json_opts($pack, $list, $result, $opt_alias);
 }
 
+sub cli_eval {
+  (my MY $self, my ($script, @args)) = @_;
+  my $sub = do {
+    local $@;
+    my $code = eval qq{use strict; sub {my \$self = shift; $script\n}};
+    die $@ if $@;
+    $code;
+  };
+  $sub->($self, @args);
+}
+
 sub cli_invoke {
   (my MY $self, my ($method, @args)) = @_;
 
