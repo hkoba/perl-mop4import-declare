@@ -17,6 +17,7 @@ use MOP4Import::Base::CLI -as_base
         , doc => "exit with 0(EXIT_SUCCESS) even when result was falsy/empty"
       ]
      , ['binary' => default => 0, doc => "keep STDIN/OUT/ERR binary friendly"]
+     , ['strip-json-comments' => default => 1]
      , '_cli_json'
    ];
 use MOP4Import::Opts;
@@ -26,6 +27,10 @@ use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 print STDERR "Using (file '" . __FILE__ . "')\n"
   if DEBUG and DEBUG >= 2;
 
+sub allow_json_comments {
+  (my MY $self) = @_;
+  ref $self ? $self->{'strip-json-comments'} : 1;
+}
 
 use JSON::MaybeXS;
 use open ();
@@ -357,14 +362,24 @@ sub cli_write_fh {
 
 sub cli_encode_json {
   (my MY $self, my $obj) = @_;
-  my $codec = $self->{_cli_json} //= do {
-    my $js = JSON->new->canonical->allow_nonref;
-    $js->utf8 unless $self->{binary};
-    $js;
-  };
+  my $codec = $self->{_cli_json} //= $self->cli_json_encoder;
   my $json = $codec->encode($obj);
   Encode::_utf8_on($json) unless $self->{binary};
   $json;
+}
+
+sub cli_json_encoder {
+  (my MY $self) = @_;
+  my $js = JSON->new->canonical->allow_nonref;
+  $js->utf8 unless $self->{binary};
+  $js;
+}
+
+sub cli_json_decoder {
+  (my MY $self) = @_;
+  my $js = JSON->new->relaxed;
+  $js->utf8 unless $self->{binary};
+  $js;
 }
 
 #----------------------------------------
@@ -481,11 +496,28 @@ sub cli_read_file__json {
   open my $fh, '<', $fileName
     or Carp::croak "Can't open $fileName: $!";
   my $all = do {local $/; <$fh>};
-  if (eval {local $@; require JSON::WithComments}) {
-    JSON::WithComments->new->decode($all);
-  } else {
-    JSON::decode_json($all);
+  unless (defined $all) {
+    Carp::croak "Can't read $fileName: $!";
   }
+  if ($classOrObj->allow_json_comments) {
+    require MOP4Import::Util::CommentedJson;
+    local $@;
+    eval {
+      $all = MOP4Import::Util::CommentedJson->strip_json_comments($all);
+    };
+    if ($@) {
+      Carp::carp "Can't strip comment in $fileName: $@";
+    }
+  }
+  local $@;
+  my @result;
+  eval {
+    @result = $classOrObj->cli_json_decoder->incr_parse($all);
+  };
+  if ($@) {
+    Carp::croak "decode_json failed in $fileName: $@";
+  }
+  @result >= 2 ? \@result : $result[0];
 }
 
 MY->run(\@ARGV) unless caller;
