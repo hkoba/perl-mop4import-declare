@@ -27,7 +27,7 @@ print STDERR "Using (file '" . __FILE__ . "')\n"
   if DEBUG and DEBUG >= 2;
 
 
-use JSON;
+use JSON::MaybeXS;
 use open ();
 
 sub cli_precmd {

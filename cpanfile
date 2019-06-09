@@ -4,10 +4,9 @@ requires perl => '>= 5.010';
 
 requires 'rlib'; # XXX:
 
-requires 'JSON';
+requires 'JSON::MaybeXS';
 
 recommends 'Module::Runtime';
-recommends 'JSON::WithComments';
 
 on configure => sub {
   requires 'rlib';
@@ -24,5 +23,4 @@ on test => sub {
   requires 'Capture::Tiny';
   requires 'Test::Output';
   requires 'Test::Exit';
-  requires 'JSON::WithComments';
 };
