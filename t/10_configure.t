@@ -91,12 +91,15 @@ END
        ok {$obj->gemini   eq "baz"};
     };
 
-    it "should wrong argument for configure", sub {
+    it "should raise error for wrong argument", sub {
       expect(do {eval q{Zodiac1->new(undef, 'foo')}; $@})
 	->to_match(qr/^Undefined option name for class Zodiac1/);
 
       expect(do {eval q{Zodiac1->new(foo => 'bar')}; $@})
 	->to_match(qr/^Unknown option for class Zodiac1: foo/);
+
+      expect(do {eval q{Zodiac1->new(_gemini_cnt => 100)}; $@})
+	->to_match(qr/^Private option is prohibited for class Zodiac1: _gemini_cnt/);
     };
 
     it "should call onconfigure_zzz hook ", sub {
@@ -196,6 +199,30 @@ package MyZodiac; use Zodiac1 -as_base;
         };
       }
     };
+  };
+
+  describe "fields with dot: [fields => qw/api.token/]", sub {
+    it "should have no error", no_error q{
+package MyConnector;
+use MOP4Import::Base::Configure -as_base, -inc
+    , [fields => qw/api.token/];
+
+sub common_header {
+  (my MY $self) = @_;
+('Content-Type' => 'application/json'
+, Authorization => "Bearer $self->{'api.token'}");
+}
+
+};
+
+    it "should be configured successfully", sub {
+
+      my $obj = MyConnector->new('api.token' => 'XXXXYYYY');
+
+      expect([$obj->common_header])->to_be([qw(Content-Type application/json Authorization) => "Bearer XXXXYYYY"]);
+
+    };
+
   };
 };
 

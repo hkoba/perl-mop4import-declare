@@ -67,7 +67,10 @@ sub configure :method {
     unless (defined $key) {
       croak "Undefined option name for class ".ref($self);
     }
-    next unless $key =~ m{^[A-Za-z][-\w]*\z};
+
+    if ($key =~ m{^_}) {
+      croak "Private option is prohibited for class ".ref($self).": $key";
+    }
 
     if (my $sub = $self->can("onconfigure_$key")) {
       push @setter, [$sub, $value];
