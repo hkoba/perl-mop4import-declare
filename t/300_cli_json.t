@@ -34,7 +34,7 @@ use MOP4Import::Base::CLI_JSON -as_base, -inc, [fields => qw/foo/]
     foreach my $dict ($self->cli_flatten_if_not_yet(@args)) {
       print $outFH join("\t", map {
         my $val = $dict->{$_};
-        _strip_tab($_).":"._strip_tab(defined $val && ref $val ? JSON::encode_json($val) : $val);
+        _strip_tab($_).":"._strip_tab(defined $val && ref $val ? $self->cli_encode_json($val) : $val);
       } sort keys %$dict), "\n";
     }
 }

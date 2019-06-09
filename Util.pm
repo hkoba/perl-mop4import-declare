@@ -222,7 +222,7 @@ sub parse_opts {
 #
 sub parse_json_opts {
   my ($pack, $list, $result, $alias) = @_;
-  require JSON;
+  require JSON::MaybeXS;
   parse_opts($pack, $list, $result, $alias, sub {
     if (not defined $_[0]) {
       undef
@@ -230,7 +230,7 @@ sub parse_json_opts {
       # Arguments might be already decoded.
       my $copy = $_[0];
       Encode::_utf8_off($copy) if Encode::is_utf8($copy);
-      JSON::from_json($copy, {relaxed => 1, utf8 => 1});
+      JSON::MaybeXS::JSON()->new->utf8->relaxed->decode($copy);
     } elsif (not Encode::is_utf8($_[0]) and $_[0] =~ /\P{ASCII}/) {
       Encode::decode(utf8 => $_[0]);
     } else {
