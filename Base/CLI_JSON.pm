@@ -56,9 +56,10 @@ sub parse_opts {
 
 sub cli_eval {
   (my MY $self, my ($script, @args)) = @_;
+  my $pack = ref $self;
   my $sub = do {
     local $@;
-    my $code = eval qq{use strict; sub {my \$self = shift; $script\n}};
+    my $code = eval qq{package $pack; use strict; sub {my \$self = shift; $script\n}};
     die $@ if $@;
     $code;
   };
