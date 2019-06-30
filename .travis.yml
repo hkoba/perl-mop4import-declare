@@ -13,8 +13,10 @@ perl:
   - "5.12"
 before_install: 
   cpanm -n Devel::Cover::Report::Coveralls
+install:
+  cpanm --installdeps --notest .
 script:
   ln -vnsf perl-mop4import-declare ../MOP4Import && cd ../MOP4Import &&
-  perlbrew exec --with perl-$TRAVIS_PERL_VERSION perl Build.PL && ./Build build && cover -test
+  perl Build.PL && ./Build build && cover -test
 after_success:
   cover -report coveralls
