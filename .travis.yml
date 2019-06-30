@@ -13,6 +13,6 @@ before_install:
   cpanm -n Devel::Cover::Report::Coveralls
 script:
   ln -vnsf perl-mop4import-declare ../MOP4Import && cd ../MOP4Import &&
-  perl Build.PL && ./Build build && cover -test
+  perl -Mlib=/home/travis/perl5 Build.PL && ./Build build && cover -test
 after_success:
   cover -report coveralls
