@@ -15,6 +15,6 @@ before_install:
   cpanm -n Devel::Cover::Report::Coveralls
 script:
   ln -vnsf perl-mop4import-declare ../MOP4Import && cd ../MOP4Import &&
-  perlbrew exec perl Build.PL && ./Build build && cover -test
+  perlbrew exec --with perl-$TRAVIS_PERL_VERSION perl Build.PL && ./Build build && cover -test
 after_success:
   cover -report coveralls
