@@ -406,6 +406,12 @@ sub cli_write_fh_as_json {
   }
 }
 
+MY->declare_output_format(MY, 'yaml');
+sub cli_write_fh_as_yaml {
+  (my MY $self, my ($outFH, @args)) = @_;
+  require YAML::Syck;
+  print $outFH YAML::Syck::Dump(@args);
+}
 
 MY->declare_output_format(MY, 'dump');
 sub cli_write_fh_as_dump {

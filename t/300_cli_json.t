@@ -133,6 +133,26 @@ subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
 
   };
 
+  subtest "--output=yaml", sub {
+    $CT->captures([run => ['--output=yaml', @args]], <<'END');
+--- 
+- 
+  result: 
+    x: 3
+- 
+  result: 
+    - 
+      "y": 8
+    - ~
+    - 
+      - 1
+      - foo
+      - 2
+      - 3
+END
+
+  };
+
   subtest "--output=tsv", sub {
     $CT->captures([run => ['--output=tsv', @args]]
                   , qq|{"result":{"x":3}}\t{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
