@@ -490,6 +490,7 @@ sub cli_read_file__txt {
 }
 
 # .yml
+*cli_read_file__yaml = *cli_read_file__yml;*cli_read_file__yaml = *cli_read_file__yml;
 sub cli_read_file__yml {
   my ($classOrObj, $fileName) = @_;
   require YAML::Syck;

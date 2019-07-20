@@ -160,6 +160,27 @@ subtest "cli_read_file APIs", sub {
   my $test = CallTester->make_tester(MyApp1->new);
 
   $test->returns_in_list(
+    [cli_read_file => "$FindBin::Bin/cli_json_input.d/input.txt"]
+    , ["foo bar baz", "xx yy zz  ", "a b c"]);
+
+  $test->returns_in_scalar(
+    [cli_read_file => "$FindBin::Bin/cli_json_input.d/input.txt"]
+    , ["foo bar baz", "xx yy zz  ", "a b c"]);
+
+  $test->returns_in_list(
+    [cli_read_file => "$FindBin::Bin/cli_json_input.d/no_extension"]
+    , ["foo\nbar\nbaz"]);
+
+  $test->returns_in_list(
+    [cli_read_file => "$FindBin::Bin/cli_json_input.d/input.yml"]
+    , [[{foo => "bar", "baz" => 3}, {x => 8}]]);
+
+  $test->returns_in_list(
+    [cli_read_file => "$FindBin::Bin/cli_json_input.d/input.yaml"]
+    , [{foo => "bar", "baz" => 3}, {x => 8, y => 3}]);
+
+
+  $test->returns_in_list(
     [cli_read_file => "$FindBin::Bin/cli_json_input.d/keybindings.json"]
     , [[{'when' => 'editorTextFocus','key' => 'ctrl+b','command' => 'cursorLeft'},{'key' => 'ctrl+f','command' => 'cursorRight','when' => 'editorTextFocus'},{'command' => 'cursorDown','key' => 'ctrl+n','when' => 'editorTextFocus'},{'when' => 'editorTextFocus && !inQuickOpen','key' => 'ctrl+p','command' => 'cursorUp'},{'when' => 'editorTextFocus','command' => 'cursorHome','key' => 'ctrl+a'},{'when' => 'editorTextFocus','command' => 'cursorEnd','key' => 'ctrl+e'},{'command' => 'deleteLeft','key' => 'ctrl+h'},{'command' => 'deleteRight','key' => 'ctrl+d','when' => 'editorTextFocus'},{'key' => 'ctrl+q','command' => 'cursorWordLeft','when' => 'editorTextFocus'},{'when' => 'editorTextFocus','key' => 'ctrl+t','command' => 'cursorWordRight'},{'when' => 'editorFocus && !findWidgetVisible && editorLangId == \'fsharp\'','key' => 'ctrl+alt+enter','command' => 'fsi.SendFile'}]]);
 
