@@ -314,7 +314,7 @@ sub cli_decoder_from__ {
 #
 sub cli_decoder_from__json {
   (my MY $self, my @opts) = @_;
-  my $decoder = JSON->new->utf8->allow_nonref;
+  my $decoder = JSON()->new->utf8->allow_nonref;
   while (my ($k, $v) = splice @opts, 0, 2) {
     $decoder->$k($v);
   }
@@ -367,14 +367,14 @@ sub cli_encode_json {
 
 sub cli_json_encoder {
   (my MY $self) = @_;
-  my $js = JSON->new->canonical->allow_nonref;
+  my $js = JSON()->new->canonical->allow_nonref;
   $js->utf8 unless $self->{binary};
   $js;
 }
 
 sub cli_json_decoder {
   (my MY $self) = @_;
-  my $js = JSON->new->relaxed;
+  my $js = JSON()->new->relaxed;
   $js->utf8 unless $self->{binary};
   $js;
 }
