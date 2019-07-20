@@ -23,17 +23,13 @@ use MOP4Import::Base::CLI -as_base
 use MOP4Import::Opts;
 use MOP4Import::Util qw/lexpand globref take_locked_opts_of lock_keys_as/;
 
+use open ();
+
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 print STDERR "Using (file '" . __FILE__ . "')\n"
   if DEBUG and DEBUG >= 2;
 
-sub allow_json_comments {
-  (my MY $self) = @_;
-  ref $self ? $self->{'strip-json-comments'} : 1;
-}
-
 use JSON::MaybeXS;
-use open ();
 
 sub cli_precmd {
   (my MY $self) = @_;
@@ -519,6 +515,11 @@ sub cli_read_file__json {
     Carp::croak "decode_json failed in $fileName: $@";
   }
   @result >= 2 ? \@result : $result[0];
+}
+
+sub allow_json_comments {
+  (my MY $self) = @_;
+  ref $self ? $self->{'strip-json-comments'} : 1;
 }
 
 MY->run(\@ARGV) unless caller;
