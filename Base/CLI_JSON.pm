@@ -361,6 +361,8 @@ sub cli_write_fh {
   $output->($self, $outFH, @args);
 }
 
+sub cli_json { JSON() }
+
 sub cli_encode_json {
   (my MY $self, my $obj) = @_;
   my $codec = $self->{_cli_json} //= $self->cli_json_encoder;

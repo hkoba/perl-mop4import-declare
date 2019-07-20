@@ -58,6 +58,10 @@ sub _strip_tab { my ($str) = @_; $str =~ s/\t//g; $str }
 1;
 };
 
+subtest "cli_json", sub {
+  is MyApp1->cli_json, JSON::MaybeXS::JSON(), "cli_json";
+};
+
 subtest "cli_array and cli_object", sub {
   my $test = CallTester->make_tester(MyApp1->new);
 
