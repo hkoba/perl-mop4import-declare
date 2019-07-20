@@ -137,6 +137,13 @@ subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
     $CT->captures([run => ['--output=tsv', @args]]
                   , qq|{"result":{"x":3}}\t{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
   };
+
+  subtest "--output=raw", sub {
+    require Math::BigInt;
+    $CT->captures([run => ['--output=raw', '--no-exit-code'
+                           , cli_eval => 'Math::BigInt->new(30)']]
+                  , 30);
+  };
 };
 
 subtest "cli_write_fh_as_... APIs", sub {
