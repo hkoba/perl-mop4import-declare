@@ -7,6 +7,7 @@ requires 'rlib'; # XXX:
 requires 'JSON::MaybeXS';
 
 recommends 'Module::Runtime';
+recommends 'YAML::Syck';
 
 on configure => sub {
   requires 'rlib';
