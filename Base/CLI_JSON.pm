@@ -30,6 +30,10 @@ print STDERR "Using (file '" . __FILE__ . "')\n"
   if DEBUG and DEBUG >= 2;
 
 use JSON::MaybeXS;
+use constant USING_CPANEL_JSON_XS => JSON()->isa("Cpanel::JSON::XS");
+
+# Only works with Cpanel::JSON::XS. JSON::XS prohibits use of restricted hash.
+sub TO_JSON { +{%{shift()}} }
 
 sub cli_precmd {
   (my MY $self) = @_;
@@ -368,6 +372,9 @@ sub cli_encode_json {
 sub cli_json_encoder {
   (my MY $self) = @_;
   my $js = JSON()->new->canonical->allow_nonref;
+  if (USING_CPANEL_JSON_XS) {
+    $js->convert_blessed;
+  }
   $js->utf8 unless $self->{binary};
   $js;
 }
