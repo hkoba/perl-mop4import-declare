@@ -24,4 +24,5 @@ on test => sub {
   requires 'Capture::Tiny';
   requires 'Test::Output';
   requires 'Test::Exit';
+  requires 'YAML::Syck';
 };
