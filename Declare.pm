@@ -396,18 +396,39 @@ sub declare_fields {
     }
   }
 
-  $myPack->declare___field($opts, ref $_ ? @$_ : $_) for @fields;
+
+  my $field_class = do {
+    # XXX: objpkg? destpkg?
+    if (my $sub = $opts->{destpkg}->can("FieldSpec")) {
+      $sub->();
+    } else {
+      $myPack->FieldSpec;
+    }
+  };
+
+  print STDERR "  FieldSpec is: $field_class\n" if DEBUG;
+
+  my %collector;
+  $myPack->declare___field($opts, $field_class
+                           , \%collector
+                           , ref $_ ? @$_ : $_)
+    for @fields;
+
+  foreach my $kind (keys %collector) {
+    my $sub = $myPack->can("declare___finalize_fields__$kind")
+      or Carp::croak "Unknown name in fields finalizer: $kind";
+    $sub->($myPack, $opts, $collector{$kind});
+  }
 
   $opts->{objpkg}; # XXX:
 }
 
 sub declare___field {
-  (my $myPack, my Opts $opts, my ($name, @rest)) = m4i_args(@_);
+  (my $myPack, my Opts $opts, my ($field_class, $collect, $name, @rest)) = m4i_args(@_);
   print STDERR "  Declaring field $opts->{objpkg}.$name " if DEBUG;
   my $extended = fields_hash($opts->{objpkg});
   my $fields_array = fields_array($opts->{objpkg});
 
-  my $field_class = $myPack->FieldSpec;
   my $spec = fields_hash($field_class);
   my (@early, @delayed);
   while (my ($k, $v) = splice @rest, 0, 2) {
@@ -446,14 +467,14 @@ sub declare___field {
 
   foreach my $delayed (@delayed) {
     my ($sub, $k, $v) = @$delayed;
-    $sub->($myPack, $opts, $obj, $k, $v);
+    $sub->($myPack, $opts, $obj, $collect, $k, $v);
   }
 
   $obj;
 }
 
 sub declare___field_with_default {
-  (my $myPack, my Opts $opts, my FieldSpec $fs, my ($k, $v)) = m4i_args(@_);
+  (my $myPack, my Opts $opts, my FieldSpec $fs, my ($collect, $k, $v)) = m4i_args(@_);
 
   $fs->{$k} = $v;
 
