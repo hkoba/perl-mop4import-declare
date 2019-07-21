@@ -15,6 +15,7 @@ use fields
    , 'default'
    , 'no_getter'
    , 'package'
+   , 'json_type'
    # file? line? package?
  );
 

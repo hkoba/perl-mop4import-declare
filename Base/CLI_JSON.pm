@@ -1,23 +1,35 @@
 #!/usr/bin/env perl
 package MOP4Import::Base::CLI_JSON;
+use strict;
+use warnings;
+use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
+
 use MOP4Import::Base::CLI -as_base
   , [constant => parse_opts__preserve_hyphen => 1]
   , [fields =>
-     , ['help' => doc => "show this help message"]
-     , ['quiet' => doc => 'to be (somewhat) quiet']
-     , ['scalar' => doc => "evaluate methods in scalar context"]
+     , ['help' => doc => "show this help message", json_type => 'string']
+     , ['quiet' => doc => 'to be (somewhat) quiet', json_type => 'int']
+     , ['scalar' => doc => "evaluate methods in scalar context", json_type => 'bool']
      , ['output' => default => 'json'
         , doc => "choose output serializer (json/tsv/dump)"
+        , json_type => 'string'
       ]
-     , ['flatten' => doc => "output each result separately (instead of single json array)"]
+     , ['flatten' => doc => "output each result separately (instead of single json array)"
+        , json_type => 'string']
      , ['undef-as' => default => 'null'
         , doc => "serialize undef as this value. used in tsv output"
+        , json_type => 'string'
       ]
      , ['no-exit-code'
         , doc => "exit with 0(EXIT_SUCCESS) even when result was falsy/empty"
+        , json_type => 'bool'
       ]
-     , ['binary' => default => 0, doc => "keep STDIN/OUT/ERR binary friendly"]
-     , ['strip-json-comments' => default => 1]
+     , ['binary' => default => 0, doc => "keep STDIN/OUT/ERR binary friendly"
+        , json_type => 'bool'
+      ]
+     , ['strip-json-comments' => default => 1
+        , json_type => 'bool'
+      ]
      , '_cli_json'
    ];
 use MOP4Import::Opts;
@@ -25,7 +37,6 @@ use MOP4Import::Util qw/lexpand globref take_locked_opts_of lock_keys_as/;
 
 use open ();
 
-use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 print STDERR "Using (file '" . __FILE__ . "')\n"
   if DEBUG and DEBUG >= 2;
 
@@ -361,9 +372,29 @@ sub cli_write_fh {
 sub cli_json { JSON() }
 
 sub cli_encode_json {
-  (my MY $self, my $obj) = @_;
+  (my MY $self, my ($obj, $json_type)) = @_;
   my $codec = $self->{_cli_json} //= $self->cli_json_encoder;
-  my $json = $codec->encode($obj);
+  my @opts;
+  my $json = do {
+    if (USING_CPANEL_JSON_XS) {
+      push @opts, do {
+        if (defined $json_type) {
+          $self->JSON_TYPE_HANDLER->lookup_json_type($json_type) // $json_type;
+        } elsif (ref $obj) {
+          $self->JSON_TYPE_HANDLER->lookup_json_type(ref $obj);
+        } else {
+          ();
+        }
+      };
+      if (my $sub = UNIVERSAL::can($obj, 'TO_JSON')) {
+        $codec->encode($sub->($obj), @opts);
+      } else {
+        $codec->encode($obj, @opts);
+      }
+    } else {
+      $codec->encode($obj);
+    }
+  };
   Encode::_utf8_on($json) unless $self->{binary};
   $json;
 }

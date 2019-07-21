@@ -485,6 +485,32 @@ sub declare___field_with_default {
   }
 }
 
+sub JSON_TYPE_HANDLER {
+  require MOP4Import::Util::JSON_TYPE;
+  'MOP4Import::Util::JSON_TYPE';
+}
+
+sub declare___field_with_json_type {
+  (my $myPack, my Opts $opts, my FieldSpec $fs, my ($collect, $kw, $typeSpec)) = m4i_args(@_);
+
+  my $json_type = $myPack->JSON_TYPE_HANDLER->build_json_type($typeSpec);
+  $fs->{json_type} = $json_type;
+
+  print STDERR "  $fs->{name} json_type: spec=", terse_dump($typeSpec),
+    " result=", terse_dump($json_type), "\n" if DEBUG;
+
+  $collect->{$kw}{$fs->{name}} = $json_type;
+}
+
+sub declare___finalize_fields__json_type {
+  (my $myPack, my Opts $opts, my ($collected)) = m4i_args(@_);
+
+  print STDERR "  json_type for fields of $opts->{objpkg} = "
+    , terse_dump($collected), "\n" if DEBUG;
+
+  $myPack->JSON_TYPE_HANDLER->register_json_type($opts->{objpkg}, $collected);
+}
+
 sub declare_alias {
   (my $myPack, my Opts $opts, my ($name, $alias)) = m4i_args(@_);
   print STDERR " Declaring alias $name in $opts->{destpkg} as $alias\n" if DEBUG;
