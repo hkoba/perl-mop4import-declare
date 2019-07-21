@@ -8,6 +8,7 @@ requires 'JSON::MaybeXS';
 
 recommends 'Module::Runtime';
 recommends 'YAML::Syck';
+recommends 'Cpanel::JSON::XS';
 
 on configure => sub {
   requires 'rlib';
@@ -25,4 +26,5 @@ on test => sub {
   requires 'Test::Output';
   requires 'Test::Exit';
   requires 'YAML::Syck';
+  requires 'Cpanel::JSON::XS';
 };
