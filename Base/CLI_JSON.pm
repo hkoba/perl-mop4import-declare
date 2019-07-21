@@ -230,7 +230,7 @@ BEGIN {
   };
   (my $dir = __FILE__) =~ s,/?[^/]+\z,,;
   my $fn = "$dir/../Util/$packSuffix.pm";
-  unless (-r $fn) {
+  if (-r __FILE__ and not -r $fn) {
     die "Can't load $fn";
   }
   do $fn;
