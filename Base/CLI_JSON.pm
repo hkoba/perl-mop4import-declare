@@ -376,7 +376,9 @@ sub cli_encode_json {
   my $codec = $self->{_cli_json} //= $self->cli_json_encoder;
   my @opts;
   my $json = do {
-    if (USING_CPANEL_JSON_XS) {
+    if (not USING_CPANEL_JSON_XS) {
+      $codec->encode($obj);
+    } else {
       push @opts, do {
         if (defined $json_type) {
           $self->JSON_TYPE_HANDLER->lookup_json_type($json_type) // $json_type;
@@ -386,13 +388,13 @@ sub cli_encode_json {
           ();
         }
       };
-      if (my $sub = UNIVERSAL::can($obj, 'TO_JSON')) {
-        $codec->encode($sub->($obj), @opts);
-      } else {
+      if (not (my $sub = UNIVERSAL::can($obj, 'TO_JSON'))) {
         $codec->encode($obj, @opts);
+      } elsif (ref (my $conv = $sub->($obj))) {
+        $codec->encode($conv, @opts);
+      } else {
+        $conv;
       }
-    } else {
-      $codec->encode($obj);
     }
   };
   Encode::_utf8_on($json) unless $self->{binary};
