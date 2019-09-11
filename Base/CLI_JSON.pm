@@ -105,6 +105,9 @@ sub cli_invoke_sub {
   \@res;
 }
 
+#
+# Output abstraction (yield).
+#
 sub cli_output :method {
   (my MY $self, my ($list)) = @_;
 
@@ -112,17 +115,34 @@ sub cli_output :method {
     return;
   }
 
+  my $emitter = ref $self->{output} eq 'CODE' ? $self->{output} : sub {
+    $self->cli_write_fh(\*STDOUT, @_);
+  };
+
   if ($self->{scalar}) {
-    $self->cli_write_fh(\*STDOUT, map {
+    $emitter->(map {
       $self->{flatten} ? lexpand($_) : $_;
     } $_) for @$list;
   } else {
     if ($self->{flatten}) {
-      $self->cli_write_fh(\*STDOUT, @$list);
+      $emitter->(@$list);
     } else {
-      $self->cli_write_fh(\*STDOUT, $list);
+      $emitter->($list);
     }
   }
+}
+
+#
+# Gather output from cli_output
+#
+sub cli_capture_output {
+  (my MY $self, my ($subOrArrayOrString, @args)) = @_;
+  my @result;
+  local $self->{output} = sub {
+    push @result, \@_;
+  };
+  $self->cli_apply($subOrArrayOrString, @args);
+  @result;
 }
 
 sub cli_examine_result {
@@ -134,6 +154,9 @@ sub cli_examine_result {
   }
 }
 
+#
+# exit code handling
+#
 sub cli_exit_for_result {
   (my MY $self, my $list) = @_;
 
