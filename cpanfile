@@ -10,6 +10,8 @@ recommends 'Module::Runtime';
 recommends 'YAML::Syck';
 recommends 'Cpanel::JSON::XS', '>= 4.05';
 
+recommends 'File::AddInc';
+
 on configure => sub {
   requires 'rlib';
   requires 'Module::Build::Pluggable';
