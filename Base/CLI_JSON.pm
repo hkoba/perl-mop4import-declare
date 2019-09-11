@@ -371,6 +371,16 @@ sub cli_write_fh {
 
 sub cli_json { JSON() }
 
+sub cli_json_type {
+  (my MY $self) = @_;
+  $self->cli_json_type_of($self);
+}
+
+sub cli_json_type_of {
+  (my MY $self, my $objOrTypeName) = @_;
+  $self->JSON_TYPE_HANDLER->lookup_json_type(ref $objOrTypeName || $objOrTypeName);
+}
+
 sub cli_encode_json {
   (my MY $self, my ($obj, $json_type)) = @_;
   my $codec = $self->{_cli_json} //= $self->cli_json_encoder;
@@ -381,9 +391,9 @@ sub cli_encode_json {
     } else {
       push @opts, do {
         if (defined $json_type) {
-          $self->JSON_TYPE_HANDLER->lookup_json_type($json_type) // $json_type;
+          $self->cli_json_type_of($json_type) // $json_type;
         } elsif (ref $obj) {
-          $self->JSON_TYPE_HANDLER->lookup_json_type(ref $obj);
+          $self->cli_json_type_of(ref $obj);
         } else {
           ();
         }

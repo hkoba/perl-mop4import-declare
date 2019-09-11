@@ -60,7 +60,7 @@ if (my $sub = $cjson->can('require_types')) {
     {
       my $json = $cjson->encode(
         $rec,
-        MOP4Import::Util::JSON_TYPE->lookup_json_type(t1::T1),
+        MOP4Import::Base::CLI_JSON->cli_json_type_of(t1::T1),
       );
 
       is($json, $expect, "Nested hash: $expect");
