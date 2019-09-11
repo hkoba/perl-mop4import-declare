@@ -19,7 +19,7 @@ use Test::More;
 
 my $cjson = Cpanel::JSON::XS->new->canonical->allow_nonref;
 if (my $sub = $cjson->can('require_types')) {
-  $sub->();
+  $sub->($cjson);
 }
 
 {
