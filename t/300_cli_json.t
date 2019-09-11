@@ -72,7 +72,7 @@ subtest "cli_array and cli_object", sub {
 };
 
 SKIP: {
-  skip "requires 5.24", 4 unless $] >= 5.024;
+  skip "requires 5.24", 4 unless $] >= 5.026;
 
   subtest "exit code", sub {
     plan tests => 4;
