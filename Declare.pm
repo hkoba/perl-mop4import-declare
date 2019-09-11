@@ -9,9 +9,9 @@ use mro qw/c3/;
 
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
-print STDERR "Using MOP4Import::VERSION = $VERSION (file '"
+print STDERR "\nUsing ".__PACKAGE__. " = $VERSION (file '"
   . __FILE__ . "')\n"
-  if DEBUG and DEBUG >= 2;
+  if DEBUG;
 
 use MOP4Import::Opts
   qw/
@@ -556,7 +556,7 @@ sub declare_carp_not {
   *{globref($opts->{objpkg}, $name)} = \@carp_not;
 }
 
-BEGIN {
+{
   #
   # Below does equiv of `our @CARP_NOT = qw/ MOP4Import::Util /;`
   #

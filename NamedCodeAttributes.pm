@@ -12,13 +12,15 @@ use MOP4Import::Declare -as_base;
 my %named_code_attributes;
 
 sub MODIFY_CODE_ATTRIBUTES {
-  shift->cli_CODE_ATTR_dispatch(@_);
+  my $caller = [caller(1)];
+  shift->cli_CODE_ATTR_dispatch($caller, @_);
 }
 
 sub cli_CODE_ATTR_dispatch {
-  my ($pack, $code, @attrs) = @_;
-  (undef, my ($filename, $lineno)) = caller;
-  print "\n\n### Got CODE_ATTR at file $filename line $lineno: @attrs\n\n"
+  my ($pack, $caller, $code, @attrs) = @_;
+  (undef, my ($filename, $lineno)) = @$caller;
+  print "\n\n### Got CODE_ATTR at file $filename line $lineno: "
+    . MOP4Import::Util::terse_dump(@attrs)."\n\n"
     if DEBUG;
   my @unknowns;
   foreach my $attStr (@attrs) {
