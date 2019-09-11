@@ -377,12 +377,20 @@ sub declare_fields {
       next if defined $extended->{$name};
       print STDERR "  Field $opts->{objpkg}.$name is inherited "
 	. "from $super_class.\n" if DEBUG;
-      $extended->{$name} = do {
+      my $anyFieldSpec = $extended->{$name} = do {
         my $origin = $super->{$name};
          # XXX: mark origin in this clone?
         ref $origin ? $origin->clone : $origin;
       };
       push @$fields_array, $name;
+      if (ref $anyFieldSpec) {
+        my FieldSpec $fs = $anyFieldSpec;
+        if ($fs->{json_type}) {
+          $myPack->declare___field_with_json_type(
+            $opts, $fs, json_type => $fs->{json_type}
+          );
+        }
+      }
     }
   }
 
@@ -408,23 +416,13 @@ sub declare_fields {
 
   print STDERR "  FieldSpec is: $field_class\n" if DEBUG;
 
-  my %collector;
-  $myPack->declare___field($opts, $field_class
-                           , \%collector
-                           , ref $_ ? @$_ : $_)
-    for @fields;
-
-  foreach my $kind (keys %collector) {
-    my $sub = $myPack->can("declare___finalize_fields__$kind")
-      or Carp::croak "Unknown name in fields finalizer: $kind";
-    $sub->($myPack, $opts, $collector{$kind});
-  }
+  $myPack->declare___field($opts, $field_class, ref $_ ? @$_ : $_) for @fields;
 
   $opts->{objpkg}; # XXX:
 }
 
 sub declare___field {
-  (my $myPack, my Opts $opts, my ($field_class, $collect, $name, @rest)) = m4i_args(@_);
+  (my $myPack, my Opts $opts, my ($field_class, $name, @rest)) = m4i_args(@_);
   print STDERR "  Declaring field $opts->{objpkg}.$name " if DEBUG;
   my $extended = fields_hash($opts->{objpkg});
   my $fields_array = fields_array($opts->{objpkg});
@@ -467,14 +465,14 @@ sub declare___field {
 
   foreach my $delayed (@delayed) {
     my ($sub, $k, $v) = @$delayed;
-    $sub->($myPack, $opts, $obj, $collect, $k, $v);
+    $sub->($myPack, $opts, $obj, $k, $v);
   }
 
   $obj;
 }
 
 sub declare___field_with_default {
-  (my $myPack, my Opts $opts, my FieldSpec $fs, my ($collect, $k, $v)) = m4i_args(@_);
+  (my $myPack, my Opts $opts, my FieldSpec $fs, my ($k, $v)) = m4i_args(@_);
 
   $fs->{$k} = $v;
 
@@ -491,24 +489,15 @@ sub JSON_TYPE_HANDLER {
 }
 
 sub declare___field_with_json_type {
-  (my $myPack, my Opts $opts, my FieldSpec $fs, my ($collect, $kw, $typeSpec)) = m4i_args(@_);
+  (my $myPack, my Opts $opts, my FieldSpec $fs, my ($kw, $typeSpec)) = m4i_args(@_);
 
-  my $json_type = $myPack->JSON_TYPE_HANDLER->build_json_type($typeSpec);
+  print STDERR "  $fs->{name} json_type: spec=", terse_dump($typeSpec), "\n" if DEBUG;
+
+  my $json_type = $myPack->JSON_TYPE_HANDLER
+    ->register_json_type_of_field($opts->{objpkg}, $fs->{name}, $typeSpec);
   $fs->{json_type} = $json_type;
 
-  print STDERR "  $fs->{name} json_type: spec=", terse_dump($typeSpec),
-    " result=", terse_dump($json_type), "\n" if DEBUG;
-
-  $collect->{$kw}{$fs->{name}} = $json_type;
-}
-
-sub declare___finalize_fields__json_type {
-  (my $myPack, my Opts $opts, my ($collected)) = m4i_args(@_);
-
-  print STDERR "  json_type for fields of $opts->{objpkg} = "
-    , terse_dump($collected), "\n" if DEBUG;
-
-  $myPack->JSON_TYPE_HANDLER->register_json_type($opts->{objpkg}, $collected);
+  #" result=", terse_dump($json_type), "\n"
 }
 
 sub declare_alias {

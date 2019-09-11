@@ -8,6 +8,8 @@ use MOP4Import::Util qw/globref define_constant/;
 
 use Cpanel::JSON::XS::Type;
 
+our %JSON_TYPES; # It is too early to hide this.
+
 BEGIN {
   my $CLS = 'Cpanel::JSON::XS::Type';
 
@@ -19,7 +21,11 @@ BEGIN {
       my $typeName = $origTypeName . $suffix;
       my $lowerName = "JSON_TYPE_".$typeName;
       my $upperName = "JSON_TYPE_".uc($typeName);
-      define_constant(join("::", __PACKAGE__, $lowerName), $CLS->$upperName);
+      my $value = $CLS->$upperName;
+      define_constant(join("::", __PACKAGE__, $lowerName), $value);
+
+      # Make sure underlying typecode 1, 2, 3... can be resolved too.
+      $JSON_TYPES{$value} = $value;
     }
   }
 
@@ -29,17 +35,38 @@ BEGIN {
   }
 }
 
-my %JSON_TYPES;
+sub intern_json_type {
+  my ($pack, $typeName) = @_;
+  if (ref $typeName) {
+    $typeName;
+  } else {
+    $JSON_TYPES{$typeName} //= $pack->build_json_type($typeName);
+  }
+}
 
 sub lookup_json_type {
   my ($pack, $typeName) = @_;
   $JSON_TYPES{$typeName};
 }
 
-sub register_json_type {
-  my ($pack, $destpkg, $json_type) = @_;
-  $JSON_TYPES{$destpkg} = $json_type;
+sub register_json_type_of_field {
+  my ($pack, $destpkg, $fieldName, $jsonType) = @_;
+  my $typeRec = $JSON_TYPES{$destpkg} //= +{};
+  unless (ref $typeRec eq 'HASH') {
+    Carp::croak "Can't set json_type for $destpkg\->{$fieldName} because it was already declared as type: @{[$typeRec // '']}"
+  }
+
+  my $found;
+  if (not ref $jsonType and ref ($found = $JSON_TYPES{$jsonType})) {
+    # If given $jsonType is a typename string and actual entry is a reference,
+    # we can weaken it.
+    $typeRec->{$fieldName} = $found;
+    Scalar::Util::weaken($typeRec->{$fieldName});
+  } else {
+    $typeRec->{$fieldName} = $pack->intern_json_type($jsonType);
+  }
 }
+
 
 sub build_json_type {
   my ($pack, $typeSpec) = @_;

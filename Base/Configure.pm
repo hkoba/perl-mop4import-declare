@@ -97,7 +97,7 @@ sub cget :method {
 }
 
 sub declare___field_with_weakref {
-  (my $myPack, my Opts $opts, my FieldSpec $fs, my ($collect, $k, $v)) = m4i_args(@_);
+  (my $myPack, my Opts $opts, my FieldSpec $fs, my ($k, $v)) = m4i_args(@_);
 
   $fs->{$k} = $v;
 

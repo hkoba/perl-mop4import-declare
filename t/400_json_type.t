@@ -72,5 +72,38 @@ use Test::More;
   }
 }
 
+{
+  {
+    package
+      t3;
+    use MOP4Import::Base::CLI_JSON -as_base;
+    use MOP4Import::Types +{basepkg => 't2::T2'}
+      , T3 => [[fields =>
+              , [e4 => json_type => 'int']
+            ]]
+      ;
+  }
+
+  {
+    use JSON::MaybeXS;
+    my t3::T3 $t3 = +{};
+    @{$t3}{qw(e1 e2 e3 e4)} = (10, "10", 10.25, "12");
+    my $expect = '{"e1":10,"e2":10,"e3":"10.25","e4":12}';
+    my $json = JSON()->new->canonical->allow_nonref # ->require_types
+      ->encode($t3, MOP4Import::Util::JSON_TYPE->lookup_json_type(t3::T3));
+    is($json, $expect, "raw HASH: $expect");
+  }
+
+  {
+    my $enc = t3->new;
+
+    my t3::T3 $t3 = fields::new(t3::T3);
+    @{$t3}{qw(e1 e2 e3 e4)} = (10, "10", 10.25, "13");
+    my $expect = '{"e1":10,"e2":10,"e3":"10.25","e4":13}';
+    is($enc->cli_encode_json(+{%$t3}, t3::T3)
+       , $expect, "plain fields::new: $expect");
+  }
+}
+
 done_testing;
 
