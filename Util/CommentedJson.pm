@@ -57,7 +57,7 @@ sub strip_json_comments {
 sub list_json_comments {
   my @pos;
   while ($_[1] =~ m{\G(?<ws>\s*+)$re_ALL}g) {
-    if (my $len = length($+{comment})) {
+    if (defined $+{comment} and my $len = length($+{comment})) {
       my $startPos = pos($_[1]) - $len;
       push @pos, [$startPos, $len]
     }
