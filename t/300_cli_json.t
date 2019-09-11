@@ -63,6 +63,13 @@ subtest "cli_json", sub {
   is MyApp1->cli_json, JSON::MaybeXS::JSON(), "cli_json";
 };
 
+subtest "cli_encode_json/cli_decode_json", sub {
+  plan tests => 2;
+  my $app = MyApp1->new;
+  is_deeply $app->cli_decode_json($app->cli_encode_json(["foo"])), ["foo"];
+  is_deeply $app->cli_encode_json($app->cli_decode_json(q|{"foo":3}|)), q|{"foo":3}|;
+};
+
 subtest "cli_array and cli_object", sub {
   plan tests => 2;
   my $test = CallTester->make_tester(MyApp1->new);

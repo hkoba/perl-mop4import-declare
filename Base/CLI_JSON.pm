@@ -404,6 +404,11 @@ sub cli_json_type_of {
   $self->JSON_TYPE_HANDLER->lookup_json_type(ref $objOrTypeName || $objOrTypeName);
 }
 
+sub cli_decode_json {
+  (my MY $self, my $string) = @_;
+  $self->cli_decoder_from__json->($string);
+}
+
 sub cli_encode_json {
   (my MY $self, my ($obj, $json_type)) = @_;
   my $codec = $self->{_cli_json} //= $self->cli_json_encoder;
