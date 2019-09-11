@@ -59,19 +59,23 @@ sub _strip_tab { my ($str) = @_; $str =~ s/\t//g; $str }
 };
 
 subtest "cli_json", sub {
+  plan tests => 1;
   is MyApp1->cli_json, JSON::MaybeXS::JSON(), "cli_json";
 };
 
 subtest "cli_array and cli_object", sub {
+  plan tests => 2;
   my $test = CallTester->make_tester(MyApp1->new);
 
   $test->returns_in_list([cli_array => qw(a b 1 2)], [qw(a b 1 2)]);
   $test->returns_in_scalar([cli_object => qw(a b 1 2)], +{a => 'b', 1 => '2'});
 };
 
-subtest "exit code", sub {
-  SKIP: {
-    skip "requires 5.24", 4 unless $] >= 5.024;
+SKIP: {
+  skip "requires 5.24", 4 unless $] >= 5.024;
+
+  subtest "exit code", sub {
+    plan tests => 4;
     my $test = CallTester->make_tester('MyApp1');
 
     $test->exits([run => [cli_array =>  1]], 0);
@@ -79,37 +83,44 @@ subtest "exit code", sub {
 
     $test->exits([run => [qw/--scalar cli_identity/,  1]], 0);
     $test->exits([run => [qw/--scalar cli_identity/, '']], 1);
-  }
-};
+  };
+}
 
 my $CT = CallTester->make_tester('MyApp1');
 
 subtest "MyApp1->run([--foo,cmd])", sub {
+  plan tests => 1;
   $CT->captures([run => ['--foo','cmd','baz']], "1 baz\n");
 };
 
 subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
   my @args = ('--no-exit-code', '--foo={"x":3}'
               , contextual => '{"y":8}', undef, '[1,"foo",2,3]');
+
   subtest "default (--output=json)", sub {
 
     $CT->captures([run => [@args]]
                   , qq|[{"result":{"x":3}},{"result":[{"y":8},null,[1,"foo",2,3]]}]\n|);
 
     subtest "--flatten", sub {
+      plan tests => 1;
       $CT->captures([run => ['--flatten', @args]]
                     , qq|{"result":{"x":3}}\n{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
     };
 
     subtest "--scalar", sub {
+      plan tests => 1;
       $CT->captures([run => ['--scalar', @args]]
                     , qq|[{"x":3},[{"y":8},null,[1,"foo",2,3]]]\n|);
     };
 
     subtest "--scalar --flatten", sub {
+      plan tests => 1;
       $CT->captures([run => ['--scalar', '--flatten', @args]]
                     , qq|{"x":3}\n[{"y":8},null,[1,"foo",2,3]]\n|);
     };
+
+    done_testing();
   };
 
   subtest "--output=dump", sub {
@@ -117,23 +128,29 @@ subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
                   , qq|[{'result' => {'x' => 3}},{'result' => [{'y' => 8},undef,[1,'foo',2,3]]}]\n|);
 
     subtest "--flatten", sub {
+      plan tests => 1;
       $CT->captures([run => ['--flatten', '--output=dump', @args]]
                     , qq|{'result' => {'x' => 3}}\n{'result' => [{'y' => 8},undef,[1,'foo',2,3]]}\n|);
     };
 
     subtest "--scalar", sub {
+      plan tests => 1;
       $CT->captures([run => ['--scalar', '--output=dump', @args]]
                     , qq|[{'x' => 3},[{'y' => 8},undef,[1,'foo',2,3]]]\n|);
     };
 
     subtest "--scalar --flatten", sub {
+      plan tests => 1;
       $CT->captures([run => ['--scalar', '--flatten', '--output=dump', @args]]
                     , qq|{'x' => 3}\n[{'y' => 8},undef,[1,'foo',2,3]]\n|);
     };
 
+    done_testing();
   };
 
   subtest "--output=yaml", sub {
+    plan tests => 1;
+
     $CT->captures([run => ['--output=yaml', @args]], <<'END');
 --- 
 - 
@@ -154,19 +171,24 @@ END
   };
 
   subtest "--output=tsv", sub {
+    plan tests => 1;
     $CT->captures([run => ['--output=tsv', @args]]
                   , qq|{"result":{"x":3}}\t{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
   };
 
   subtest "--output=raw", sub {
+    plan tests => 1;
     require Math::BigInt;
     $CT->captures([run => ['--output=raw', '--no-exit-code'
                            , cli_eval => 'Math::BigInt->new(30)']]
                   , 30);
   };
+
+  done_testing();
 };
 
 subtest "cli_write_fh_as_... APIs", sub {
+  plan tests => 1;
 
   $CT->captures([run => [qw/--no-exit-code --output=ltsv cli_array/
                          , qq|{"a":{"foo":"bar"},"b":[1,"baz"]}|
@@ -209,6 +231,8 @@ subtest "cli_read_file APIs", sub {
       , [{url => "http://localhost", key2 => [0..4]
           , "key3" => {a => "foo/*bar baz*/", b => 2}}]
     );
+
+  done_testing();
 };
 
 done_testing();
