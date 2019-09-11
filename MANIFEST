@@ -37,8 +37,15 @@ t/106_base_cli_export.t
 t/10_configure.t
 t/200_cli.t
 t/300_cli_json.t
+t/400_json_type.t
+t/410_json_type_nested.t
 t/50_types.t
+t/cli_json_input.d/basic-js.json
+t/cli_json_input.d/input.txt
+t/cli_json_input.d/input.yaml
+t/cli_json_input.d/input.yml
 t/cli_json_input.d/keybindings.json
+t/cli_json_input.d/no_extension
 t/t_lib.pl
 t/t_lib.pm
 Types.pm
@@ -46,7 +53,9 @@ Types.pod
 Types/Extend.pm
 Util.pm
 Util/CallTester.pm
+Util/CommentedJson.pm
 Util/compat_double_diamond.pm
 Util/compat_double_diamond_5_20.pm
 Util/FindMethods.pm
+Util/JSON_TYPE.pm
 whyfields.pod

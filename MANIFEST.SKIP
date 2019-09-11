@@ -26,3 +26,4 @@
 ^MYMETA\.json$
 ^cover_db/
 ^MOP4Import-Declare-
+.perl-version
