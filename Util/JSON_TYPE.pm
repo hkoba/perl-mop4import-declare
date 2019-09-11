@@ -75,16 +75,19 @@ sub build_json_type {
   }
   elsif (not ref $typeSpec) {
     if (defined (my $found = $JSON_TYPES{$typeSpec})) {
+      # Note: weakening here does not take effect.
       $found;
     } elsif (my $sub = $pack->can(my $longName = "JSON_TYPE_".$typeSpec)) {
       $sub->();
     } else {
       Carp::croak "Unknown JSON_TYPE name: $typeSpec";
     }
-  } elsif (ref $typeSpec eq 'ARRAY') {
+  }
+  elsif (ref $typeSpec eq 'ARRAY') {
     my ($keyword, @args) = @$typeSpec;
     $pack->$keyword(map {$pack->build_json_type($_)} @args);
-  } elsif (ref $typeSpec eq 'HASH') {
+  }
+  elsif (ref $typeSpec eq 'HASH') {
     my %spec;
     foreach my $key (keys %$typeSpec) {
       $spec{$key} = $pack->build_json_type($typeSpec->{$key});
