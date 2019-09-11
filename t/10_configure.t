@@ -126,7 +126,7 @@ package MyZodiac; use Zodiac1 -as_base;
   describe "use .. [fields [f => \@spec],...]", sub {
     describe "spec: default => 'value'", sub {
       it "should be accepted"
-	, no_error q{package F_def; use Zodiac1 -as_base, [fields => [fmt => default => 'tsv']]};
+        , no_error q{package F_def; use Zodiac1 -as_base, -inc, [fields => [fmt => default => 'tsv']]};
 
       it "should be set as default value", sub {
 	ok {F_def->new->fmt eq 'tsv'};
@@ -135,6 +135,40 @@ package MyZodiac; use Zodiac1 -as_base;
       it "should be changed in regular manner", sub {
 	ok {F_def->new(fmt => 'xlsx')->fmt eq 'xlsx'};
       }
+    };
+
+    describe "before/after hook for configure_default", sub {
+      it "should be defined", no_error q{
+package F_def_with_hooks;
+use F_def -as_base
+  , [fields =>
+       [x => default => 'X'],
+       [y => default => 'Y'],
+       [z => default => 'Z'],
+       'value', 'x_is_explicitly_defined',
+    ]
+  ;
+
+sub before_configure_default {
+  (my MY $self) = @_;
+  $self->{x_is_explicitly_defined} = defined $self->{x};
+}
+
+sub after_configure_default {
+  (my MY $self) = @_;
+  $self->{value} //= "$self->{x}$self->{y}$self->{z}";
+}
+
+};
+
+      it "should allow defining derived value in after_configure_hook", sub {
+        expect(F_def_with_hooks->new->value)->to_be("XYZ");
+      };
+
+      it "should allow use of definedness of options in before_configure_hook", sub {
+        expect(F_def_with_hooks->new(x => 8)->x_is_explicitly_defined)->to_be(1);
+      };
+
     };
 
     describe "spec: weakref => 1", sub {
@@ -146,7 +180,6 @@ package MyZodiac; use Zodiac1 -as_base;
 	ok {$obj->[0] = F_weak->new(f => $obj); isweak($obj->[0]->{f})};
       }
     };
-    
   };
 
   describe 'copy constructor and such', sub {
