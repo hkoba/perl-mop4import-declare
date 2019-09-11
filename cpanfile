@@ -21,6 +21,7 @@ on build => sub {
 };
 
 on test => sub {
+  requires 'Test::More', '>= 1.3021';
   requires 'Test::Kantan';
   requires 'Capture::Tiny';
   requires 'Test::Output';
