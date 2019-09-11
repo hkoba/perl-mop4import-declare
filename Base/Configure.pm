@@ -146,41 +146,45 @@ __END__
 
 =head1 NAME
 
-MOP4Import::Base::Configure - OO Base class (based on MOP4Import)
+MOP4Import::Base::Configure - Base class with configure() interface for fields
 
 =head1 SYNOPSIS
 
-  package MyPSGIMiddlewareSample {
-    use MOP4Import::Base::Configure -as_base
-      , [fields =>
+  package MyMetaCPAN {
+     
+     use MOP4Import::Base::Configure -as_base
+       , [fields =>
+          [baseurl => default => 'https://fastapi.metacpan.org/v1'],
+        ]
+       ;
+     
+     sub get {
+       (my MY $self, my $entry) = @_;
+       $self->furl_get("$self->{baseurl}$entry");
+     }
+   }
+  
+  #
+  
+  my $obj = MyMetaCPAN->new;
+  print $obj->baseurl; # => https://fastapi.metacpan.org/v1
+  $obj->get("/author/someone");
 
-         , [app =>
-             , doc => 'For Plack::Middleware standard conformance.']
+  $obj = MyMetaCPAN->new(baseurl => 'http://localhost:8000');
+  # $obj = MyMetaCPAN->new({baseurl => 'http://localhost:8000'});
+  # $obj->configure(baseurl => 'http://localhost:8000');
 
-         , [dbname =>
-             , doc => 'Name of SQLite dbfile']
-        ];
+  print $obj->baseurl; # => 'http://localhost:8000'
+  $obj->get("/author/someone");
 
-    use parent qw( Plack::Middleware );
-
-    use DBI;
-
-    sub call {
-      (my MY $self, my $env) = @_;
-
-      $env->{'myapp.dbh'} = DBI->connect("dbi:SQLite:dbname=$self->{dbname}");
-
-      return $self->app->($env);
-    }
-  };
 
 =head1 DESCRIPTION
 
-MOP4Import::Base::Configure is a
-L<MOP4Import|MOP4Import::Declare> family
-and is my latest implementation of
-L<Tk-like configure based object|MOP4Import::whyfields>
-base classs. This class also inherits L<MOP4Import::Declare>,
+MOP4Import::Base::Configure is a minimalistic base class
+for L<fields> based OO with support of Tk-like new/configure interface,
+automatic getter generation and default value initialization.
+
+This class also inherits L<MOP4Import::Declare>,
 so you can define your own C<declare_..> pragmas too.
 
 =head1 METHODS
@@ -189,6 +193,17 @@ so you can define your own C<declare_..> pragmas too.
 X<new>
 
 Usual constructor. This passes given C<%opts> to L</configure>.
+Actual implementation is following:
+
+  sub new :method {
+    my MY $self = fields::new(shift);
+    $self->configure(@_);
+    $self->before_configure_default;
+    $self->after_new; # Note: deprecated.
+    $self->configure_default;
+    $self->after_configure_default;
+    $self;
+  }
 
 =head2 configure (%opts | \%opts)
 X<configure>
@@ -206,10 +221,20 @@ L<default|MOP4Import::Declare/declare___field_with_default> field spec.
 
 =head1 HOOK METHODS
 
-=head2 after_new
+=head2 before_configure_default
+
+This hook is called after configure and just before configure_default.
+This is useful to change behavior whether specific option is given or not.
+
+=head2 after_configure_default
+
+This hook is called after configure_default.
+This is useful to compute all fields are filled with default values.
+
+=head2 after_new (deprecated)
 X<after_new>
 
-This hook is called just after call of C<configure> in C<new>.
+This method is called just before configure_default.
 
 =head1 FIELD SPECs
 
@@ -224,6 +249,10 @@ This defines C<default_FIELDNAME> method with given VALUE.
 
 This generates set hook (onconfigure_FIELDNAME) wrapped with
 L<Scalar::Util/weaken>.
+
+=head2 json_type => STRING | Cpanel::JSON::XS::Type
+
+To be documented...
 
 =head1 SEE ALSO
 
