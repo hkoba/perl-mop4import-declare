@@ -25,8 +25,6 @@ script:
     cd ../MOP4Import
     perl Build.PL
     ./Build build
-     cover -test
+    prove -v
     echo DONE
     '
-after_success:
-  cover -report coveralls
