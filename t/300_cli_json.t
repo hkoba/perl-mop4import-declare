@@ -101,29 +101,29 @@ subtest "MyApp1->run([--foo,cmd])", sub {
 };
 
 subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
-  my @args = ('--no-exit-code', '--foo={"x":3}'
-              , contextual => '{"y":8}', undef, '[1,"foo",2,3]');
+  my @opts = ('--no-exit-code', '--foo={"x":3}');
+  my @vals = ('{"y":8}', undef, '[1,"foo",2,3]');
 
   subtest "default (--output=json)", sub {
 
-    $CT->captures([run => [@args]]
+    $CT->captures([run => [@opts, contextual => @vals]]
                   , qq|[{"result":{"x":3}},{"result":[{"y":8},null,[1,"foo",2,3]]}]\n|);
 
     subtest "--flatten", sub {
       plan tests => 1;
-      $CT->captures([run => ['--flatten', @args]]
+      $CT->captures([run => ['--flatten', @opts, contextual => @vals]]
                     , qq|{"result":{"x":3}}\n{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
     };
 
     subtest "--scalar", sub {
       plan tests => 1;
-      $CT->captures([run => ['--scalar', @args]]
+      $CT->captures([run => ['--scalar', @opts, contextual => @vals]]
                     , qq|[{"x":3},[{"y":8},null,[1,"foo",2,3]]]\n|);
     };
 
     subtest "--scalar --flatten", sub {
       plan tests => 1;
-      $CT->captures([run => ['--scalar', '--flatten', @args]]
+      $CT->captures([run => ['--scalar', '--flatten', @opts, contextual => @vals]]
                     , qq|{"x":3}\n[{"y":8},null,[1,"foo",2,3]]\n|);
     };
 
@@ -131,24 +131,24 @@ subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
   };
 
   subtest "--output=dump", sub {
-    $CT->captures([run => ['--output=dump', @args]]
+    $CT->captures([run => ['--output=dump', @opts, contextual => @vals]]
                   , qq|[{'result' => {'x' => 3}},{'result' => [{'y' => 8},undef,[1,'foo',2,3]]}]\n|);
 
     subtest "--flatten", sub {
       plan tests => 1;
-      $CT->captures([run => ['--flatten', '--output=dump', @args]]
+      $CT->captures([run => ['--flatten', '--output=dump', @opts, contextual => @vals]]
                     , qq|{'result' => {'x' => 3}}\n{'result' => [{'y' => 8},undef,[1,'foo',2,3]]}\n|);
     };
 
     subtest "--scalar", sub {
       plan tests => 1;
-      $CT->captures([run => ['--scalar', '--output=dump', @args]]
+      $CT->captures([run => ['--scalar', '--output=dump', @opts, contextual => @vals]]
                     , qq|[{'x' => 3},[{'y' => 8},undef,[1,'foo',2,3]]]\n|);
     };
 
     subtest "--scalar --flatten", sub {
       plan tests => 1;
-      $CT->captures([run => ['--scalar', '--flatten', '--output=dump', @args]]
+      $CT->captures([run => ['--scalar', '--flatten', '--output=dump', @opts, contextual => @vals]]
                     , qq|{'x' => 3}\n[{'y' => 8},undef,[1,'foo',2,3]]\n|);
     };
 
@@ -158,7 +158,7 @@ subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
   subtest "--output=yaml", sub {
     plan tests => 1;
 
-    $CT->captures([run => ['--output=yaml', @args]], <<'END');
+    $CT->captures([run => ['--output=yaml', @opts, contextual => @vals]], <<'END');
 --- 
 - 
   result: 
@@ -179,7 +179,7 @@ END
 
   subtest "--output=tsv", sub {
     plan tests => 1;
-    $CT->captures([run => ['--output=tsv', @args]]
+    $CT->captures([run => ['--output=tsv', @opts, contextual => @vals]]
                   , qq|{"result":{"x":3}}\t{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
   };
 
