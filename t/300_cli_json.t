@@ -178,7 +178,7 @@ END
   };
 
   subtest "--output=tsv", sub {
-    plan tests => 3;
+    plan tests => 2;
 
     $CT->captures([run => ['--output=tsv', @opts, contextual => @vals]]
                   , qq|{"result":{"x":3}}\n{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
@@ -197,6 +197,10 @@ END
                          , join("\t", 'null', q{ '"}, '{"x":5,"y":6}', '[7,8,9]')."\n"
                        ));
 
+  };
+
+  subtest 'cli_encode_as($format, @records)', sub {
+
     is(MyApp1->new
        ->cli_encode_as(tsv => ['a'..'d'], [1..4], {x => 5, y => [6, 7]})
        , join("", "a\tb\tc\td\n"
@@ -205,7 +209,27 @@ END
             )
        , 'cli_encode_as(tsv => @tsv)'
      );
-  };
+
+    is(MyApp1->new(flatten => 1)
+       ->cli_encode_as(tsv => ['a'..'d'], [1..4], {x => 5, y => [6, 7]})
+       , join("", "a\tb\tc\td\n"
+              , "1\t2\t3\t4\n"
+              , '{"x":5,"y":[6,7]}'."\n"
+            )
+       , 'cli_encode_as(tsv => @tsv), flatten does not affect'
+     );
+
+    use utf8;
+    is(MyApp1->new
+       ->cli_encode_as([tsv => ":utf8"]
+                       => [N => 'label'], [1, "漢字"], [2, "ひらがな"])
+       , Encode::encode_utf8(join("", "N\tlabel\n"
+                                   , "1\t漢字\n"
+                                   , "2\tひらがな\n"
+                                 ))
+       , "layer option"
+     )
+};
 
   subtest "--output=raw", sub {
     plan tests => 1;

@@ -463,14 +463,16 @@ sub cli_json_decoder {
 #----------------------------------------
 
 sub cli_encode_as {
-  (my MY $self, my ($outputFmt, @items)) = @_;
+  (my MY $self, my ($outputSpec, @items)) = @_;
+  my ($outputFmt, $layer) = lexpand($outputSpec);
   $outputFmt //= '';
+  $layer //= '';
   my $sub = $self->can("cli_write_fh_as_$outputFmt")
     or Carp::croak "Unknown output format: '$outputFmt'";
   local $self->{flatten};
   my $buffer = "";
   {
-    open my $outFH, '>', \$buffer;
+    open my $outFH, ">$layer", \$buffer;
     $sub->($self, $outFH, \@items);
   }
   $buffer;
