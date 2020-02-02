@@ -466,7 +466,7 @@ sub cli_flatten_if_not_yet {
   (my MY $self, my @args) = @_;
   # When called via flatten, list is already unwrapped.
   map {
-    $self->{flatten} ? $_ : @$_
+    $self->{flatten} ? $_ : (ref $_ eq 'ARRAY' ? @$_ : $_)
   } @args;
 }
 
@@ -503,17 +503,20 @@ sub cli_write_fh_as_raw {
 
 MY->declare_output_format(MY, 'tsv');
 sub cli_write_fh_as_tsv {
-  (my MY $self, my ($outFH, @args)) = @_;
-  # Write given \@args as a single record if requested so.
-  print $outFH join("\t", map {
-    if (not defined $_) {
-      $self->{'undef-as'};
-    } elsif (ref $_) {
-      $self->cli_encode_json($_);
-    } else {
-      $_;
-    }
-  } $self->cli_flatten_if_not_yet(@args)), "\n";
+  (my MY $self, my ($outFH, @tsv)) = @_;
+  foreach my $rec (map {ref $_ eq 'ARRAY' ? @$_ : $_} @tsv) {
+    print $outFH join("\t", map {
+      if (not defined $_) {
+        $self->{'undef-as'};
+      } elsif (ref $_) {
+        $self->cli_encode_json($_);
+      } else {
+        my $cp = $_;
+        $cp =~ s/[\t\n]+/ /g;
+        $cp
+      }
+    } $self->cli_flatten_if_not_yet($rec) ), "\n";
+  }
 }
 
 #========================================

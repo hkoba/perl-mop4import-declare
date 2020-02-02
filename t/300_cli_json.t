@@ -178,9 +178,25 @@ END
   };
 
   subtest "--output=tsv", sub {
-    plan tests => 1;
+    plan tests => 2;
+
     $CT->captures([run => ['--output=tsv', @opts, contextual => @vals]]
-                  , qq|{"result":{"x":3}}\t{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
+                  , qq|{"result":{"x":3}}\n{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
+
+    $CT->captures([run => ['--output=tsv', @opts
+                           , cli_array =>
+                           , [foo => 'bar']
+                           , [1,2]
+                           , [3,4]
+                           , [undef, "\t\n'\"", {x => 5, y => 6}, [7, 8, 9]]
+                         ]]
+                  , join(""
+                         , "foo\tbar\n"
+                         , "1\t2\n"
+                         , "3\t4\n"
+                         , join("\t", 'null', q{ '"}, '{"x":5,"y":6}', '[7,8,9]')."\n"
+                       ));
+
   };
 
   subtest "--output=raw", sub {
