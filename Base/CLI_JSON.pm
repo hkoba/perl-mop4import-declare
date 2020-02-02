@@ -462,6 +462,20 @@ sub cli_json_decoder {
 
 #----------------------------------------
 
+sub cli_encode_as {
+  (my MY $self, my ($outputFmt, @items)) = @_;
+  $outputFmt //= '';
+  my $sub = $self->can("cli_write_fh_as_$outputFmt")
+    or Carp::croak "Unknown output format: '$outputFmt'";
+  local $self->{flatten};
+  my $buffer = "";
+  {
+    open my $outFH, '>', \$buffer;
+    $sub->($self, $outFH, \@items);
+  }
+  $buffer;
+}
+
 sub cli_flatten_if_not_yet {
   (my MY $self, my @args) = @_;
   # When called via flatten, list is already unwrapped.
