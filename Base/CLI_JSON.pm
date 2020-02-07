@@ -409,7 +409,7 @@ sub cli_decode_json {
   $self->cli_decoder_from__json->($string);
 }
 
-sub cli_encode_json {
+sub cli_encode_json_as_bytes {
   (my MY $self, my ($obj, $json_type)) = @_;
   my $codec = $self->{_cli_json} //= $self->cli_json_encoder;
   my @opts;
@@ -435,6 +435,12 @@ sub cli_encode_json {
       }
     }
   };
+  $json;
+}
+
+sub cli_encode_json {
+  (my MY $self, my ($obj, $json_type)) = @_;
+  my $json = $self->cli_encode_json_as_bytes($obj, $json_type);
   Encode::_utf8_on($json) unless $self->{binary};
   $json;
 }
