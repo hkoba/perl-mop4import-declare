@@ -164,7 +164,7 @@ sub cli_group_options {
     push @{$package{$spec->{package}}}, $spec;
   }
 
-  my $isa = mro::get_linear_isa(ref $self);
+  my $isa = mro::get_linear_isa(ref $self || $self);
 
   map {
     $package{$_} ? [$_, @{$package{$_}}] : ();
