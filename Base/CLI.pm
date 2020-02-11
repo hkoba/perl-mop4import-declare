@@ -23,10 +23,12 @@ use List::Util ();
 
 #========================================
 
-sub run :method {
+*run = *cli_run; *run = *cli_run;
+
+sub cli_run :method {
   my ($class, $arglist, $opt_alias) = @_;
 
-  my MY $self = $class->new($class->parse_opts($arglist, undef, $opt_alias));
+  my MY $self = $class->new($class->cli_parse_opts($arglist, undef, $opt_alias));
 
   unless (@$arglist) {
     # Invoke help command if no arguments are given.
@@ -61,7 +63,8 @@ sub run :method {
 #
 # Each class can override parse_opts method.
 #
-sub parse_opts :method {
+*parse_opts = *cli_parse_opts; *parse_opts = *cli_parse_opts;
+sub cli_parse_opts :method {
   my ($pack, $list, $result, $opt_alias) = @_;
 
   MOP4Import::Util::parse_opts($pack, $list, $result, $opt_alias);
@@ -254,6 +257,6 @@ sub cli_info_methods :method {
   }
 }
 
-MY->run(\@ARGV) unless caller;
+MY->cli_run(\@ARGV) unless caller;
 
 1;

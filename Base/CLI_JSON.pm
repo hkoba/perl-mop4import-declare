@@ -59,7 +59,7 @@ sub cli_precmd {
 #
 # Replace parse_opts to use parse_json_opts
 #
-sub parse_opts {
+sub cli_parse_opts {
   my ($pack, $list, $result, $opt_alias, $converter, %opts) = @_;
 
   MOP4Import::Util::parse_json_opts($pack, $list, $result, $opt_alias);
@@ -629,6 +629,6 @@ sub allow_json_comments {
   ref $self ? $self->{'strip-json-comments'} : 1;
 }
 
-MY->run(\@ARGV) unless caller;
+MY->cli_run(\@ARGV) unless caller;
 
 1;
