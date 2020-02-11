@@ -24,7 +24,7 @@ In F<MyScript.pm>
     ([arguments => @ARGV], [structs => $self->{structs}])
   }
   
-  MY->run(\@ARGV, {h => "help", v => 'verbose', d => 'debug'}) unless caller;
+  MY->cli_run(\@ARGV, {h => "help", v => 'verbose', d => 'debug'}) unless caller;
   1;
 
 From shell:
@@ -91,24 +91,26 @@ so that we can develop perl modules more rapidly via CLI-tested pieces of codes.
 
 =head1 CLASS METHODS
 
-=head2 run (\@ARGV, \%option_shortcuts)
+=head2 cli_run (\@ARGV, \%option_shortcuts)
 
-  __PACKAGE__->run(\@ARGV) unless caller;
+  __PACKAGE__->cli_run(\@ARGV) unless caller;
 
 This method parses arguments, invokes appropriate command
-and usually emits its result to STDOUT.
+and usually emits its result to STDOUT. Also there is an alias C<run()>
+which points to C<cli_run()> so that you do the same thing like below:
+
+  __PACKAGE__->run(\@ARGV) unless caller;
 
 Accepted options are a subset of posix style options (C<--name> and C<--name=value> only). C<--name value> is not allowed,
 L<intentionally|MOP4Import::name_space_value_options_considered_harmful>.
 If I<value> part of options are recognized as JSON arrays/objects, they are automatically deserialized as perl's arrays/hashes.
 
-If run() gets optional second argument hash, it is used to
+If cli_run() gets optional second argument hash, it is used to
 accept short name for options like following:
 
-  __PACKAGE__->run(\@ARGV, {h => 'help', v => 'verbose'}) unless caller;
+  __PACKAGE__->cli_run(\@ARGV, {h => 'help', v => 'verbose'}) unless caller;
 
 In above, C<-h> is recognized samely as C<--help> and C<-v> as C<--verbose>.
-
 
 =head3 Command name interpretation rule
 X<command-rule>
