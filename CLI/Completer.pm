@@ -70,6 +70,7 @@ sub zsh_methods {
       push @methods, $self->gather_methods_from(
         $super, \%seen
         , no_getter => 1
+        , ($universal_argument >= 4*4 ? (all => 1) : ())
       );
     }
   }
@@ -87,6 +88,7 @@ sub zsh_methods {
 sub gather_methods_from {
   (my MY $self, my $targetClass, my $seenDict, my %opts) = @_;
   my $no_getter = delete $opts{no_getter};
+  my $all       = delete $opts{all};
   MOP4Import::Util::function_names(
     from => $targetClass,
     matching => qr{^(?:cmd_)?[a-z]},
@@ -98,6 +100,11 @@ sub gather_methods_from {
       }
       if ($self->cli_inspector->info_code_attribute(MetaOnly => $code)) {
         return 0;
+      }
+      if ($all) {
+        return 1;
+      } else {
+        return 0 if MOP4Import::Base::Configure->can($_);
       }
       if ($no_getter) {
         return not $self->cli_inspector->is_getter_of($targetClass, $_);
