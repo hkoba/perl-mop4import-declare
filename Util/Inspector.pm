@@ -83,6 +83,12 @@ sub format_option {
   sprintf "  --%-${len}s  %s\n", $fs->{name}, $fs->{doc} // "";
 }
 
+sub is_getter_of {
+  my ($self, $pack, $subName) = @_;
+  my $fields = fields_hash($pack);
+  exists $fields->{$subName} && $pack->can($subName);
+}
+
 sub info_command_doc_of {
   my ($self, $class, $name) = @_;
   $self->info_method_doc_of($class, "cmd_$name");
