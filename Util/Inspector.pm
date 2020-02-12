@@ -100,7 +100,12 @@ sub info_method_doc_of {
     return if $allow_missing;
     Carp::croak "No such method: $name";
   };
-  scalar MOP4Import::NamedCodeAttributes::cli_CODE_ATTR_get($class, Doc => $sub);
+  $self->info_code_attribute(Doc => $sub);
+}
+
+sub info_code_attribute {
+  my ($self, $name, $code) = @_;
+  scalar MOP4Import::NamedCodeAttributes->m4i_CODE_ATTR_get($name => $code);
 }
 
 sub info_methods :method {
