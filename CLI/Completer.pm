@@ -62,17 +62,27 @@ sub zsh_methods {
 
   my $insp = $self->cli_inspector;
 
-  my @methods = $self->gather_methods_from($targetClass);
-  if (my $universal_argument = $opts->{NUMERIC}) {
+  my $methodPrefix = $opts->{words}[$opts->{CURRENT} - 1];
+
+  my $universal_argument = $opts->{NUMERIC};
+
+  # default => methods implemented in $targetClass only.
+  # one universal_argument => find superclasses too.
+  # two universal_argument => find all methods including getters, new,...
+
+  my @gather_default = (($methodPrefix || (($universal_argument || 0) >= 4*4))
+                        ? (all => 1) : (no_getter => 1));
+  my @methods = $self->gather_methods_from($targetClass, undef, @gather_default);
+  if ($methodPrefix or $universal_argument) {
     my %seen; $seen{$_} = 1 for @methods;
     (undef, my @super) = @{mro::get_linear_isa($targetClass)};
     foreach my $super (@super) {
-      push @methods, $self->gather_methods_from(
-        $super, \%seen
-        , no_getter => 1
-        , ($universal_argument >= 4*4 ? (all => 1) : ())
-      );
+      push @methods, $self->gather_methods_from($super, \%seen, @gather_default);
     }
+  }
+
+  if ($methodPrefix) {
+    @methods = grep {/^$methodPrefix/} @methods;
   }
 
   map {
