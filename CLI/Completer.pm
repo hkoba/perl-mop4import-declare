@@ -43,13 +43,32 @@ sub zsh_options {
   my ($targetClass, $has_shbang) = $self->load_module_from_pm($opts->{pmfile})
     or Carp::croak "Can't extract class name from $opts->{pmfile}";
 
-  map {
+  my $optionPrefix = $opts->{words}[$opts->{CURRENT} - 1];
+  $optionPrefix =~ s/^--?//;
+
+  my $universal_argument = $opts->{NUMERIC};
+
+  my @options = $self->cli_inspector->list_options_of($targetClass);
+  if ($optionPrefix) {
+    @options = grep {/^$optionPrefix/} @options;
+  }
+
+  my @grouped = map {
     my ($implClass, @specs) = @$_;
-    map {
-      my FieldSpec $spec = $_;
+    if (not $universal_argument) {
+      ($implClass eq '' || $implClass eq $targetClass) ? @specs : ();
+    } else {
+      @specs;
+    }
+  } $self->cli_inspector->group_options_of($targetClass, @options);
+
+  map {
+    if (ref (my FieldSpec $spec = $_)) {
       "--$spec->{name}=-". ($spec->{doc} ? "[$spec->{doc}]" : "");
-    } @specs;
-  } $self->cli_inspector->group_options($targetClass);
+    } else {
+      $_;
+    }
+  } @grouped;
 }
 
 sub zsh_methods {
