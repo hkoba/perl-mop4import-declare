@@ -69,14 +69,6 @@ sub zsh_methods {
     foreach my $super (@super) {
       push @methods, $self->gather_methods_from(
         $super, \%seen
-        , except => qr{^(
-                         declare_ | import |
-                         cli_CODE_ATTR |
-                         default_|
-                         (before|after)_(new|configure_default) |
-                         dispatch_
-                       )
-                    }x
         , no_getter => 1
       );
     }
@@ -102,6 +94,9 @@ sub gather_methods_from {
       my ($realName, $code) = @_;
       s/^cmd_//;
       if ($seenDict->{$_}++) {
+        return 0;
+      }
+      if ($self->cli_inspector->info_code_attribute(MetaOnly => $code)) {
         return 0;
       }
       if ($no_getter) {
