@@ -9,6 +9,8 @@ use mro qw/c3/;
 
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
+use Sub::Util ();
+
 print STDERR "\nUsing ".__PACKAGE__. " = $VERSION (file '"
   . __FILE__ . "')\n"
   if DEBUG;
@@ -463,7 +465,10 @@ sub declare___field :MetaOnly {
         croak "Accessor $opts->{objpkg}::$name is redefined!\nIf you really want to define the accessor by hand, please specify fields spec like: [$name => no_getter => 1, ...].";
       }
     }
-    *{globref($opts->{objpkg}, $name)} = sub :method { $_[0]->{$name} };
+
+    *{globref($opts->{objpkg}, $name)}
+      = Sub::Util::set_subname(join("::", $opts->{objpkg}, $name)
+                               , sub :method { $_[0]->{$name} });
   }
 
   foreach my $delayed (@delayed) {
