@@ -48,13 +48,13 @@ sub list_commands {
 
 sub format_command_of {
   my ($self, $class, $name) = @_;
-  "  ".join("        ", $name
+  "  ".join("        "
+            , $name
             , $self->info_command_doc_of($class, $name) // '')."\n";
 }
 
 sub group_options {
-  my $self = shift;
-  my $pack = shift || ref $self || $self;
+  my ($self, $pack) = @_;
   my $fields = fields_hash($pack);
   my %package;
   foreach my $name (@{fields_array($pack)}) {
@@ -71,9 +71,9 @@ sub group_options {
 }
 
 sub max_option_length {
-  my $self = shift;
-  my $fields = fields_hash($self);
-  my @name = grep {/^[a-z]/} @{fields_array($self)};
+  my ($self, $pack) = @_;
+  my $fields = fields_hash($pack);
+  my @name = grep {/^[a-z]/} @{fields_array($pack)};
   List::Util::max(map {length} @name);
 }
 
