@@ -15,7 +15,7 @@ sub describe_commands_of {
   (my MY $self, my $classOrObj) = @_;
   my $class = ref $classOrObj || $classOrObj;
 
-  map {$self->format_command_of($class, $_)} $self->list_commands($class);
+  map {$self->format_command_of($class, $_)} $self->list_commands_of($class);
 }
 
 sub describe_options_of {
@@ -24,7 +24,7 @@ sub describe_options_of {
 
   my @msg;
 
-  my @options = $self->group_options($class);
+  my @options = $self->group_options_of($class);
   my $maxlen = $self->max_option_length($class);
 
   foreach my $group (@options) {
@@ -40,9 +40,8 @@ END
   @msg;
 }
 
-sub list_commands {
-  my $self = shift;
-  my $pack = shift || ref $self || $self;
+sub list_commands_of {
+  my ($self, $pack) = @_;
   FindMethods($pack, sub {s/^cmd_//});
 }
 
@@ -53,21 +52,33 @@ sub format_command_of {
             , $self->info_command_doc_of($class, $name) // '')."\n";
 }
 
-sub group_options {
+sub list_options_of {
   my ($self, $pack) = @_;
+  @{fields_array($pack)};
+}
+
+sub group_options_of {
+  my ($self, $pack, @opt_names) = @_;
   my $fields = fields_hash($pack);
+  @opt_names = @{fields_array($pack)} unless @opt_names;
   my %package;
-  foreach my $name (@{fields_array($pack)}) {
+  my @unknown;
+  foreach my $name (@opt_names) {
     next unless $name =~ /^[a-z]/;
-    my FieldSpec $spec = $fields->{$name};
+    ref(my FieldSpec $spec = $fields->{$name}) or do {
+      push @unknown, $name;
+      next
+    };
     push @{$package{$spec->{package}}}, $spec;
   }
 
   my $isa = mro::get_linear_isa($pack);
 
-  map {
+  my @grouped = map {
     $package{$_} ? [$_, @{$package{$_}}] : ();
   } @$isa;
+
+  ((@unknown ? ['', @unknown] : ()), @grouped);
 }
 
 sub max_option_length {
