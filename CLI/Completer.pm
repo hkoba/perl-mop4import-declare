@@ -16,45 +16,102 @@ use Module::Runtime ();
 use MOP4Import::Util::ResolveSymlinks;
 
 use MOP4Import::Types
-  ZshParams => [[fields => qw/pmfile words CURRENT BUFFER CURSOR/]]
+  ZshParams => [[fields => qw/pmfile words NUMERIC CURRENT BUFFER CURSOR/]]
   ;
+
+sub cli_inspector {
+  require MOP4Import::Util::Inspector;
+  'MOP4Import::Util::Inspector';
+}
 
 sub onconfigure_zero {
   (my MY $self) = @_;
   $self->{separator} = "\0";
 }
 
-sub cmd_zsh_arguments {
-  (my MY $self, my @args) = @_;
-  my @completion = $self->zsh_arguments(@args);
+sub cmd_joined {
+  (my MY $self, my ($method, @args)) = @_;
+  my @completion = $self->$method(@args);
   print join($self->{separator}, @completion);
 }
 
-sub zsh_arguments {
+sub zsh_options {
   (my MY $self, my %opts) = @_;
 
   my ZshParams $opts = \%opts;
 
-  my (@args) = @{$opts->{words}};
+  my ($targetClass, $has_shbang) = $self->load_module_from_pm($opts->{pmfile})
+    or Carp::croak "Can't extract class name from $opts->{pmfile}";
+
+  map {
+    my ($implClass, @specs) = @$_;
+    map {
+      my FieldSpec $spec = $_;
+      "--$spec->{name}=-". ($spec->{doc} ? "[$spec->{doc}]" : "");
+    } @specs;
+  } $self->cli_inspector->group_options($targetClass);
+}
+
+sub zsh_methods {
+  (my MY $self, my %opts) = @_;
+
+  my ZshParams $opts = \%opts;
 
   my ($targetClass, $has_shbang) = $self->load_module_from_pm($opts->{pmfile})
     or Carp::croak "Can't extract class name from $opts->{pmfile}";
 
-  # my @opts = $self->cli_parse_opts(\@args);
+  my $insp = $self->cli_inspector;
 
-  # if (($opts->{CURRENT} - 1) <= @opts/2) {
+  my @methods = $self->gather_methods_from($targetClass);
+  if (my $universal_argument = $opts->{NUMERIC}) {
+    my %seen; $seen{$_} = 1 for @methods;
+    (undef, my @super) = @{mro::get_linear_isa($targetClass)};
+    foreach my $super (@super) {
+      push @methods, $self->gather_methods_from(
+        $super, \%seen
+        , except => qr{^(
+                         declare_ | import |
+                         cli_CODE_ATTR |
+                         default_|
+                         (before|after)_(new|configure_default) |
+                         dispatch_
+                       )
+                    }x
+        , no_getter => 1
+      );
+    }
+  }
 
-  my @opts = map {
-      my ($implClass, @specs) = @$_;
-      map {
-        my FieldSpec $spec = $_;
-        "--$spec->{name}=-". ($spec->{doc} ? "[$spec->{doc}]" : "");
-      } @specs;
-    } MOP4Import::Base::CLI::cli_group_options($targetClass);
+  map {
+    my $method = $targetClass->can("cmd_$_") ? "cmd_$_" : $_;
+    if (defined (my $doc = $insp->info_method_doc_of($targetClass, $method, 1))) {
+      "$_:$doc"
+    } else {
+      $_;
+    }
+  } @methods;
+}
 
-  my @methods = FindMethods($targetClass, sub {s/^(?:cmd_)?//});
-
-  (@opts, "*:argument:(".join(" ", @methods).")");
+sub gather_methods_from {
+  (my MY $self, my $targetClass, my $seenDict, my %opts) = @_;
+  my $no_getter = delete $opts{no_getter};
+  MOP4Import::Util::function_names(
+    from => $targetClass,
+    matching => qr{^(?:cmd_)?[a-z]},
+    grep => sub {
+      my ($realName, $code) = @_;
+      s/^cmd_//;
+      if ($seenDict->{$_}++) {
+        return 0;
+      }
+      if ($no_getter) {
+        return not $self->cli_inspector->is_getter_of($targetClass, $_);
+      }
+      1;
+      # MOP4Import::Util::has_method_attr($code); # Too strict.
+    },
+    %opts,
+  );
 }
 
 sub load_module_from_pm {
