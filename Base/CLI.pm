@@ -13,8 +13,6 @@ use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 
 use MOP4Import::Base::Configure -as_base, qw/FieldSpec/;
 
-use MOP4Import::NamedCodeAttributes -as_base;
-
 #========================================
 
 *run = *cli_run; *run = *cli_run;
