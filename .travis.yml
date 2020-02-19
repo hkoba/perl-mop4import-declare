@@ -21,18 +21,13 @@ script:
     echo TRAVIS_REPO_SLUG=$TRAVIS_REPO_SLUG
     docker run --init --rm -it -v $PWD:/$TRAVIS_REPO_SLUG -w /$TRAVIS_REPO_SLUG $image bash -c '
     set -euxo pipefail
-    distDir=$PWD
-    mkdir -p ../build/lib
-    cd ../build
-    buildRoot=$PWD
-    ln -vnsfr $distDir lib/MOP4Import
-    ln -vnsfr $distDir/cpanfile .
     curl -fsSL --compressed https://git.io/cpm > cpm
     chmod +x cpm
     ./cpm install -g Devel::Cover Devel::Cover::Report::Coveralls
     ./cpm install -g
-    cd $distDir
-    perl ./Build.PL
+    ln -vnsf perl-mop4import-declare ../MOP4Import
+    cd ../MOP4Import
+    perl Build.PL
     ./Build build
     cover -test
     echo DONE
