@@ -6,6 +6,8 @@ requires 'rlib'; # XXX:
 
 requires 'JSON::MaybeXS';
 
+requires 'Sub::Util', '>= 1.40'; # For subname
+
 recommends 'Module::Runtime';
 recommends 'YAML::Syck';
 recommends 'Cpanel::JSON::XS', '>= 4.05';
