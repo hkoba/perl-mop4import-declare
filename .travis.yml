@@ -30,7 +30,7 @@ script:
     perl Build.PL
     ./Build build
     cover -test
+    cover -report coveralls
     echo DONE
     '
-after_success:
-  cover -report coveralls
+  
