@@ -16,9 +16,7 @@ recommends 'File::AddInc';
 
 on build => sub {
   requires 'rlib';
-  requires 'Module::Build';
-  requires 'Module::Build::Pluggable';
-  requires 'Module::CPANfile';
+  requires 'Module::Build::Pluggable::CPANfile';
 };
 
 on test => sub {
