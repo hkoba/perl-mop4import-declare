@@ -25,10 +25,10 @@ script:
     ./cpm install
     ln -vnsf perl-mop4import-declare ../MOP4Import
     cd ../MOP4Import
-    perl Build.PL
-    ./Build build
-    cover -test
+    perl -Ilocal/lib/perl5 Build.PL
+    perl -Ilocal/lib/perl5 ./Build build
+    perl -Ilocal/lib/perl5 cover -test
     echo DONE
     '
 after_success:
-  cover -report coveralls
+  perl -Ilocal/lib/perl5 cover -report coveralls
