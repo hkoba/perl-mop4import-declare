@@ -21,8 +21,8 @@ script:
     set -euxo pipefail
     curl -fsSL --compressed https://git.io/cpm > cpm
     chmod +x cpm
-    cpm install Devel::Cover Devel::Cover::Report::Coveralls
-    cpm install
+    ./cpm install Devel::Cover Devel::Cover::Report::Coveralls
+    ./cpm install
     ln -vnsf perl-mop4import-declare ../MOP4Import
     cd ../MOP4Import
     perl Build.PL
