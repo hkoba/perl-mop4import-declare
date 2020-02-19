@@ -14,15 +14,11 @@ recommends 'Cpanel::JSON::XS', '>= 4.05';
 
 recommends 'File::AddInc';
 
-on configure => sub {
+on build => sub {
   requires 'rlib';
   requires 'Module::Build';
   requires 'Module::Build::Pluggable';
   requires 'Module::CPANfile';
-};
-
-on build => sub {
-  requires 'rlib'; # XXX:
 };
 
 on test => sub {
