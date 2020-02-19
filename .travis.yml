@@ -32,7 +32,7 @@ script:
     ./cpm install -g Devel::Cover Devel::Cover::Report::Coveralls
     ./cpm install -g
     cd $distDir
-    ./Build.PL
+    perl ./Build.PL
     ./Build build
     cover -test
     echo DONE
