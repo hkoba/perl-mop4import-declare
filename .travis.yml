@@ -29,13 +29,13 @@ script:
     ln -vnsfr $distDir/cpanfile .
     curl -fsSL --compressed https://git.io/cpm > cpm
     chmod +x cpm
-    ./cpm install Devel::Cover Devel::Cover::Report::Coveralls
-    ./cpm install
+    ./cpm install -g Devel::Cover Devel::Cover::Report::Coveralls
+    ./cpm install -g
     cd $distDir
-    perl -I$buildRoot/local/lib/perl5 Build.PL
-    perl -I$buildRoot/local/lib/perl5 Build build
-    perl -I$buildRoot/local/lib/perl5 cover -test
+    ./Build.PL
+    ./Build build
+    cover -test
     echo DONE
     '
 after_success:
-  perl -I$PWD/../build/local/lib/perl5 cover -report coveralls
+  cover -report coveralls
