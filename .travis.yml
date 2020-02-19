@@ -19,12 +19,14 @@ script:
   - |
     echo TRAVIS_BUILD_DIR=$TRAVIS_BUILD_DIR
     echo TRAVIS_REPO_SLUG=$TRAVIS_REPO_SLUG
+    echo TRAVIS_BRANCH=$TRAVIS_BRANCH
     docker run --init --rm -it \
       -e COVERALLS_REPO_TOKEN \
+      -e TRAVIS_BRANCH \
       -v $PWD:/$TRAVIS_REPO_SLUG -w /$TRAVIS_REPO_SLUG $image \
       bash -c '
     set -euxo pipefail
-    if [[ -r .git/config ]]; then git branch -v; else echo NO GIT; fi
+    if [[ -r .git/config ]]; then git checkout $TRAVIS_BRANCH; else echo NO GIT; fi
     curl -fsSL --compressed https://git.io/cpm > cpm
     chmod +x cpm
     ./cpm install -g Devel::Cover Devel::Cover::Report::Coveralls
