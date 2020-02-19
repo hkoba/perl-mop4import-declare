@@ -17,18 +17,25 @@ before_install:
   - docker run $image perl -V
 script:
   - |
+    echo TRAVIS_BUILD_DIR=$TRAVIS_BUILD_DIR
+    echo TRAVIS_REPO_SLUG=$TRAVIS_REPO_SLUG
     docker run --init --rm -it -v $PWD:/$TRAVIS_REPO_SLUG -w /$TRAVIS_REPO_SLUG $image bash -c '
     set -euxo pipefail
+    distDir=$PWD
+    mkdir -p ../build/lib
+    cd ../build
+    buildRoot=$PWD
+    ln -vnsfr $distDir lib/MOP4Import
+    ln -vnsfr $distDir/cpanfile .
     curl -fsSL --compressed https://git.io/cpm > cpm
     chmod +x cpm
     ./cpm install Devel::Cover Devel::Cover::Report::Coveralls
     ./cpm install
-    ln -vnsf perl-mop4import-declare ../MOP4Import
-    cd ../MOP4Import
-    perl -Ilocal/lib/perl5 Build.PL
-    perl -Ilocal/lib/perl5 ./Build build
-    perl -Ilocal/lib/perl5 cover -test
+    cd $distDir
+    perl -I$buildRoot/local/lib/perl5 Build.PL
+    perl -I$buildRoot/local/lib/perl5 Build build
+    perl -I$buildRoot/local/lib/perl5 cover -test
     echo DONE
     '
 after_success:
-  perl -Ilocal/lib/perl5 cover -report coveralls
+  perl -I$PWD/../build/local/lib/perl5 cover -report coveralls
