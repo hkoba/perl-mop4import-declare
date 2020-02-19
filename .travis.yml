@@ -24,6 +24,7 @@ script:
       -v $PWD:/$TRAVIS_REPO_SLUG -w /$TRAVIS_REPO_SLUG $image \
       bash -c '
     set -euxo pipefail
+    if [[ -r .git/config ]]; then git branch -v; else echo NO GIT; fi
     curl -fsSL --compressed https://git.io/cpm > cpm
     chmod +x cpm
     ./cpm install -g Devel::Cover Devel::Cover::Report::Coveralls
