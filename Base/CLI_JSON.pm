@@ -564,14 +564,15 @@ sub cli_create_from_file :method {
 }
 
 sub cli_read_file :method {
-  my ($classOrObj, $fileName) = @_;
+  my ($classOrObj, $fileNameSpec, %moreOpts) = @_;
+  my ($fileName, %opts) = lexpand($fileNameSpec);
   my ($ftype) = $fileName =~ m{\.(\w+)$};
   $ftype //= "";
 
   my $sub = $classOrObj->can("cli_read_file__$ftype")
     or Carp::croak "Unsupported file type '$ftype': $fileName";
 
-  $sub->($classOrObj, $fileName);
+  $sub->($classOrObj, $fileName, %opts, %moreOpts);
 }
 
 # No filename extension => read entire content except last \n.
