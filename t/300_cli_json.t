@@ -136,12 +136,48 @@ subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
 
   subtest "--output=dump", sub {
     $CT->captures([run => ['--output=dump', @opts, contextual => @vals]]
-                  , qq|[{'result' => {'x' => 3}},{'result' => [{'y' => 8},undef,[1,'foo',2,3]]}]\n|);
+                  , <<'END');
+{
+  'result' => {
+    'x' => 3,
+  },
+}
+{
+  'result' => [
+    {
+      'y' => 8,
+    },
+    undef,
+    [
+      1,
+      'foo',
+      2,
+      3,
+    ],
+  ],
+}
+END
 
     subtest "--scalar", sub {
       plan tests => 1;
       $CT->captures([run => ['--scalar', '--output=dump', @opts, contextual => @vals]]
-                    , qq|[{'x' => 3},[{'y' => 8},undef,[1,'foo',2,3]]]\n|);
+                    , <<'END');
+{
+  'x' => 3,
+}
+[
+  {
+    'y' => 8,
+  },
+  undef,
+  [
+    1,
+    'foo',
+    2,
+    3,
+  ],
+]
+END
     };
 
     done_testing();

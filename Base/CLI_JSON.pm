@@ -519,7 +519,7 @@ sub cli_write_fh_as_dump {
       ->Indent(1)
       ->Deparse(1)
       ->Trailingcomma(1)
-      ->Dump, "\n";
+      ->Dump;
   }
 }
 
