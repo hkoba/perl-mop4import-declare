@@ -30,20 +30,27 @@ should_compile "package MyApp1 {use ... -as_base;...}", q{
 package MyApp1;
 use MOP4Import::Base::CLI_JSON -as_base, -inc, [fields => qw/foo/]
 , [output_format => ltsv => sub {
-  my ($self, $outFH, @args) = @_;
-    foreach my $dict ($self->cli_flatten_if_not_yet(@args)) {
+  my ($self, $outFH, @tables) = @_;
+  foreach my $table (@tables) {
+    foreach my $dict (ref $table eq 'ARRAY' ? @$table : $table) {
       print $outFH join("\t", map {
         my $val = $dict->{$_};
         _strip_tab($_).":"._strip_tab(defined $val && ref $val ? $self->cli_encode_json($val) : $val);
       } sort keys %$dict), "\n";
     }
-}
+  }
+ }
 ]
 ;
 
 sub cmd_cmd {
   (my MY $self, my @args) = @_;
   print join(" ", $self->{foo}, @args), "\n";
+}
+
+sub as_is {
+  (my MY $self, my @args) = @_;
+  wantarray ? @args : \@args;
 }
 
 sub contextual {
@@ -109,23 +116,20 @@ subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
     $CT->captures([run => [@opts, contextual => @vals]]
                   , qq|[{"result":{"x":3}},{"result":[{"y":8},null,[1,"foo",2,3]]}]\n|);
 
-    subtest "--flatten", sub {
-      plan tests => 1;
-      $CT->captures([run => ['--flatten', @opts, contextual => @vals]]
-                    , qq|{"result":{"x":3}}\n{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
-    };
-
     subtest "--scalar", sub {
       plan tests => 1;
       $CT->captures([run => ['--scalar', @opts, contextual => @vals]]
                     , qq|[{"x":3},[{"y":8},null,[1,"foo",2,3]]]\n|);
     };
 
-    subtest "--scalar --flatten", sub {
-      plan tests => 1;
-      $CT->captures([run => ['--scalar', '--flatten', @opts, contextual => @vals]]
-                    , qq|{"x":3}\n[{"y":8},null,[1,"foo",2,3]]\n|);
-    };
+    done_testing();
+  };
+
+  subtest "default (--output=ndjson)", sub {
+    my @o = ('--output=ndjson', @opts);
+
+    $CT->captures([run => [@o, as_is => [1..3], {x => 8}]]
+                  , qq|[1,2,3]\n{"x":8}\n|);
 
     done_testing();
   };
@@ -134,22 +138,10 @@ subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
     $CT->captures([run => ['--output=dump', @opts, contextual => @vals]]
                   , qq|[{'result' => {'x' => 3}},{'result' => [{'y' => 8},undef,[1,'foo',2,3]]}]\n|);
 
-    subtest "--flatten", sub {
-      plan tests => 1;
-      $CT->captures([run => ['--flatten', '--output=dump', @opts, contextual => @vals]]
-                    , qq|{'result' => {'x' => 3}}\n{'result' => [{'y' => 8},undef,[1,'foo',2,3]]}\n|);
-    };
-
     subtest "--scalar", sub {
       plan tests => 1;
       $CT->captures([run => ['--scalar', '--output=dump', @opts, contextual => @vals]]
                     , qq|[{'x' => 3},[{'y' => 8},undef,[1,'foo',2,3]]]\n|);
-    };
-
-    subtest "--scalar --flatten", sub {
-      plan tests => 1;
-      $CT->captures([run => ['--scalar', '--flatten', '--output=dump', @opts, contextual => @vals]]
-                    , qq|{'x' => 3}\n[{'y' => 8},undef,[1,'foo',2,3]]\n|);
     };
 
     done_testing();
@@ -208,15 +200,6 @@ END
               , '{"x":5,"y":[6,7]}'."\n"
             )
        , 'cli_encode_as(tsv => @tsv)'
-     );
-
-    is(MyApp1->new(flatten => 1)
-       ->cli_encode_as(tsv => ['a'..'d'], [1..4], {x => 5, y => [6, 7]})
-       , join("", "a\tb\tc\td\n"
-              , "1\t2\t3\t4\n"
-              , '{"x":5,"y":[6,7]}'."\n"
-            )
-       , 'cli_encode_as(tsv => @tsv), flatten does not affect'
      );
 
     use utf8;

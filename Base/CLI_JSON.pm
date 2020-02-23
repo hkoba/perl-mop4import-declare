@@ -11,11 +11,9 @@ use MOP4Import::Base::CLI -as_base
      , ['quiet' => doc => 'to be (somewhat) quiet', json_type => 'int']
      , ['scalar' => doc => "evaluate methods in scalar context", json_type => 'bool']
      , ['output' => default => 'json'
-        , doc => "choose output serializer (json/tsv/dump)"
+        , doc => "choose output serializer (json/ndjson/tsv/dump)"
         , json_type => 'string'
       ]
-     , ['flatten' => doc => "output each result separately (instead of single json array)"
-        , json_type => 'string']
      , ['undef-as' => default => 'null'
         , doc => "serialize undef as this value. used in tsv output"
         , json_type => 'string'
@@ -106,7 +104,7 @@ sub cli_invoke_sub {
 }
 
 #
-# Output abstraction (yield).
+# cli_output($list) -- Output abstraction (yield).
 #
 sub cli_output :method {
   (my MY $self, my ($list)) = @_;
@@ -120,16 +118,14 @@ sub cli_output :method {
   };
 
   if ($self->{scalar}) {
-    $emitter->(map {
-      $self->{flatten} ? lexpand($_) : $_;
-    } $_) for @$list;
+    $emitter->($_) for @$list;
   } else {
-    if ($self->{flatten}) {
-      $emitter->(@$list);
-    } else {
-      $emitter->($list);
-    }
+    $emitter->($list);
   }
+}
+
+sub onconfigure_flatten {
+  Carp::croak "--flatten option is deprecated. For json, please consider --output=ndjson";
 }
 
 #
@@ -270,7 +266,6 @@ sub _cli_xargs {
   my ($subOrArray, @restPrefix) = @args;
   $self->cli_precheck_apply($subOrArray);
 
-  $self->{flatten} //= 1; # xargs should flatten outputs by default.
   local $/ = $opts->{null} ? "\0" : "\n";
   local *ARGV;
   if ($opts->{slurp} || $opts->{single}) {
@@ -384,6 +379,12 @@ sub declare_output_format {
   }
 }
 
+# cli_write_fh($outFH, @output) -- Output format abstraction
+# In cli_run context, cli_write_fh is called from cli_output($list) and
+# used as cli_write_fh(\*STDOUT, $list).
+# But in general, cli_write_fh can process multiple arguments at once.
+# 
+
 sub cli_write_fh {
   (my MY $self, my ($outFH, @args)) = @_;
   my $output = $self->can("cli_write_fh_as_".$self->{'output'})
@@ -475,7 +476,6 @@ sub cli_encode_as {
   $layer //= '';
   my $sub = $self->can("cli_write_fh_as_$outputFmt")
     or Carp::croak "Unknown output format: '$outputFmt'";
-  local $self->{flatten};
   my $buffer = "";
   {
     open my $outFH, ">$layer", \$buffer;
@@ -484,12 +484,14 @@ sub cli_encode_as {
   $buffer;
 }
 
-sub cli_flatten_if_not_yet {
-  (my MY $self, my @args) = @_;
-  # When called via flatten, list is already unwrapped.
-  map {
-    $self->{flatten} ? $_ : (ref $_ eq 'ARRAY' ? @$_ : $_)
-  } @args;
+MY->declare_output_format(MY, 'ndjson');
+sub cli_write_fh_as_ndjson {
+  (my MY $self, my ($outFH, @tables)) = @_;
+  foreach my $table (@tables) {
+    foreach my $item (ref $table eq 'ARRAY' ? @$table : $table) {
+      print $outFH ((ref $item ? $self->cli_encode_json($item) : $item // $self->{'undef-as'} // ''), "\n");
+    }
+  }
 }
 
 MY->declare_output_format(MY, 'json');
@@ -517,27 +519,31 @@ sub cli_write_fh_as_dump {
 
 MY->declare_output_format(MY, 'raw');
 sub cli_write_fh_as_raw {
-  (my MY $self, my ($outFH, @args)) = @_;
-  foreach my $item ($self->cli_flatten_if_not_yet(@args)) {
-    print $outFH $item;
+  (my MY $self, my ($outFH, @tables)) = @_;
+  foreach my $table (@tables) {
+    foreach my $item (ref $table eq 'ARRAY' ? @$table : $table) {
+      print $outFH $item;
+    }
   }
 }
 
 MY->declare_output_format(MY, 'tsv');
 sub cli_write_fh_as_tsv {
-  (my MY $self, my ($outFH, @tsv)) = @_;
-  foreach my $rec (map {ref $_ eq 'ARRAY' ? @$_ : $_} @tsv) {
-    print $outFH join("\t", map {
-      if (not defined $_) {
-        $self->{'undef-as'};
-      } elsif (ref $_) {
-        $self->cli_encode_json($_);
-      } else {
-        my $cp = $_;
-        $cp =~ s/[\t\n]+/ /g;
-        $cp
-      }
-    } $self->cli_flatten_if_not_yet($rec) ), "\n";
+  (my MY $self, my ($outFH, @tables)) = @_;
+  foreach my $table (@tables) {
+    foreach my $rec (@$table) {
+      print $outFH join("\t", map {
+        if (not defined $_) {
+          $self->{'undef-as'};
+        } elsif (ref $_) {
+          $self->cli_encode_json($_);
+        } else {
+          my $cp = $_;
+          $cp =~ s/[\t\n]+/ /g;
+          $cp
+        }
+      } ref $rec eq 'ARRAY' ? @$rec : $rec), "\n";
+    }
   }
 }
 
