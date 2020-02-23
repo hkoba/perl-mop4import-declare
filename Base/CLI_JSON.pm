@@ -10,8 +10,8 @@ use MOP4Import::Base::CLI -as_base
      , ['help' => doc => "show this help message", json_type => 'string']
      , ['quiet' => doc => 'to be (somewhat) quiet', json_type => 'int']
      , ['scalar' => doc => "evaluate methods in scalar context", json_type => 'bool']
-     , ['output' => default => 'json'
-        , doc => "choose output serializer (json/ndjson/tsv/dump)"
+     , ['output' => default => 'ndjson'
+        , doc => "choose output serializer (ndjson/json/tsv/dump)"
         , json_type => 'string'
       ]
      , ['undef-as' => default => 'null'

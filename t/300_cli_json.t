@@ -111,25 +111,36 @@ subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
   my @opts = ('--no-exit-code', '--foo={"x":3}');
   my @vals = ('{"y":8}', undef, '[1,"foo",2,3]');
 
-  subtest "default (--output=json)", sub {
+  subtest "default (--output=ndjson)", sub {
+    my @o = (@opts);
 
-    $CT->captures([run => [@opts, contextual => @vals]]
-                  , qq|[{"result":{"x":3}},{"result":[{"y":8},null,[1,"foo",2,3]]}]\n|);
+    $CT->captures([run => [@o, contextual => @vals]]
+                  , qq|{"result":{"x":3}}\n{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
 
     subtest "--scalar", sub {
       plan tests => 1;
-      $CT->captures([run => ['--scalar', @opts, contextual => @vals]]
-                    , qq|[{"x":3},[{"y":8},null,[1,"foo",2,3]]]\n|);
+      $CT->captures([run => ['--scalar', @o, contextual => @vals]]
+                    , qq|{"x":3}\n[{"y":8},null,[1,"foo",2,3]]\n|);
     };
 
     done_testing();
   };
 
-  subtest "default (--output=ndjson)", sub {
-    my @o = ('--output=ndjson', @opts);
+  subtest "(--output=json)", sub {
+    my @o = ('--output=json', @opts);
 
     $CT->captures([run => [@o, as_is => [1..3], {x => 8}]]
-                  , qq|[1,2,3]\n{"x":8}\n|);
+                  , qq|[[1,2,3],{"x":8}]\n|);
+
+
+    $CT->captures([run => [@o, contextual => @vals]]
+                  , qq|[{"result":{"x":3}},{"result":[{"y":8},null,[1,"foo",2,3]]}]\n|);
+
+    subtest "--scalar", sub {
+      plan tests => 1;
+      $CT->captures([run => ['--scalar', @o, contextual => @vals]]
+                    , qq|[{"x":3},[{"y":8},null,[1,"foo",2,3]]]\n|);
+    };
 
     done_testing();
   };
