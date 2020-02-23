@@ -14,6 +14,8 @@ recommends 'Cpanel::JSON::XS', '>= 4.05';
 
 recommends 'File::AddInc';
 
+recommends 'Data::Dumper', '>= 2.160';
+
 on build => sub {
   requires 'rlib';
   requires 'Module::Build::Pluggable::CPANfile';
