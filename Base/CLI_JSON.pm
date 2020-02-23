@@ -163,7 +163,12 @@ sub cli_exit_for_result {
 
 sub cli_array :method {
   (my MY $self, my @args) = @_;
-  wantarray ? @args : \@args;
+  \@args;
+}
+
+sub cli_list :method {
+  (my MY $self, my @args) = @_;
+  @args;
 }
 
 sub cli_object :method {

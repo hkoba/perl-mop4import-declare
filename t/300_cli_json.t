@@ -81,7 +81,7 @@ subtest "cli_array and cli_object", sub {
   plan tests => 2;
   my $test = CallTester->make_tester(MyApp1->new);
 
-  $test->returns_in_list([cli_array => qw(a b 1 2)], [qw(a b 1 2)]);
+  $test->returns_in_list([cli_array => qw(a b 1 2)], [[qw(a b 1 2)]]);
   $test->returns_in_scalar([cli_object => qw(a b 1 2)], +{a => 'b', 1 => '2'});
 };
 
@@ -92,8 +92,8 @@ SKIP: {
     plan tests => 4;
     my $test = CallTester->make_tester('MyApp1');
 
-    $test->exits([run => [cli_array =>  1]], 0);
-    $test->exits([run => [cli_array => ()]], 1);
+    $test->exits([run => [cli_list => 'foo']], 0);
+    $test->exits([run => [cli_list => ()]], 1);
 
     $test->exits([run => [qw/--scalar cli_identity/,  1]], 0);
     $test->exits([run => [qw/--scalar cli_identity/, '']], 1);
@@ -212,7 +212,7 @@ END
                   , qq|{"result":{"x":3}}\n{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
 
     $CT->captures([run => ['--output=tsv', @opts
-                           , cli_array =>
+                           , cli_list =>
                            , [foo => 'bar']
                            , [1,2]
                            , [3,4]
@@ -264,7 +264,7 @@ END
 subtest "cli_write_fh_as_... APIs", sub {
   plan tests => 1;
 
-  $CT->captures([run => [qw/--no-exit-code --output=ltsv cli_array/
+  $CT->captures([run => [qw/--no-exit-code --output=ltsv cli_list/
                          , qq|{"a":{"foo":"bar"},"b":[1,"baz"]}|
                          , qq|{"c":3,"d":8}|
                        ]]
