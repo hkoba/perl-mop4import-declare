@@ -68,7 +68,7 @@ sub _strip_tab { my ($str) = @_; $str =~ s/\t//g; $str }
 sub compat_Data_Dumper {
   my ($str) = @_;
   require Data::Dumper;
-  if ($Data::Dumper::VERSION >= 2.160) {
+  if ($Data::Dumper::VERSION ge "2.160") {
     $str =~ s/,X$/,/mg;
   } else {
     $str =~ s/,X$//mg;
