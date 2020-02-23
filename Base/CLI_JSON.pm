@@ -513,7 +513,13 @@ MY->declare_output_format(MY, 'dump');
 sub cli_write_fh_as_dump {
   (my MY $self, my ($outFH, @args)) = @_;
   foreach my $item (@args) {
-    print $outFH MOP4Import::Util::terse_dump($item), "\n";
+    print $outFH Data::Dumper->new($item)
+      ->Terse(1)
+      ->Sortkeys(1)
+      ->Indent(1)
+      ->Deparse(1)
+      ->Trailingcomma(1)
+      ->Dump, "\n";
   }
 }
 
