@@ -65,6 +65,17 @@ sub _strip_tab { my ($str) = @_; $str =~ s/\t//g; $str }
 1;
 };
 
+sub compat_Data_Dumper {
+  my ($str) = @_;
+  require Data::Dumper;
+  if ($Data::Dumper::VERSION >= 2.160) {
+    $str =~ s/,X$/,/mg;
+  } else {
+    $str =~ s/,X$//mg;
+  }
+  $str;
+}
+
 subtest "cli_json", sub {
   plan tests => 1;
   is MyApp1->cli_json, JSON::MaybeXS::JSON(), "cli_json";
@@ -147,46 +158,46 @@ subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
 
   subtest "--output=dump", sub {
     $CT->captures([run => ['--output=dump', @opts, contextual => @vals]]
-                  , <<'END');
+                  , compat_Data_Dumper(<<'END'));
 {
   'result' => {
-    'x' => 3,
-  },
+    'x' => 3,X
+  },X
 }
 {
   'result' => [
     {
-      'y' => 8,
+      'y' => 8,X
     },
     undef,
     [
       1,
       'foo',
       2,
-      3,
-    ],
-  ],
+      3,X
+    ],X
+  ],X
 }
 END
 
     subtest "--scalar", sub {
       plan tests => 1;
       $CT->captures([run => ['--scalar', '--output=dump', @opts, contextual => @vals]]
-                    , <<'END');
+                    , compat_Data_Dumper(<<'END'));
 {
-  'x' => 3,
+  'x' => 3,X
 }
 [
   {
-    'y' => 8,
+    'y' => 8,X
   },
   undef,
   [
     1,
     'foo',
     2,
-    3,
-  ],
+    3,X
+  ],X
 ]
 END
     };
