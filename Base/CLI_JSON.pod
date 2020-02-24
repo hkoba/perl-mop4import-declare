@@ -47,8 +47,7 @@ From shell:
     --help          show this help message
     --quiet         to be (somewhat) quiet
     --scalar        evaluate methods in scalar context
-    --output        choose output serializer (json/tsv/dump)
-    --flatten       output each result separately (instead of single json array)
+    --output        choose output serializer (ndjson/json/tsv/dump)
     --undef-as      serialize undef as this value. used in tsv output
     --no-exit-code  exit with 0(EXIT_SUCCESS) even when result was falsy/empty
     --binary        keep STDIN/OUT/ERR binary friendly
@@ -57,7 +56,8 @@ From shell:
   FOO
   %
   % ./MyScript.pm --structs='[1,2,{"x":"y"}]' bar '["baz",{"qux":"quux"}]' '{"other":"arg"}'
-  [["arguments",["baz",{"qux":"quux"}],{"other":"arg"}],["structs",[1,2,{"x":"y"}]]]
+  ["arguments",["baz",{"qux":"quux"}],{"other":"arg"}]
+  ["structs",[1,2,{"x":"y"}]]
 
 =head1 DESCRIPTION
 
@@ -133,7 +133,6 @@ If there is a method exactly matches to specified command,
 it is invoked via L<cli_invoke($method, @args)|cli_invoke>.
 It invokes the method in array context (unless C<--scalar> option is given).
 Results are printed by C<cli_output()> with JSON serializer.
-If option C<--flatten> is given, cli_output is called for each element of the results instead.
 
 If results are empty list, program exit with code 1
 (unless C<--no-exit-code> option is given).
@@ -161,11 +160,7 @@ evaluate methods in scalar context
 
 =item output
 
-default 'json'
-
-=item flatten
-
-output each result separately (instead of single json array)
+default 'ndjson'. ndjson stands for Newline Delimited JSON. See L<http://ndjson.org/>.
 
 =item undef-as
 
