@@ -37,6 +37,7 @@ script:
     cd ../MOP4Import
     which perl
     perldoc -lm JSON::PP
+    grep "::PP::VERSION " $(perldoc -lm JSON::PP)
     perl Build.PL
     ./Build build
     cover -test
