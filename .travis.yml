@@ -31,8 +31,12 @@ script:
     chmod +x cpm
     ./cpm install -g Devel::Cover Devel::Cover::Report::Coveralls
     ./cpm install -g
+    which perl
+    perldoc -lm JSON::PP
     ln -vnsf perl-mop4import-declare ../MOP4Import
     cd ../MOP4Import
+    which perl
+    perldoc -lm JSON::PP
     perl Build.PL
     ./Build build
     cover -test
