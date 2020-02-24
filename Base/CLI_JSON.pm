@@ -25,9 +25,6 @@ use MOP4Import::Base::CLI -as_base
      , ['binary' => default => 0, doc => "keep STDIN/OUT/ERR binary friendly"
         , json_type => 'bool'
       ]
-     , ['strip-json-comments' => default => 1
-        , json_type => 'bool'
-      ]
      , '_cli_json'
    ];
 use MOP4Import::Opts;
@@ -623,14 +620,15 @@ sub cli_read_file__yml {
 
 # .json
 sub cli_read_file__json {
-  my ($classOrObj, $fileName) = @_;
+  my ($classOrObj, $fileName, %opts) = @_;
+  my $allow_comments = delete $opts{allow_comments};
   open my $fh, '<', $fileName
     or Carp::croak "Can't open $fileName: $!";
   my $all = do {local $/; <$fh>};
   unless (defined $all) {
     Carp::croak "Can't read $fileName: $!";
   }
-  if ($classOrObj->allow_json_comments) {
+  if ($allow_comments) {
     require MOP4Import::Util::CommentedJson;
     local $@;
     eval {
@@ -649,11 +647,6 @@ sub cli_read_file__json {
     Carp::croak "decode_json failed in $fileName: $@";
   }
   @result >= 2 ? \@result : $result[0];
-}
-
-sub allow_json_comments {
-  (my MY $self) = @_;
-  ref $self ? $self->{'strip-json-comments'} : 1;
 }
 
 MY->cli_run(\@ARGV) unless caller;

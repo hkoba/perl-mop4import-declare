@@ -319,11 +319,11 @@ subtest "cli_read_file APIs", sub {
 
 
   $test->returns_in_list(
-    [cli_read_file => "$FindBin::Bin/cli_json_input.d/keybindings.json"]
+    [cli_read_file => "$FindBin::Bin/cli_json_input.d/keybindings.json", allow_comments => 1]
     , [[{'when' => 'editorTextFocus','key' => 'ctrl+b','command' => 'cursorLeft'},{'key' => 'ctrl+f','command' => 'cursorRight','when' => 'editorTextFocus'},{'command' => 'cursorDown','key' => 'ctrl+n','when' => 'editorTextFocus'},{'when' => 'editorTextFocus && !inQuickOpen','key' => 'ctrl+p','command' => 'cursorUp'},{'when' => 'editorTextFocus','command' => 'cursorHome','key' => 'ctrl+a'},{'when' => 'editorTextFocus','command' => 'cursorEnd','key' => 'ctrl+e'},{'command' => 'deleteLeft','key' => 'ctrl+h'},{'command' => 'deleteRight','key' => 'ctrl+d','when' => 'editorTextFocus'},{'key' => 'ctrl+q','command' => 'cursorWordLeft','when' => 'editorTextFocus'},{'when' => 'editorTextFocus','key' => 'ctrl+t','command' => 'cursorWordRight'},{'when' => 'editorFocus && !findWidgetVisible && editorLangId == \'fsharp\'','key' => 'ctrl+alt+enter','command' => 'fsi.SendFile'}]]);
 
     $test->returns_in_list(
-      [cli_read_file => "$FindBin::Bin/cli_json_input.d/basic-js.json"]
+      [cli_read_file => "$FindBin::Bin/cli_json_input.d/basic-js.json", allow_comments => 1]
       , [{url => "http://localhost", key2 => [0..4]
           , "key3" => {a => "foo/*bar baz*/", b => 2}}]
     );
