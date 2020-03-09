@@ -492,6 +492,12 @@ sub cli_encode_as {
   (my MY $self, my ($outputSpec, @items)) = @_;
   my ($outputFmt, $layer, @opts) = lexpand($outputSpec);
   $outputFmt //= '';
+  # Allow $layer to be a HASH
+  if (defined $layer and ref $layer eq 'HASH') {
+    my %opts = %$layer;
+    $layer = delete $opts{layer};
+    unshift @opts, %opts;
+  }
   $layer //= '';
   my $buffer = "";
   {
