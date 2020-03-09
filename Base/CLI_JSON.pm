@@ -361,6 +361,7 @@ sub cli_decoder_from__json {
 
 sub declare_output_format {
   (my $myPack, my Opts $opts, my ($formatName, $sub)) = m4i_args(@_);
+  my $encoderFuncName = "cli_encoder_to__$formatName";
   my $writeFuncName = "cli_write_fh_as_$formatName";
   my $outputFuncName = "cli_output_as_$formatName";
   if (ref $sub eq 'CODE') {
@@ -369,12 +370,19 @@ sub declare_output_format {
       shift->$writeFuncName(\*STDOUT, $_[0]);
     };
   } elsif (not defined $sub) {
-    unless ($opts->{destpkg}->can($writeFuncName)) {
+    if ($opts->{destpkg}->can($writeFuncName)) {
+      *{globref($opts->{destpkg}, $outputFuncName)} = sub {
+        shift->$writeFuncName(\*STDOUT, $_[0]);
+      };
+    }
+    elsif ($opts->{destpkg}->can($encoderFuncName)) {
+      *{globref($opts->{destpkg}, $outputFuncName)} = sub {
+        shift->$encoderFuncName(\*STDOUT)->($_[0]);
+      }
+    }
+    else {
       Carp::croak "output_format $formatName doesn't have method '$writeFuncName'";
     }
-    *{globref($opts->{destpkg}, $outputFuncName)} = sub {
-      shift->$writeFuncName(\*STDOUT, $_[0]);
-    };
   } else {
     Carp::croak "Invalid argument for output_format: "
       . MOP4Import::Util::terse_dump($sub);
@@ -389,10 +397,19 @@ sub declare_output_format {
 
 sub cli_write_fh {
   (my MY $self, my ($outFH, @args)) = @_;
-  my $output = $self->can("cli_write_fh_as_".$self->{'output'})
-    or Carp::croak("Unknown output format: $self->{'output'}");
 
-  $output->($self, $outFH, @args);
+  my ($outputFmt, @opts) = lexpand($self->{'output'});
+
+  if (my $sub = $self->can("cli_encoder_to__$outputFmt")) {
+    my $encoder = $sub->($self, $outFH, @opts);
+    $encoder->($_) for @args;
+  }
+  elsif ($sub = $self->can("cli_write_fh_as_".$outputFmt)) {
+    $sub->($self, $outFH, @args);
+  }
+  else {
+    Carp::croak("Unknown output format: $self->{'output'}");
+  }
 }
 
 sub cli_json { JSON() }
@@ -473,15 +490,24 @@ sub cli_json_decoder {
 
 sub cli_encode_as {
   (my MY $self, my ($outputSpec, @items)) = @_;
-  my ($outputFmt, $layer) = lexpand($outputSpec);
+  my ($outputFmt, $layer, @opts) = lexpand($outputSpec);
   $outputFmt //= '';
   $layer //= '';
-  my $sub = $self->can("cli_write_fh_as_$outputFmt")
-    or Carp::croak "Unknown output format: '$outputFmt'";
   my $buffer = "";
   {
     open my $outFH, ">$layer", \$buffer;
-    $sub->($self, $outFH, \@items);
+    if (my $sub = $self->can("cli_encoder_to__$outputFmt")) {
+      my $encoder = $sub->($self, $outFH, @opts);
+      foreach my $item (@items) {
+        $encoder->($item);
+      }
+    }
+    elsif ($sub = $self->can("cli_write_fh_as_$outputFmt")) {
+      $sub->($self, $outFH, \@items);
+    }
+    else {
+      Carp::croak "Unknown output format: '$outputFmt'";
+    }
   }
   $buffer;
 }
