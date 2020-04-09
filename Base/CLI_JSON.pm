@@ -378,6 +378,12 @@ sub declare_output_format {
     elsif ($opts->{destpkg}->can($encoderFuncName)) {
       *{globref($opts->{destpkg}, $outputFuncName)} = sub {
         shift->$encoderFuncName(\*STDOUT)->($_[0]);
+      };
+
+      unless ($opts->{destpkg}->can($writeFuncName)) {
+        *{globref($opts->{destpkg}, $writeFuncName)} = sub {
+          shift->$encoderFuncName(shift)->(\@_);
+        };
       }
     }
     else {
