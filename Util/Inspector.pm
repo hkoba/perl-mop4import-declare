@@ -5,7 +5,7 @@ use MOP4Import::Base::Configure -as_base;
 
 use MOP4Import::NamedCodeAttributes ();
 
-use MOP4Import::Util qw/terse_dump fields_hash fields_array
+use MOP4Import::Util qw/terse_dump fields_hash fields_symbol
 			take_hash_opts_maybe/;
 use MOP4Import::Util::FindMethods;
 
@@ -54,13 +54,20 @@ sub format_command_of {
 
 sub list_options_of {
   my ($self, $pack) = @_;
-  @{fields_array($pack)};
+  my $symbol = fields_symbol($pack);
+  if (my $array = *{$symbol}{ARRAY}) {
+    @$array
+  } elsif (my $hash = *{$symbol}{HASH}) {
+    sort keys %$hash;
+  } else {
+    ();
+  }
 }
 
 sub group_options_of {
   my ($self, $pack, @opt_names) = @_;
   my $fields = fields_hash($pack);
-  @opt_names = @{fields_array($pack)} unless @opt_names;
+  @opt_names = $self->list_options_of($pack) unless @opt_names;
   my %package;
   my @unknown;
   foreach my $name (@opt_names) {
@@ -84,7 +91,7 @@ sub group_options_of {
 sub max_option_length {
   my ($self, $pack) = @_;
   my $fields = fields_hash($pack);
-  my @name = grep {/^[a-z]/} @{fields_array($pack)};
+  my @name = grep {/^[a-z]/} $self->list_options_of($pack);
   List::Util::max(map {length} @name);
 }
 
