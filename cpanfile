@@ -18,6 +18,7 @@ recommends 'Data::Dumper', '>= 2.160';
 
 on build => sub {
   requires 'rlib';
+  requires 'Module::Build', '>= 0.42';
   requires 'Module::Build::Pluggable::CPANfile';
   requires 'JSON::PP', '>= 2.273';
 };
