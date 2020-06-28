@@ -128,11 +128,14 @@ subtest "MyApp1->run([--foo={x:3},contextual,{y:8},undef,[a,b,c]])", sub {
     $CT->captures([run => [@o, contextual => @vals]]
                   , qq|{"result":{"x":3}}\n{"result":[{"y":8},null,[1,"foo",2,3]]}\n|);
 
-    subtest "--scalar", sub {
-      plan tests => 1;
-      $CT->captures([run => ['--scalar', @o, contextual => @vals]]
-                    , qq|{"x":3}\n[{"y":8},null,[1,"foo",2,3]]\n|);
-    };
+    $CT->captures([run => ['--scalar', @o, contextual => @vals]]
+                  , qq|{"x":3}\n[{"y":8},null,[1,"foo",2,3]]\n|);
+
+    $CT->captures([run => [@o, cli_array => 2..5]]
+                  , qq|[2,3,4,5]\n|);
+
+    $CT->captures([run => [@o, '--flatten', cli_array => 2..5]]
+                  , qq|2\n3\n4\n5\n|);
 
     done_testing();
   };

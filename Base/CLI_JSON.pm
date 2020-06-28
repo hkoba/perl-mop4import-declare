@@ -14,6 +14,9 @@ use MOP4Import::Base::CLI -as_base
         , doc => "choose output serializer (ndjson/json/tsv/dump)"
         , json_type => 'string'
       ]
+     , ['flatten'
+        , json_type => 'bool'
+      ]
      , ['undef-as' => default => 'null'
         , doc => "serialize undef as this value. used in tsv output"
         , json_type => 'string'
@@ -119,10 +122,6 @@ sub cli_output :method {
   } else {
     $emitter->($list);
   }
-}
-
-sub onconfigure_flatten {
-  Carp::croak "--flatten option is deprecated. For json, please consider --output=ndjson";
 }
 
 #
@@ -399,7 +398,7 @@ sub declare_output_format {
 # In cli_run context, cli_write_fh is called from cli_output($list) and
 # used as cli_write_fh(\*STDOUT, $list).
 # But in general, cli_write_fh can process multiple arguments at once.
-# 
+#
 
 sub cli_write_fh {
   (my MY $self, my ($outFH, @args)) = @_;
@@ -408,10 +407,14 @@ sub cli_write_fh {
 
   if (my $sub = $self->can("cli_encoder_to__$outputFmt")) {
     my $encoder = $sub->($self, $outFH, @opts);
-    $encoder->($_) for @args;
+    $encoder->($_) for ($self->{flatten} ? (map {
+      (defined $_ && ref $_ eq 'ARRAY') ? @$_ : $_
+    } @args) : @args);
   }
   elsif ($sub = $self->can("cli_write_fh_as_".$outputFmt)) {
-    $sub->($self, $outFH, @args);
+    $sub->($self, $outFH, $self->{flatten} ? (map {
+      (defined $_ && ref $_ eq 'ARRAY') ? @$_ : $_
+    } @args) : @args);
   }
   else {
     Carp::croak("Unknown output format: $self->{'output'}");
