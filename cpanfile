@@ -2,8 +2,6 @@
 
 requires perl => '>= 5.010';
 
-requires 'rlib'; # XXX:
-
 requires 'JSON::MaybeXS';
 
 requires 'Sub::Util', '>= 1.40'; # For subname
@@ -15,6 +13,10 @@ recommends 'Cpanel::JSON::XS', '>= 4.05';
 recommends 'File::AddInc';
 
 recommends 'Data::Dumper', '>= 2.160';
+
+on configure => sub {
+  requires 'rlib';
+};
 
 on build => sub {
   requires 'rlib';
