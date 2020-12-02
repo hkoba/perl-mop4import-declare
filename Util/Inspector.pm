@@ -123,8 +123,10 @@ sub info_method_doc_of {
 
 sub info_code_attribute {
   my ($self, $name, $code) = @_;
-  my ($atts) = attributes::get($code)
-    or return undef;
+  my ($atts) = grep {
+    ref $_ eq 'HASH'
+  } attributes::get($code)
+  or return undef;
   $atts->{$name}
 }
 
