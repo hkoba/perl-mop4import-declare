@@ -123,7 +123,9 @@ sub info_method_doc_of {
 
 sub info_code_attribute {
   my ($self, $name, $code) = @_;
-  scalar MOP4Import::NamedCodeAttributes->m4i_CODE_ATTR_get($name => $code);
+  my ($atts) = attributes::get($code)
+    or return undef;
+  $atts->{$name}
 }
 
 sub info_methods :method {
