@@ -244,7 +244,7 @@ sub declare_parent :MetaOnly {
   (my $myPack, my Opts $opts, my (@base)) = m4i_args(@_);
 
   foreach my $fn (@base) {
-    (my $cp = $fn) =~ s{::|'}{/}g;
+    (my $cp = $fn) =~ s{::|\'}{/}g;
     require "$cp.pm";
   }
 
