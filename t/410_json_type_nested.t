@@ -139,7 +139,7 @@ if (my $sub = $cjson->can('require_types')) {
       $msg->{sender} = $from;
       $msg->{recipient} = [$alice, $bob];
 
-      my $json = $msg->cli_encode_json($msg, t4::Message);
+      my $json = $msg->cli_encode_json($msg);
 
       is($json, $expected, "Nested hash - blessed Object: $expected");
     }
