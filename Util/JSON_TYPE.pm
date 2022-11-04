@@ -28,6 +28,7 @@ BEGIN {
 
       # Make sure underlying typecode 1, 2, 3... can be resolved too.
       $JSON_TYPES{$value} = $value;
+      $JSON_TYPES{$typeName} = $value;
     }
   }
 
@@ -38,11 +39,6 @@ BEGIN {
       shift; $sub->(@_);
     }
   }
-}
-
-sub intern_json_type {
-  (my $pack, my Opts $opts, my $typeName) = @_;
-  $JSON_TYPES{$typeName} //= $pack->build_json_type($opts, $typeName);
 }
 
 sub lookup_json_type {
@@ -69,19 +65,35 @@ sub inherit_json_type {
   }
 }
 
-sub resolve_json_type_in_context {
+sub resolve_json_type_name {
   (my $pack, my Opts $opts, my $typeName) = @_;
   Carp::confess "typename is undef!" unless defined $typeName;
-  if ($typeName =~ /^[A-Z]/ and $typeName !~ /::/
-      and my $sub = $opts->{destpkg}->can($typeName)) {
+  Carp::confess "typename should be a string" if ref $typeName;
+
+  print STDERR "   resolving typeSpec $typeName"
+    if DEBUG and DEBUG >= 2;
+
+  if ($typeName eq '') {
+    Carp::confess "typename is empty string!"
+  }
+
+  if ($typeName =~ /::/ and defined $JSON_TYPES{$typeName}) {
+    $typeName
+  }
+  elsif ($typeName =~ /^[a-z]/) {
+    Carp::croak "Unknown builtin json type: $typeName"
+      unless $JSON_TYPES{$typeName};
+    $typeName;
+  }
+  elsif (my $sub = $opts->{destpkg}->can($typeName)) {
     my $value = $sub->();
     print STDERR ", $typeName is resolved to $value in $opts->{destpkg}"
       if DEBUG;
-    $value;
+    $value
   } else {
     print STDERR ", $typeName is used as-is in $opts->{destpkg}"
       if DEBUG;
-    undef;
+    $typeName
   }
 }
 
@@ -95,14 +107,21 @@ sub register_json_type_of_field {
   push @{$opts->{delayed_tasks}}, sub {
     print STDERR "  $fieldName json_type: spec=", terse_dump($jsonType)
       if DEBUG;
+    print STDERR "  Current \%JSON_TYPES=", terse_dump(\%JSON_TYPES)
+      if DEBUG and DEBUG >= 4;
 
-    my $typeName;
-    if (not ref $jsonType and $typeName = ($JSON_TYPES{$jsonType} || $pack->resolve_json_type_in_context($opts, $jsonType) || $jsonType) and my $found = $JSON_TYPES{$typeName}) {
-      $typeRec->{$fieldName} = $found;
+    # Note about reference weakining:
+    # All user defined types should be registered in %JSON_TYPES.
+    # All references to them should be weakened.
+
+    if (not ref $jsonType
+        and my $found = $pack->resolve_json_type_name($opts, $jsonType)) {
+      $typeRec->{$fieldName} = $JSON_TYPES{$found};
+      Scalar::Util::weaken($typeRec->{$fieldName})
+        if ref $typeRec->{$fieldName};
     } else {
-      $typeRec->{$fieldName} = $pack->intern_json_type($opts, $jsonType);
+      $typeRec->{$fieldName} = $pack->build_json_type($opts, $jsonType)
     }
-    Scalar::Util::weaken($typeRec->{$fieldName}) if ref $typeRec->{$fieldName};
 
     print STDERR "\n" if DEBUG;
   };
@@ -115,10 +134,9 @@ sub build_json_type {
     Carp::croak "json_type is undef!";
   }
   elsif (not ref $typeSpec) {
-    my $typeName = $pack->resolve_json_type_in_context($opts, $typeSpec) || $typeSpec;
-    if (defined (my $found = $JSON_TYPES{$typeName})) {
+    if (my $found = $pack->resolve_json_type_name($opts, $typeSpec)) {
       # Note: weakening here does not take effect.
-      return $found;
+      return $JSON_TYPES{$found};
     } elsif (my $sub = $pack->can(my $longName = "JSON_TYPE_".$typeSpec)) {
       return $sub->();
     } else {
@@ -127,10 +145,10 @@ sub build_json_type {
   }
   elsif (ref $typeSpec eq 'ARRAY') {
     my ($keyword, @args) = @$typeSpec;
-    print STDERR "  build_json_type(", terse_dump($keyword, @args), ") => "
+    print STDERR "\n    build_json_type(", terse_dump($keyword, @args), ") => "
       if DEBUG;
     my @actual = map {$pack->build_json_type($opts, $_)} @args;
-    print STDERR " >> (", terse_dump($keyword, @actual), ")"
+    print STDERR "\n    >> (", terse_dump($keyword, @actual), ")\n"
       if DEBUG;
     $pack->$keyword(@actual);
   }

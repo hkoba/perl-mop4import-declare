@@ -126,10 +126,8 @@ if (my $sub = $cjson->can('require_types')) {
       $msg->{sender} = $from;
       $msg->{recipient} = [$alice, $bob];
 
-      my $json = $cjson->encode(
-        $msg,
-        MOP4Import::Base::CLI_JSON->cli_json_type_of(t4::Message),
-      );
+      my $typeSpec = MOP4Import::Base::CLI_JSON->cli_json_type_of(t4::Message);
+      my $json = $cjson->encode($msg, $typeSpec);
 
       is($json, $expected, "Nested hash - raw HASH $expected");
     }
