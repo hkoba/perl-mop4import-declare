@@ -31,6 +31,8 @@ jobs:
       - uses: actions/checkout@v2
       - name: perl -V
         run: perl -V
+      - name: Install Dependencies
+        run: cpm install -g
       - name: build
         run: perl Build.PL && ./Build build
       - name: Run Tests
