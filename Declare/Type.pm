@@ -109,37 +109,47 @@ MOP4Import::Declare::Type - inner-type related pragmas
 =head1 SYNOPSIS
 
   package MyApp;
-  use MOP4Import::Declare::Type
-    [type => BaseUser => [fields => qw/sessid/]
-      , [subtypes =>
-            Guest => []
-          , RegisteredUser => [[fields => qw/uid registered_at/]]
-        ]
-    ];
-
+  use MOP4Import::Types
+    BaseUser => [
+      [fields => qw/sessid/],
+      [subtypes =>
+        Guest => [],
+        RegisteredUser => [[fields => qw/uid registered_at/]],
+     ]
+    ],
+    AdminUser => [
+      [extends => 'RegisteredUser'],
+      [fields => qw/impersonation/],
+    ],
+    ;
 
 =head1 DESCRIPTION
 
-This module provides inner-type related pragmas.
+This module implements inner-type related pragmas.
 Usually used via L<MOP4Import::Types>.
 
 =head1 PRAGMAS
 
-=head2 [type => $typename, @spec]
+=head2 [subtypes => ($typename => [@spec])...]
+X<subtypes>
+
+Declare multiple inner-types which are subtypes of currently-defining inner-type by C<< $typename => [@spec] >> pair list.
+
+=head2 [extends => $typename]
+X<extends>
+
+Set superclass for currently-defining inner-type to C<< $typename >>.
+
+=head2 (Internal) [type => $typename, @spec]
 X<type>
 
 Declare inner-type C<$typename> based on given C<@spec>.
 
-=head2 [extend => $typename, @spec]
+=head2 (Not recommended) [extend => $typename, @spec]
 X<extend>
 
 Declare extended version of C<$typename>, which is inherited from parent class,
 based on given C<@spec>.
-
-=head2 [subtypes => ($typename => [@spec])...]
-X<subtypes>
-
-Declare multiple inner-types from given C<< $typename => [@spec] >> pair list.
 
 =head1 AUTHOR
 
