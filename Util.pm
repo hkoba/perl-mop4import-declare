@@ -47,7 +47,8 @@ sub fields_hash {
 }
 
 sub maybe_fields_hash {
-  my $sym = maybe_globref($_[0], 'FIELDS');
+  my $sym = maybe_globref($_[0], 'FIELDS')
+    or return undef;
   *{$sym}{HASH};
 }
 
