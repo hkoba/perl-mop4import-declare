@@ -35,6 +35,22 @@ sub declare_type {
 				    , $opts->{destpkg}, $name, @spec);
 }
 
+sub declare_extends {
+  (my $myPack, my Opts $opts, my ($baseClassName)) = m4i_args(@_);
+
+  my $baseClass = do {
+    if (my $sub = $opts->{destpkg}->can($baseClassName)) {
+      $sub->()
+    } elsif (MOP4Import::Util::maybe_fields_hash($baseClassName)) {
+      $baseClassName
+    } else {
+      Carp::croak "Can't find base class $baseClassName in (parents of) $opts->{destpkg}";
+    }
+  };
+
+  $myPack->declare_fileless_base($opts, $baseClass);
+}
+
 #
 # Create a new class $extended, deriving from $callpack->SUPER::$extended,
 # in $callpack.
@@ -50,8 +66,6 @@ sub declare_extend {
 				    , [fileless_base => $sub->()]
 				    , @spec);
 }
-
-*declare_extends = *declare_extend; *declare_extends = *declare_extend;
 
 sub declare___inner_class_in {
   (my $myPack, my Opts $opts, my ($destpkg, $name, @spec)) = m4i_args(@_);
