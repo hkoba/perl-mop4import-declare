@@ -98,7 +98,7 @@ sub _strip_quotes {
 }
 
 #========================================
-# :Doc() attribute.
+# :MetaOnly attribute
 #
 
 sub m4i_CODE_ATTR_build__MetaOnly {
@@ -106,7 +106,7 @@ sub m4i_CODE_ATTR_build__MetaOnly {
   $value;
 }
 
-# :MetaOnly attribute
+# :Doc() attribute.
 #
 sub m4i_CODE_ATTR_build__Doc {
   my ($pack, $code, $value, $attName) = @_;
