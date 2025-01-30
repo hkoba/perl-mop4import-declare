@@ -1,7 +1,9 @@
+#!/usr/bin/env perl
 package MOP4Import::Util::Inspector;
 use strict;
 use warnings;
-use MOP4Import::Base::Configure -as_base;
+use Carp;
+use MOP4Import::Base::CLI_JSON -as_base;
 
 use MOP4Import::NamedCodeAttributes ();
 
@@ -136,6 +138,14 @@ sub info_methods :method {
   my $groupByClass = delete $opts{group};
   my $detail = delete $opts{detail};
   my $all = delete $opts{all};
+  my $inc = delete $opts{inc};
+  my $pack = do {
+    if (my $name = delete $opts{pack}) {
+      $self->require_module($name, MOP4Import::Util::lexpand($inc));
+    } else {
+      ref $self;
+    }
+  };
 
   unless (keys %opts == 0) {
     Carp::croak "Unknown options: ".join(", ", sort keys %opts);
@@ -158,7 +168,7 @@ sub info_methods :method {
     }
   };
 
-  my $isa = mro::get_linear_isa(ref $self);
+  my $isa = mro::get_linear_isa($pack);
 
   my @all = map {
     my $symtab = MOP4Import::Util::symtab($_);
@@ -185,11 +195,29 @@ sub info_methods :method {
 
   if (not $detail and not $groupByClass) {
     my %dup;
-    sort grep {not $dup{$_}++}@all
+    sort grep {not $dup{$_}++}@all;
   } else {
     @all;
   }
 }
 
-1;
+sub require_module {
+  (my MY $self, my ($moduleName, @inc)) = @_;
+  {
+    require Module::Runtime;
+    local @INC = (@inc, @INC);
+    Module::Runtime::require_module($moduleName);
+  }
+  my $fn = Module::Runtime::module_notional_filename($moduleName);
+  wantarray ? ($moduleName => $INC{$fn}) : $moduleName;
+}
 
+unless (caller) {
+  # To avoid redefinition wornings:
+  # cli_run -> cli_help -> cli_inspector -> require MOP4Import::Util::Inspector;
+  $INC{"MOP4Import/Util/Inspector.pm"} = __FILE__;
+
+  MY->cli_run(\@ARGV);
+}
+
+1;
