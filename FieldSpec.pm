@@ -20,6 +20,8 @@ use fields
    , 'json_type'
    , 'isa'
    , 'validator'
+   , 'zsh_completer'
+   , 'extra'
    # file? line? package?
  );
 
