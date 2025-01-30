@@ -26,8 +26,16 @@ sub MODIFY_CODE_ATTRIBUTES {
 
 sub FETCH_CODE_ATTRIBUTES {
   my ($pack, $code) = @_;
-  my $atts = m4i_CODE_ATTR_dict($pack, $code);
-  $atts;
+  my $atts = m4i_CODE_ATTR_dict($pack, $code)
+    or return;
+  map {
+    if (defined (my $val = $atts->{$_})) {
+      # XXX: escape this!
+      "$_($val)"
+    } else {
+      $_;
+    }
+  } keys %$atts;
 }
 
 sub m4i_CODE_ATTR_dispatch {
