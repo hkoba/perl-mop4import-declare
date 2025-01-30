@@ -302,6 +302,29 @@ sub has_method_attr {
   grep {$_ eq 'method'} attributes::get($_[0])
 }
 
+use MOP4Import::FieldSpec qw(FieldSpec);
+
+sub list_validator {
+  my ($typeName) = @_;
+  my $fields = maybe_fields_hash($typeName)
+    or Carp::croak "Can't find type spec for $typeName";
+  map {
+    my FieldSpec $spec = $fields->{$_};
+    if (not UNIVERSAL::isa($spec, FieldSpec)) {
+      ()
+    }
+    elsif ($spec->{validator}) {
+      ($_ => $spec->{validator})
+    }
+    elsif ($spec->{isa}) {
+      ($_ => +{isa => $spec->{isa}, (exists $spec->{default} ? (default => $spec->{default}) : ())})
+    }
+    else {
+      ()
+    }
+  } sort keys %$fields
+}
+
 #========================================
 
 sub m4i_log_start {
