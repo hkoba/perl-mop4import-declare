@@ -116,20 +116,23 @@ sub info_command_doc_of {
 
 sub info_method_doc_of {
   my ($self, $class, $name, $allow_missing) = @_;
+
+  my $atts = $self->info_code_attributes_of($class, $name, $allow_missing)
+    or return undef;
+
+  $atts->{Doc};
+}
+
+sub info_code_attributes_of {
+  my ($self, $class, $name, $allow_missing) = @_;
+  unless (defined $class and defined $name) {
+    Carp::croak "Usage: \$self->info_code_attributes_of(\$class, \$name, ?\$allow_missing\?)"
+  }
   my $sub = $class->can($name) or do {
     return if $allow_missing;
     Carp::croak "No such method: $name";
   };
-  $self->info_code_attribute(Doc => $sub);
-}
-
-sub info_code_attribute {
-  my ($self, $name, $code) = @_;
-  my ($atts) = grep {
-    ref $_ eq 'HASH'
-  } attributes::get($code)
-  or return undef;
-  $atts->{$name}
+  MOP4Import::NamedCodeAttributes::m4i_CODE_ATTR_dict($class, $sub);
 }
 
 sub info_methods :method {
