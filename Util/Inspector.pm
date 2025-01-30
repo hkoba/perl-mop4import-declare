@@ -123,6 +123,13 @@ sub info_method_doc_of {
   $atts->{Doc};
 }
 
+sub info_code_attribute {
+  my ($self, $attName, $code) = @_;
+  my $atts = MOP4Import::NamedCodeAttributes->m4i_CODE_ATTR_dict($code)
+    or return undef;
+  $atts->{$attName};
+}
+
 sub info_code_attributes_of {
   my ($self, $class, $name, $allow_missing) = @_;
   unless (defined $class and defined $name) {
@@ -132,7 +139,7 @@ sub info_code_attributes_of {
     return if $allow_missing;
     Carp::croak "No such method: $name";
   };
-  MOP4Import::NamedCodeAttributes::m4i_CODE_ATTR_dict($class, $sub);
+  MOP4Import::NamedCodeAttributes->m4i_CODE_ATTR_dict($sub);
 }
 
 sub info_methods :method {
