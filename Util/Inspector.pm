@@ -212,6 +212,14 @@ sub require_module {
   wantarray ? ($moduleName => $INC{$fn}) : $moduleName;
 }
 
+sub list_validator_in_module {
+  (my MY $self, my ($typeName, $moduleName, @rest)) = @_;
+  my $pack = $self->require_module($moduleName, @rest);
+  my $sub = $pack->can($typeName);
+  my $realType = $sub ? $sub->() : $typeName;
+  MOP4Import::Util::list_validator($realType);
+}
+
 unless (caller) {
   # To avoid redefinition wornings:
   # cli_run -> cli_help -> cli_inspector -> require MOP4Import::Util::Inspector;
