@@ -12,7 +12,6 @@ use File::Spec;
 use Test::More;
 use Test::Output;
 use Capture::Tiny qw(capture_stdout);
-use JSON;
 
 use_ok("MOP4Import::Util::Inspector");
 
