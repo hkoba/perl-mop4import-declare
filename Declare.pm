@@ -78,6 +78,9 @@ sub always_exports {
 sub dispatch_declare :MetaOnly {
   (my $myPack, my Opts $opts, my (@decls)) = m4i_args(@_);
 
+  print STDERR "$myPack->dispatch_declare("
+    .terse_dump($opts, @decls).")\n" if DEBUG;
+
   foreach my $declSpec (@decls) {
 
     croak "Undefined pragma!" unless defined $declSpec;
