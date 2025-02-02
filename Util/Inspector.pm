@@ -18,14 +18,14 @@ use List::Util ();
 
 sub describe_commands_of {
   (my MY $self, my $classOrObj) = @_;
-  my $class = ref $classOrObj || $classOrObj;
+  my $class = ref $classOrObj || $self->require_module($classOrObj);
 
   map {$self->format_command_of($class, $_)} $self->list_commands_of($class);
 }
 
 sub describe_options_of {
   (my MY $self, my $classOrObj) = @_;
-  my $class = ref $classOrObj || $classOrObj;
+  my $class = ref $classOrObj || $self->require_module($classOrObj);
 
   my @msg;
 
@@ -47,6 +47,7 @@ END
 
 sub list_commands_of {
   my ($self, $pack) = @_;
+  $self->require_module($pack);
   FindMethods($pack, sub {s/^cmd_//});
 }
 
@@ -59,6 +60,7 @@ sub format_command_of {
 
 sub list_options_of {
   my ($self, $pack) = @_;
+  $self->require_module($pack);
   my $symbol = fields_symbol($pack);
   if (my $array = *{$symbol}{ARRAY}) {
     @$array
@@ -138,6 +140,7 @@ sub info_code_attributes_of {
   unless (defined $class and defined $name) {
     Carp::croak "Usage: \$self->info_code_attributes_of(\$class, \$name, ?\$allow_missing\?)"
   }
+  $self->require_module($class);
   my $sub = $class->can($name) or do {
     return if $allow_missing;
     Carp::croak "No such method: $name";
