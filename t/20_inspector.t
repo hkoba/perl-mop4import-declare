@@ -24,11 +24,6 @@ my $testDir = "$FindBin::Bin/examples";
   stdout_is sub {
     system $^X ($^X, $modulinoFn, "--lib=$testDir", list_commands_of => "t_Case1")
   }, "foo\nhelp\n", "Inspector.pm as a modulino";
-}
-
-{
-  my $modulinoFn = $INC{"MOP4Import/Util/Inspector.pm"};
-  ok -x $modulinoFn, "Inspector.pm is executable";
 
   is_deeply decode_json(capture_stdout {
     system $^X ($^X, $modulinoFn, "--lib=$testDir"
@@ -39,8 +34,11 @@ my $testDir = "$FindBin::Bin/examples";
 {
   my $inspector = MOP4Import::Util::Inspector->new(lib => $testDir);
 
-  is $inspector->require_module("t_Case1"), "t_Case1"
-    , "require_module ok";
+  {
+    local @INC = ($FindBin::Bin, @INC);
+    is $inspector->require_module("t_Case1"), "t_Case1"
+      , "require_module ok";
+  }
 
   is_deeply [$inspector->list_commands_of("t_Case1")]
     , [qw(foo help)], "list_commands_of";

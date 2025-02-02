@@ -63,12 +63,29 @@ sub list_options_of {
   $self->require_module($pack);
   my $symbol = fields_symbol($pack);
   if (my $array = *{$symbol}{ARRAY}) {
-    @$array
+    List::Util::uniq(@$array, $self->list_options_onconfigure_of($pack))
   } elsif (my $hash = *{$symbol}{HASH}) {
     sort keys %$hash;
   } else {
     ();
   }
+}
+
+sub list_options_onconfigure_of {
+  my ($self, $pack) = @_;
+  $self->require_module($pack);
+  my $isa = mro::get_linear_isa($pack);
+  my %dup;
+  map {
+    my $symtab = MOP4Import::Util::symtab($_);
+    map {
+      if (/^onconfigure_(\w+)$/ and not $dup{$1}++) {
+        $1
+      } else {
+        ()
+      }
+    } sort keys %$symtab;
+  } @$isa;
 }
 
 sub group_options_of {
