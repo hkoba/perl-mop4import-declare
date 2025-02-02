@@ -41,9 +41,9 @@ sub import :MetaOnly {
 
   my Opts $opts = m4i_opts([caller]);
 
-  @decls = $myPack->default_exports unless @decls;
+  @decls = $myPack->default_exports($opts) unless @decls;
 
-  $myPack->dispatch_declare($opts, $myPack->always_exports, @decls);
+  $myPack->dispatch_declare($opts, $myPack->always_exports($opts), @decls);
 
   my $tasks;
   if ($tasks = $opts->{delayed_tasks} and @$tasks) {
@@ -65,13 +65,35 @@ sub m4i_stash :method :MetaOnly {
 }
 
 #
-# This serves as @EXPORT
+# `default_exports` is a hook to list exported symbols
+# when the module is used without arguments, like "use Foo".
+# Default implementation get them from `@EXPORT`.
 #
 sub default_exports {
-  ();
+  (my $myPack, my Opts $opts) = @_;
+  my $symtab = MOP4Import::Util::symtab($myPack);
+  my $sym = $symtab->{EXPORT};
+  if ($sym and my $export = *{$sym}{ARRAY}) {
+    print STDERR "HAS \@EXPORT: $myPack" if DEBUG;
+    @$export
+  } else {
+    print STDERR "NO \@EXPORT: $myPack"  if DEBUG;
+    ();
+  }
+}
+
+sub declare_default_exports {
+  (my $myPack, my Opts $opts, my (@decls)) = m4i_args(@_);
+
+  my $export = MOP4Import::Util::ensure_symbol_has_array(
+    globref($opts->{objpkg}, 'EXPORT')
+  );
+
+  push @$export, @decls;
 }
 
 sub always_exports {
+  (my $myPack, my Opts $opts) = @_;
   qw(-strict);
 }
 
