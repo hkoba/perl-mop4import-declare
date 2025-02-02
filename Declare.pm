@@ -574,6 +574,8 @@ sub declare_defaults :MetaOnly {
     $myPack->declare_private_constant($opts, $fn, $v);
   }
 }
+*declare_override_defaults = *declare_defaults;
+*declare_override_defaults = *declare_defaults;
 
 sub declare_map_methods :MetaOnly {
   (my $myPack, my Opts $opts, my (@pairs)) = m4i_args(@_);
