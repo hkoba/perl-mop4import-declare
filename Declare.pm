@@ -27,6 +27,7 @@ use MOP4Import::NamedCodeAttributes
   qw(MODIFY_CODE_ATTRIBUTES
      FETCH_CODE_ATTRIBUTES
      /^m4i_CODE_ATTR_/
+     declare_code_attributes
   );
 
 #========================================

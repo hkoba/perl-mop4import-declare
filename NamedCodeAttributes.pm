@@ -16,6 +16,8 @@ our @EXPORT = qw(
 
 use MOP4Import::Util ();
 
+use MOP4Import::Opts;
+
 my %named_code_attributes;
 
 sub MODIFY_CODE_ATTRIBUTES {
@@ -98,21 +100,25 @@ sub _strip_quotes {
 }
 
 #========================================
-# :MetaOnly attribute
-#
 
-sub m4i_CODE_ATTR_build__MetaOnly {
-  my ($pack, $code, $value, $attName) = @_;
-  $value;
+sub declare_code_attributes {
+  (my $myPack, my Opts $opts, my (@decls)) = m4i_args(@_);
+
+  foreach my $desc (@decls) {
+    # [$name => @opts] でも良いとする。@opts の使い方は後で決める。
+    my ($name, @opts) = MOP4Import::Util::lexpand($desc);
+    my $sym = MOP4Import::Util::globref($opts->{destpkg}, "m4i_CODE_ATTR_build__$name");
+    *$sym = sub {
+      my ($pack, $code, $value, $attName) = @_;
+      $value;
+    };
+  }
 }
 
-# :Doc() attribute.
-#
-sub m4i_CODE_ATTR_build__Doc {
-  my ($pack, $code, $value, $attName) = @_;
-  $value;
-}
-
+__PACKAGE__->declare_code_attributes(__PACKAGE__, (
+  'MetaOnly',
+  'Doc',
+));
 
 our @EXPORT_OK = MOP4Import::Util::function_names(from => __PACKAGE__);
 

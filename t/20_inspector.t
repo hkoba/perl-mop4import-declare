@@ -11,6 +11,8 @@ use File::Spec;
 
 use Test::More;
 use Test::Output;
+use Capture::Tiny qw(capture_stdout);
+use JSON;
 
 use_ok("MOP4Import::Util::Inspector");
 
@@ -22,6 +24,16 @@ my $testDir = "$FindBin::Bin/examples";
   stdout_is sub {
     system $^X ($^X, $modulinoFn, "--lib=$testDir", list_commands_of => "t_Case1")
   }, "foo\nhelp\n", "Inspector.pm as a modulino";
+}
+
+{
+  my $modulinoFn = $INC{"MOP4Import/Util/Inspector.pm"};
+  ok -x $modulinoFn, "Inspector.pm is executable";
+
+  is_deeply decode_json(capture_stdout {
+    system $^X ($^X, $modulinoFn, "--lib=$testDir"
+                , qw(info_code_attributes_of t_Case2 foo))
+  }), +{Bar => "yy", Foo => "xx"}, "Custom code attributes";
 }
 
 {
