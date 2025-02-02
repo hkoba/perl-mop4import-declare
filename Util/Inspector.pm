@@ -96,10 +96,16 @@ sub group_options_of {
   my @unknown;
   foreach my $name (@opt_names) {
     next unless $name =~ /^[a-z]/;
-    ref(my FieldSpec $spec = $fields->{$name}) or do {
+    # FieldSpec もどきをここで作る
+    my FieldSpec $spec = $fields->{$name};
+    if (ref($spec)
+        or $spec = $self->get_field_spec_for_onconfigure($pack, $name)) {
+      # ok
+    }
+    else {
       push @unknown, $name;
       next
-    };
+    }
     push @{$package{$spec->{package}}}, $spec;
   }
 
@@ -110,6 +116,33 @@ sub group_options_of {
   } @$isa;
 
   ((@unknown ? ['', @unknown] : ()), @grouped);
+}
+
+sub get_field_spec_for_onconfigure {
+  (my MY $self, my ($pack, $name)) = @_;
+  my $code = $pack->can("onconfigure_$name")
+    or return;
+
+  if (my $atts = MOP4Import::NamedCodeAttributes->m4i_CODE_ATTR_dict($code)) {
+    $self->create_field_spec_from_code_attribute($pack, $name, $atts);
+  }
+  else {
+    +{package => $pack, name => $name};
+  }
+}
+
+sub create_field_spec_from_code_attribute {
+  (my MY $self, my ($pack, $name, $atts)) = @_;
+  my FieldSpec $spec = +{};
+  $spec->{package} = $pack;
+  $spec->{name} = $name;
+  if ($atts->{Doc}) {
+    $spec->{doc} = $atts->{Doc};
+  }
+  if ($atts->{ZshCompleter}) {
+    $spec->{zsh_completer} = $atts->{ZshCompleter};
+  }
+  $spec;
 }
 
 sub max_option_length {
