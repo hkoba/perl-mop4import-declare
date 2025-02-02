@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
-package t_Case04;
+package
+  t_Case04;
 use MOP4Import::Base::CLI_JSON -as_base;
 
 our @EXPORT = qw(foo bar baz);
