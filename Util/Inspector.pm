@@ -3,7 +3,10 @@ package MOP4Import::Util::Inspector;
 use strict;
 use warnings;
 use Carp;
-use MOP4Import::Base::CLI_JSON -as_base;
+use MOP4Import::Base::CLI_JSON -as_base
+  , [fields =>
+     [lib => doc => "library directory list. SCALAR, ARRAY or ':' separated STRING"]
+   ];
 
 use MOP4Import::NamedCodeAttributes ();
 
@@ -213,6 +216,14 @@ sub info_methods :method {
 
 sub require_module {
   (my MY $self, my ($moduleName, @inc)) = @_;
+
+  # In modulino, cmd_help may be called during module loading.
+  # At that time, $INC{$moduleFileName} is not yet initialized.
+  # This leads to double-require. To avoid this, use symtab check.
+  return $moduleName if MOP4Import::Util::maybe_symtab($moduleName);
+
+  @inc = map {split /:/} MOP4Import::Util::lexpand($self->{lib})
+    if not @inc and ref $self;
   {
     require Module::Runtime;
     local @INC = (@inc, @INC);
