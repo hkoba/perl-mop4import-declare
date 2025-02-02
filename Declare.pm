@@ -575,7 +575,7 @@ sub declare_carp_not :MetaOnly {
   #
   # Below does equiv of `our @CARP_NOT = qw/ MOP4Import::Util /;`
   #
-  __PACKAGE__->declare_carp_not(MOP4Import::Opts::m4i_fake(__PACKAGE__),
+  __PACKAGE__->declare_carp_not(MOP4Import::Opts::m4i_fake_opts(__PACKAGE__),
                                 qw/
                                    MOP4Import::Util
                                    /

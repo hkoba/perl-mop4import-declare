@@ -120,7 +120,7 @@ sub m4i_args {
   ($_[0], m4i_opts($_[1]), @_[2..$#_]);
 }
 
-sub m4i_fake {
+sub m4i_fake_opts {
   my ($fakedCallpack) = @_;
   (undef, my (@callerTail)) = caller;
   Opts->new(caller => [$fakedCallpack, @callerTail]);
