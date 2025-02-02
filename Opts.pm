@@ -33,6 +33,9 @@ use fields
    # default value for json_type. 'string' if not specified
    , 'default_json_type'
 
+   # Cache to store and keep heavy computation results between pragmas.
+   , 'stash'
+
    , qw/filename line/
  );
 

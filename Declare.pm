@@ -59,6 +59,11 @@ sub m4i_file_line_of :method :MetaOnly {
   " at $opts->{filename} line $opts->{line}";
 }
 
+sub m4i_stash :method :MetaOnly {
+  (my $myPack, my Opts $opts) = @_;
+  $opts->{stash}{$myPack} //= +{};
+}
+
 #
 # This serves as @EXPORT
 #
