@@ -118,6 +118,7 @@ sub declare_code_attributes {
 __PACKAGE__->declare_code_attributes(__PACKAGE__, (
   'MetaOnly',
   'Doc',
+  'ZshCompleter',
 ));
 
 our @EXPORT_OK = MOP4Import::Util::function_names(from => __PACKAGE__);
