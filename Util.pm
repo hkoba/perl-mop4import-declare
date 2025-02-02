@@ -23,6 +23,21 @@ sub symtab {
   *{globref(shift, '')}{HASH}
 }
 
+sub maybe_symtab {
+  my ($pack) = @_;
+  my @name = split /::/, $pack
+    or return undef;
+  shift @name if $name[0] eq "";
+  my $symtab = \%::;
+  foreach my $name (@name) {
+    my $glob = $symtab->{$name . "::"}
+      or return undef;
+    $symtab = *{$glob}{HASH}
+      or return undef;
+  }
+  $symtab;
+}
+
 sub safe_globref {
   my ($pack_or_obj, $name) = @_;
   unless (defined symtab($pack_or_obj)->{$name}) {
