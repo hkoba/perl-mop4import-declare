@@ -323,6 +323,8 @@ sub list_validator {
   my ($typeName) = @_;
   my $fields = maybe_fields_hash($typeName)
     or Carp::croak "Can't find type spec for $typeName";
+  my $names = fields_array($typeName);
+  my @names = $names ? @$names : sort keys %$fields;
   map {
     my FieldSpec $spec = $fields->{$_};
     if (not UNIVERSAL::isa($spec, FieldSpec)) {
@@ -337,7 +339,7 @@ sub list_validator {
     else {
       ()
     }
-  } sort keys %$fields
+  } @names;
 }
 
 #========================================
