@@ -54,7 +54,7 @@ sub import :MetaOnly {
   m4i_log_end($opts->{callpack}) if DEBUG;
 }
 
-sub file_line_of {
+sub m4i_file_line_of :method :MetaOnly {
   (my $myPack, my Opts $opts) = @_;
   " at $opts->{filename} line $opts->{line}";
 }
@@ -194,7 +194,7 @@ sub dispatch_declare_pragma :MetaOnly {
     $sub->($myPack, $opts, @args);
   } else {
     croak "No such pragma: \`use $myPack\ [".terse_dump($pragma)."]`"
-      . $myPack->file_line_of($opts);
+      . $myPack->m4i_file_line_of($opts);
   }
 }
 
