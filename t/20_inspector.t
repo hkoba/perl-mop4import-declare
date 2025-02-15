@@ -82,6 +82,20 @@ my $testDir = "$FindBin::Bin/examples";
     , "info_code_attributes_of(t_Case1 => onconfigure_bar)";
 }
 
+SKIP: {
+  skip "requires v5.38", 1 unless $] >= 5.038;
+
+  my $inspector = MOP4Import::Util::Inspector->new(lib => $testDir);
+
+  is_deeply $inspector->info_code_attributes_of(wo_m4i_method_att1 => "foo")
+    , +{method => 1}
+    , "info_code_attributes_of(wo_m4i_method_att1 => foo)";
+
+  is_deeply $inspector->info_code_attributes_of(wo_m4i_method_att1 => "bar")
+    , +{}
+    , "info_code_attributes_of(wo_m4i_method_att1 => bar)";
+}
+
 {
   stderr_like sub {
     system $^X ($^X, "$testDir/t_Case1.pm")
