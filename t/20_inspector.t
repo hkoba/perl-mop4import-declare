@@ -58,8 +58,24 @@ my $testDir = "$FindBin::Bin/examples";
     )], "list_options_of";
 
   is_deeply $inspector->info_code_attributes_of(t_Case1 => "cmd_foo")
-    , +{Doc => q(this is foo command)}
+    , +{Doc => q(this is foo command), method => 1}
     , "info_code_attributes_of(t_Case1 => cmd_foo)";
+
+  is_deeply $inspector->info_code_attributes_of(t_Case1 => "bar")
+    , +{Doc => q(bar), method => 1}
+    , "info_code_attributes_of(t_Case1 => bar)";
+
+  is_deeply $inspector->info_code_attributes_of(t_Case1 => "baz")
+    , +{Doc => q(baz)}
+    , "info_code_attributes_of(t_Case1 => baz)";
+
+  is_deeply $inspector->info_code_attributes_of(t_Case1 => "qux")
+    , +{method => 1}
+    , "info_code_attributes_of(t_Case1 => qux)";
+
+  is_deeply $inspector->info_code_attributes_of(t_Case1 => "QuuuuuuX")
+    , +{}
+    , "info_code_attributes_of(t_Case1 => QuuuuuuX)";
 
   is_deeply $inspector->info_code_attributes_of(t_Case1 => "onconfigure_bar")
     , +{Doc => q(bar option), ZshCompleter => q(:filename:_files)}
