@@ -97,4 +97,15 @@ Options from t_Case1:
   --bar           bar option
 }, "output of cmd_help";
 }
+
+{
+  my $inspector = MOP4Import::Util::Inspector->new(lib => $testDir);
+
+  is_deeply $inspector->info_code_attributes_of(wo_m4i_method_att1 => 'foo')
+    , +{method => 1}, "info_code_attributes_of() can detect :method attribute";
+
+  is_deeply $inspector->info_code_attributes_of(wo_m4i_method_att1 => 'bar')
+    , +{}, "info_code_attributes_of() returns empty hash if no attributes found";
+}
+
 done_testing;
