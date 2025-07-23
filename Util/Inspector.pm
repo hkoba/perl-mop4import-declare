@@ -3,6 +3,11 @@ package MOP4Import::Util::Inspector;
 use strict;
 use warnings;
 use Carp;
+use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
+BEGIN {
+  print STDERR "Using (file '" . __FILE__ . "')\n" if DEBUG and DEBUG >= 2
+}
+
 use MOP4Import::Base::CLI_JSON -as_base
   , [fields =>
      [lib =>

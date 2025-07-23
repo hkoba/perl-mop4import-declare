@@ -9,6 +9,11 @@ use Exporter qw/import/;
 
 use Sub::Util ();
 
+use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
+BEGIN {
+  print STDERR "Using (file '" . __FILE__ . "')\n" if DEBUG and DEBUG >= 2
+}
+
 sub globref {
   my $pack = shift;
   unless (defined $pack) {
