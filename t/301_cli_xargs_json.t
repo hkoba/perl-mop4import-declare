@@ -9,10 +9,16 @@ use FindBin; BEGIN { do "$FindBin::Bin/t_lib.pl" }
 use Test::More;
 use Test2::Tools::Command;
 
-my $prog = "$FindBin::Bin/../Base/CLI_JSON.pm";
+ok chdir("$FindBin::Bin/../Base"), "chdir to MOP4Import/Base";
 
 command {
-  args => [$prog, qw(cli_xargs_json cli_array)]
+  args => [qw(./CLI_JSON.pm)]
+    , status => 255
+    , stderr => qr/^Usage: /
+};
+
+command {
+  args => [qw(./CLI_JSON.pm cli_xargs_json cli_array)]
     , stdin => qq{{}},
     , stdout => qq{[{}]\n}
 };
