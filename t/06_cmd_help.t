@@ -42,7 +42,6 @@ Options from MOP4Import::Base::CLI_JSON:
 END
 }
 
-if ($] >= 5.018)
 {
   eq_or_diff(scalar(capture_stderr {
     system $^X ($^X, "$testDir/../../Base/CLI_JSON.pm", "unknown_method")
