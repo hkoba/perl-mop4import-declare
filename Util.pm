@@ -211,7 +211,8 @@ sub take_hash_opts_maybe {
 
 sub take_locked_opts_of {
   my ($myPack, $typeName, $list, $alias, $sink) = @_;
-  $myPack->lock_keys_as($typeName, scalar $myPack->take_hash_opts_maybe(
+  $myPack->lock_keys_as($typeName, scalar take_hash_opts_maybe(
+    $myPack,
     $list,
     $sink,
     $alias,
