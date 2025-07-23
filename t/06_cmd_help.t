@@ -44,7 +44,7 @@ END
 
 SKIP:
 {
-  skip "perl:5.16-buster fails this with code=25"
+  skip "perl:5.16-buster fails this with code=25", 1
     if $] <= 5.018;
 
   eq_or_diff(scalar(capture_stderr {
