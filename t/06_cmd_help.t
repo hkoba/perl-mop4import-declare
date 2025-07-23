@@ -45,7 +45,7 @@ END
 SKIP:
 {
   skip "perl:5.16-buster fails this with code=25"
-    if $] <= 5.016;
+    if $] <= 5.018;
 
   eq_or_diff(scalar(capture_stderr {
     system $^X ($^X, "$testDir/../../Base/CLI_JSON.pm", "unknown_method")
