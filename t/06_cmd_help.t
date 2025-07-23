@@ -42,11 +42,8 @@ Options from MOP4Import::Base::CLI_JSON:
 END
 }
 
-SKIP:
+if ($] >= 5.018)
 {
-  skip "perl:5.16-buster fails this with code=25", 1
-    if $] <= 5.018;
-
   eq_or_diff(scalar(capture_stderr {
     system $^X ($^X, "$testDir/../../Base/CLI_JSON.pm", "unknown_method")
   }), <<'END', "cmd_help unknown_method");
