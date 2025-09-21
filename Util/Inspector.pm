@@ -72,9 +72,14 @@ sub list_options_of {
   my $symbol = fields_symbol($pack);
   if (my $array = *{$symbol}{ARRAY}) {
     List::Util::uniq(@$array, $self->list_options_onconfigure_of($pack))
-  } elsif (my $hash = *{$symbol}{HASH}) {
+  }
+  elsif (my $hash = *{$symbol}{HASH}) {
     sort keys %$hash;
-  } else {
+  }
+  elsif ($pack->can("meta")) {
+    $pack->meta->get_attribute_list
+  }
+  else {
     ();
   }
 }
