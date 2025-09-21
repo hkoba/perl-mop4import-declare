@@ -2,134 +2,17 @@
 
 ## Overview
 
-OO Modulino (Object-Oriented Modulino) is a pattern where a single Perl file functions as both a "class module" and a "CLI executable". This pattern allows you to test and execute any method of a module directly from the CLI without writing external scripts.
+OO Modulino (Object-Oriented Modulino) is an extension of Modulino that adds an initialization and method dispatch mechanism, allowing any method to be invoked as a CLI subcommand.
 
 ## What is a Modulino?
 
-A Modulino is a Perl file that can act as both a module and an executable ([reference](https://www.masteringperl.org/category/chapters/modulinos/)).
+A Modulino is a design pattern where a module can also function as an executable file ([reference](https://www.masteringperl.org/category/chapters/modulinos/)).
 
-In a regular Modulino, which functions are accessible from CLI depends on the implementation. To use arbitrary functions, you often still need to write scripts.
+In general, what features a Modulino provides to the CLI is left to the individual programmer's discretion. Therefore, to use arbitrary functions different from those exposed by the CLI, you still need to write scripts.
 
 ## OO Modulino Characteristics
 
-OO Modulino extends Modulino by standardizing CLI behavior:
-
-1. **Object-oriented**: Creates instances and invokes methods
-2. **Standardized CLI**: Git-like subcommand format
-3. **Flexible parameters**: Separation of constructor options and method arguments
-
-## Basic Implementation Examples
-
-### Simple Example
-
-```perl
-package Greetings;
-use strict;
-use warnings;
-
-sub new  { my $class = shift; bless +{@_}, $class }
-
-sub hello { my $self = shift; join " ", "Hello", $self->{name} }
-
-sub goodnight { my $self = shift; join(" ", "Good night" => $self->{name}, @_) }
-
-1;
-```
-
-To use this module from CLI normally:
-
-```bash
-$ perl -I. -MGreetings -le 'print Greetings->new(name => "world")->hello'
-```
-
-### Minimal OO Modulino
-
-```perl
-#!/usr/bin/env perl
-package Greetings_oo_modulino;
-use strict;
-use warnings;
-
-unless (caller) {
-    my $self = __PACKAGE__;
-
-    my $cmd = shift
-      or die "Usage: $0 COMMAND ARGS...\n";
-
-    print $self->new(name => "world")->$cmd(@ARGV), "\n";
-}
-
-sub new  { my $class = shift; bless +{@_}, $class }
-
-sub hello { my $self = shift; join " ", "Hello", $self->{name} }
-
-sub goodnight { my $self = shift; join(" ", "Good night" => $self->{name}, @_) }
-
-1;
-```
-
-Usage:
-
-```bash
-$ ./Greetings_oo_modulino.pm hello
-Hello world
-```
-
-### With Constructor Options
-
-```perl
-#!/usr/bin/env perl
-package Greetings_with_options;
-use strict;
-use warnings;
-use fields qw/name/;
-
-sub MY () {__PACKAGE__}
-
-unless (caller) {
-    my $self = MY->new(name => 'world', MY->_parse_posix_opts(\@ARGV));
-
-    my $cmd = shift @ARGV
-      or die "Usage: $0 [OPTIONS] COMMAND ARGS...\n";
-
-    print $self->$cmd(@ARGV), "\n";
-}
-
-sub _parse_posix_opts {
-    my ($class, $list) = @_;
-    my @opts;
-    while (@$list and $list->[0] =~ /^--(?:(\w+)(?:=(.*))?)?\z/s) {
-        shift @$list;
-        last unless defined $1;
-        push @opts, $1, $2 // 1;
-    }
-    @opts;
-}
-
-sub new  { my MY $self = fields::new(shift); %$self = @_; $self }
-
-sub hello { my MY $self = shift; join " ", "Hello", $self->{name} }
-
-sub goodnight { my MY $self = shift; join " ", "Good night" => $self->{name}, @_ }
-
-1;
-```
-
-Usage:
-
-```bash
-$ ./Greetings_with_options.pm --name=Universe hello
-Hello Universe
-
-$ ./Greetings_with_options.pm --name=World goodnight everyone
-Good night World everyone
-```
-
-## CLI Standardization
-
-OO Modulino standardizes CLI with the following conventions:
-
-### Command Line Format
+OO Modulino introduces a consistent set of conventions to the Modulino's CLI, inspired by CLI tools with subcommands like git:
 
 ```
 program [GLOBAL_OPTIONS] COMMAND [COMMAND_ARGS]
@@ -139,6 +22,8 @@ program [GLOBAL_OPTIONS] COMMAND [COMMAND_ARGS]
 - `COMMAND`: Method name to invoke
 - `COMMAND_ARGS`: Arguments to the method
 
+By introducing this calling convention to the Modulino's CLI, it becomes possible to easily test any method of a module from the command line. This is an extremely valuable characteristic for both module developers and those who test the module later.
+
 ### Similarity to Git Commands
 
 This design is inspired by git commands:
@@ -146,47 +31,118 @@ This design is inspired by git commands:
 - `git --git-dir=/path commit -m "message"`
   - `--git-dir=/path`: Global option (git object configuration)
   - `commit`: Subcommand (method)
-  - `-m "message"`: Command arguments
+  - `-m "message"`: Command argument
 
-Similarly in OO Modulino:
+Based on the same concept, OO Modulino allows passing module methods and constructor options from the command line:
 
 - `./MyScript.pm --config=prod query "SELECT * FROM users"`
   - `--config=prod`: Constructor option
   - `query`: Method name
   - `"SELECT * FROM users"`: Method argument
 
-## Type Safety with fields
+## Basic Implementation Examples
 
-Using the `fields` pragma provides:
+As an example, let's look at how to make a Mouse-based module into an OO Modulino.
 
-1. **Compile-time type checking**: Prevents field name typos
-2. **Invalid field rejection**: Errors on undefined field access
+### Original Module (Mouse-based)
 
 ```perl
-use fields qw/name age/;
+package Greetings;
+use Mouse;
 
-sub new {
-    my MY $self = fields::new(shift);
-    %$self = @_;
-    $self;
+has name => (is => 'rw', default => 'world');
+
+sub hello {
+  my ($self, @msg) = @_; +{ result => ["Hello", $self->name, @msg] }
 }
 
-sub greet {
-    my MY $self = shift;
-    # $self->{nama} would be a compile-time error (typo detection)
-    return "I'm $self->{name}, $self->{age} years old";
+sub goodnight {
+  my ($self, @msg) = @_; +{ result => ["Good night", $self->name, @msg] }
 }
+#========================================
+1;
 ```
 
-## Extensions with MOP4Import::Base::CLI_JSON
+To test this module from the CLI, you need to write a one-liner like:
 
-CLI_JSON extends the OO Modulino pattern with:
+```sh
+% perl -I. -MGreetings -MJSON -le 'print encode_json(Greetings->new(name => "universe")->hello)'
+{"result":["Hello","universe"]}
+```
 
-1. **JSON arguments/returns**: Complex data structure handling
-2. **Auto-serialization**: Automatic JSON output of return values
-3. **Rich output formats**: ndjson, json, yaml, tsv, dump
-4. **Help functionality**: Automatic help message generation
-5. **Automatic method exposure**: All public methods available without special configuration
+### OO Modulino Implementation (with JSON support)
+
+Let's create `Greetings_oo_modulino_json.pm`, an OO Modulino version of the previous `Greetings.pm`:
+
+```perl
+#!/usr/bin/env perl
+package Greetings_oo_modulino_json;
+
+# ...omitted...
+
+use JSON;
+
+# Implementation of _parse_long_opts, _decode_json_maybe shown separately
+
+sub cmd_help {
+  die "Usage: $0 [OPTIONS] COMMAND ARGS...\n";
+}
+
+unless (caller) {
+  my $self = __PACKAGE__->new(__PACKAGE__->_parse_long_opts(\@ARGV));
+
+  my $cmd = shift || "help";
+
+  if (my $sub = $self->can("cmd_$cmd")) {
+    $sub->($self, map {_decode_json_maybe($_)} @ARGV);
+  }
+  elsif ($sub = $self->can($cmd)) {
+    print encode_json($sub->($self, map {_decode_json_maybe($_)} @ARGV)), "\n";
+  }
+  else {
+    die "Unknown command: $cmd\n";
+  }
+}
+1;
+```
+
+With OO Modulino, you can easily test methods. (If your shell is Zsh and you have [App::oo_modulino_zsh_completion_helper](https://metacpan.org/pod/App::oo_modulino_zsh_completion_helper) installed, you can even tab-complete method names):
+
+```sh
+% ./Greetings_oo_modulino_json.pm hello '{"foo":"bar"}'
+{"result":["Hello","world",{"foo":"bar"}]}
+
+% ./Greetings_oo_modulino_json.pm --name='["foo","bar"]' goodnight
+{"result":["Good night",["foo","bar"]]}
+```
+
+### Appendix
+
+```perl
+sub _parse_long_opts {
+  my ($class, $list) = @_;
+  my @opts;
+  while (@$list and $list->[0] =~ /^--(?:(\w+)(?:=(.*))?)?\z/s) {
+    shift @$list;
+    last unless defined $1;
+    push @opts, $1, _decode_json_maybe($2) // 1;
+  }
+  @opts;
+}
+
+sub _decode_json_maybe {
+  my ($str) = @_;
+  if (not defined $str) {
+    return undef;
+  }
+  elsif ($str =~ /^(?:\[.*?\]|\{.*?\})\z/s) {
+    decode_json($str)
+  }
+  else {
+    $str
+  }
+}
+```
 
 ## Summary
 
@@ -204,3 +160,4 @@ This enables consistent module handling from early development through productio
 - [Modulino: both script and module](https://perlmaven.com/modulino-both-script-and-module)
 - [Mastering Perl: Modulinos](https://www.masteringperl.org/category/chapters/modulinos/)
 - [MOP4Import::Base::CLI_JSON](../Base/CLI_JSON.pod)
+- [App::oo_modulino_zsh_completion_helper](https://metacpan.org/pod/App::oo_modulino_zsh_completion_helper)
