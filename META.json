@@ -75,7 +75,7 @@
       },
       "MOP4Import::Declare" : {
          "file" : "Declare.pm",
-         "version" : "0.070"
+         "version" : "0.070_001"
       },
       "MOP4Import::Declare::Type" : {
          "file" : "Declare/Type.pm"
@@ -129,7 +129,7 @@
          "file" : "Util/compat_double_diamond_5_20.pm"
       }
    },
-   "release_status" : "stable",
+   "release_status" : "testing",
    "resources" : {
       "license" : [
          "http://dev.perl.org/licenses/"
@@ -138,6 +138,6 @@
          "url" : "https://github.com/hkoba/perl-mop4import-declare"
       }
    },
-   "version" : "0.070",
+   "version" : "0.070_001",
    "x_serialization_backend" : "JSON::PP version 4.16"
 }

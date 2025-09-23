@@ -1,5 +1,8 @@
 Revision history for Perl extension MOP4Import::Declare
 
+0.070_001 2025-09-23
+    * GH-100 - to solve cpantesters errors
+
 0.070 2025-09-21
     * GH-99 - Inspector - Add support for `$class->meta->get_attribute_list` for better interop with Moose, Moo, Mouse...
     * GH-98 - Fix non-HASH TO_JSON result handling of cli_encode_json
