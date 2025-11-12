@@ -6,6 +6,7 @@ use Carp;
 use File::AddInc;
 
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
+
 BEGIN {
   print STDERR "Using (file '" . __FILE__ . "')\n" if DEBUG and DEBUG >= 2
 }
@@ -21,7 +22,8 @@ use MOP4Import::Base::CLI_JSON -as_base
 use MOP4Import::NamedCodeAttributes ();
 
 use MOP4Import::Util qw/terse_dump fields_hash fields_symbol
-			take_hash_opts_maybe/;
+                        maybe_fields_hash
+                        take_hash_opts_maybe/;
 use MOP4Import::Util::FindMethods;
 
 use List::Util ();
@@ -105,22 +107,18 @@ sub list_options_onconfigure_of {
 
 sub group_options_of {
   my ($self, $pack, @opt_names) = @_;
-  my $fields = fields_hash($pack);
+  $self->require_module($pack);
+  my $meta = $pack->can("meta") ? $pack->meta : undef;
   @opt_names = $self->list_options_of($pack) unless @opt_names;
   my %package;
   my @unknown;
   foreach my $name (@opt_names) {
     next unless $name =~ /^[a-z]/;
     # FieldSpec もどきをここで作る
-    my FieldSpec $spec = $fields->{$name};
-    if (ref($spec)
-        or $spec = $self->get_field_spec_for_onconfigure($pack, $name)) {
-      # ok
-    }
-    else {
+    my FieldSpec $spec = $self->get_field_spec_of($pack, $name) or do {
       push @unknown, $name;
       next
-    }
+    };
     push @{$package{$spec->{package}}}, $spec;
   }
 
@@ -131,6 +129,27 @@ sub group_options_of {
   } @$isa;
 
   ((@unknown ? ['', @unknown] : ()), @grouped);
+}
+
+sub get_field_spec_of {
+  (my MY $self, my ($pack, $name)) = @_;
+  $self->require_module($pack);
+  if (my $fields = maybe_fields_hash($pack)) {
+    my $spec = $fields->{$name};
+    return $spec if ref $spec;
+    $self->get_field_spec_for_onconfigure($pack, $name)
+  } elsif (my $sub = $pack->can("meta")) {
+    my $attMeta = $sub->($pack)->get_attribute($name);
+    my FieldSpec $spec = +{};
+    $spec->{package} = $pack;
+    $spec->{name} = $name;
+    if (my $doc = $attMeta->{documentation} || $attMeta->{isa}) {
+      $spec->{doc} = $doc;
+    }
+    $spec;
+  } else {
+    undef;
+  }
 }
 
 sub get_field_spec_for_onconfigure {
