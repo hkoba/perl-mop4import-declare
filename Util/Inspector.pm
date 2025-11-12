@@ -3,6 +3,8 @@ package MOP4Import::Util::Inspector;
 use strict;
 use warnings;
 use Carp;
+use File::AddInc;
+
 use constant DEBUG => $ENV{DEBUG_MOP4IMPORT};
 BEGIN {
   print STDERR "Using (file '" . __FILE__ . "')\n" if DEBUG and DEBUG >= 2
