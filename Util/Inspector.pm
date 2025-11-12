@@ -143,8 +143,11 @@ sub get_field_spec_of {
     my FieldSpec $spec = +{};
     $spec->{package} = $pack;
     $spec->{name} = $name;
-    if (my $doc = $attMeta->{documentation} || $attMeta->{isa}) {
+    if (my $doc = $attMeta->{documentation}) {
       $spec->{doc} = $doc;
+    }
+    elsif ($doc = $attMeta->{isa}) {
+      $spec->{doc} = "isa $doc";
     }
     $spec;
   } else {
