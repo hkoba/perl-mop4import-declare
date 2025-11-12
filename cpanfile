@@ -10,7 +10,7 @@ requires 'Module::Runtime'; # For module_notional_filename
 recommends 'YAML::Syck';
 recommends 'Cpanel::JSON::XS', '>= 4.05';
 
-requires 'File::AddInc';
+recommends 'File::AddInc';
 
 recommends 'Data::Dumper', '>= 2.160';
 
