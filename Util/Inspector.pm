@@ -206,11 +206,22 @@ sub info_code_attributes_of {
     Carp::croak "Usage: \$self->info_code_attributes_of(\$class, \$name, ?\$allow_missing\?)"
   }
   $self->require_module($class);
-  my $sub = $class->can($name) or do {
-    return if $allow_missing;
-    Carp::croak "No such method: $name";
-  };
-  MOP4Import::NamedCodeAttributes->m4i_CODE_ATTR_dict($sub);
+  if ($class->can('meta')) {
+    my $meta = $class->meta->get_method($name) or do {
+      return if $allow_missing;
+      Carp::croak "No such method: $name";
+    };
+    $meta->can('attributes')
+      or return;
+    my $atts = $meta->attributes;
+    MOP4Import::NamedCodeAttributes->m4i_parse_attributes(@$atts);
+  } else {
+    my $sub = $class->can($name) or do {
+      return if $allow_missing;
+      Carp::croak "No such method: $name";
+    };
+    MOP4Import::NamedCodeAttributes->m4i_CODE_ATTR_dict($sub);
+  }
 }
 
 sub info_methods :method {
