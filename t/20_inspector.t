@@ -19,26 +19,32 @@ use_ok("MOP4Import::Util::Inspector");
 my $testDir = "$FindBin::Bin/examples";
 
 {
+  local $ENV{PERL5LIB} = "";
+
   my $modulinoFn = $INC{"MOP4Import/Util/Inspector.pm"};
   ok -x $modulinoFn, "Inspector.pm is executable";
 
+  (my $myLib = $modulinoFn) =~ s,\QMOP4Import/Util/Inspector.pm,,;
+
+  my @run = ($^X, "-Mlib=$myLib", $modulinoFn);
+
   is_deeply decode_json(capture_stdout {
-    system $^X ($^X, $modulinoFn, list_module_version => 'MOP4Import::Declare')
+    system $^X (@run, list_module_version => 'MOP4Import::Declare')
   }), {
     'MOP4Import::Declare' => $MOP4Import::Declare::VERSION,
   }, "Inspector.pm's MOP4Import::Declare version sanity check($MOP4Import::Declare::VERSION)";
 
   is_deeply decode_json(capture_stdout {
-    system $^X ($^X, $modulinoFn, "--lib=$testDir"
+    system $^X (@run, "--lib=$testDir"
                 , qw(list_module_path t_Case1))
   }), +{t_Case1 => "$testDir/t_Case1.pm"}, "sanity check for t_Case1 path";
 
   stdout_is sub {
-    system $^X ($^X, $modulinoFn, "--lib=$testDir", list_commands_of => "t_Case1")
+    system $^X (@run, "--lib=$testDir", list_commands_of => "t_Case1")
   }, "foo\nhelp\n", "Inspector.pm list_commands_of t_Case1";
 
   is_deeply decode_json(capture_stdout {
-    system $^X ($^X, $modulinoFn, "--lib=$testDir"
+    system $^X (@run, "--lib=$testDir"
                 , qw(info_code_attributes_of t_Case2 foo))
   }), +{Bar => "yy", Foo => "xx"}, "Custom code attributes";
 }
