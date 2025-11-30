@@ -19,8 +19,10 @@ jobs:
       - name: Install Devel::Cover
         run: ./cpm install -g App::Yath Devel::Cover Devel::Cover::Report::Coveralls
       - name: Run tests (with coverage)
-        run: |
-          PERL5OPT=-MDevel::Cover yath test --qvf lib/MOP4Import/t/
-          cover -report coveralls
+        working-directory: 'lib/MOP4Import'
+        run: PERL5OPT=-MDevel::Cover yath test --qvf t/
+      - name: push coverage report
+        working-directory: 'lib/MOP4Import'
+        run: cover -report coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
