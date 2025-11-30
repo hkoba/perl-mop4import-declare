@@ -20,7 +20,7 @@ jobs:
         run: ./cpm install -g App::Yath Devel::Cover Devel::Cover::Report::Coveralls
       - name: Run tests (with coverage)
         working-directory: 'lib/MOP4Import'
-        run: PERL5OPT=-MDevel::Cover yath test --qvf t/
+        run: PERL5OPT=-MDevel::Cover="-ignore,^t/,-ignore,^/usr" yath test --qvf t/
       - name: push coverage report
         working-directory: 'lib/MOP4Import'
         run: cover -report coveralls
