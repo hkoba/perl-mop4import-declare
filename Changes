@@ -1,5 +1,9 @@
 Revision history for Perl extension MOP4Import::Declare
 
+0.071_001 2025-11-30
+    Mainly for test robustness
+    * GH-100 - Inspector.pm - add list_module_path, list_module_version for sanity check
+
 0.071 2025-11-12
     * GH-99 - Inspector - Add support for `$class->meta->get_attribute_list` for better interop with Moose, Moo, Mouse...
     
