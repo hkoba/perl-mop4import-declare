@@ -24,7 +24,7 @@ my $testDir = "$FindBin::Bin/examples";
   my $modulinoFn = $INC{"MOP4Import/Util/Inspector.pm"};
   ok -x $modulinoFn, "Inspector.pm is executable";
 
-  (my $myLib = $modulinoFn) =~ s,\QMOP4Import/Util/Inspector.pm,,;
+  my $myLib = dirname(dirname(dirname($modulinoFn)));
 
   my @run = ($^X, "-Mlib=$myLib", $modulinoFn);
 
