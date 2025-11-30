@@ -10,9 +10,17 @@ jobs:
       image: perl:stable
     steps:
       - uses: actions/checkout@v4
-      - run: cpanm --quiet --notest --installdeps .
-      - run: cpanm --quiet --notest App::Yath Devel::Cover Devel::Cover::Report::Coveralls
-      - run: PERL5OPT=-MDevel::Cover yath test --qvf t/
-      - run: cover -report coveralls
+        with:
+           path: 'lib/MOP4Import'
+      - name: Install cpm
+        run: curl -fsSL --compressed https://git.io/cpm > cpm; chmod +x cpm
+      - name: Install Dependencies
+        run: ./cpm install -g --cpanfile=lib/MOP4Import/cpanfile
+      - name: Install Devel::Cover
+        run: ./cpm install -g App::Yath Devel::Cover Devel::Cover::Report::Coveralls
+      - name: Run tests (with coverage)
+        run: |
+          PERL5OPT=-MDevel::Cover yath test --qvf lib/MOP4Import/t/
+          cover -report coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
