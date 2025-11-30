@@ -11,9 +11,12 @@ use Test::More;
 use Test2::Tools::Command;
 
 my $dist_root = dirname($FindBin::Bin);
+my $dist_lib  = dirname($dist_root);
+
+my @run = ($^X, "-I$dist_lib");
 
 command {
-  args => ["$dist_root/Base/CLI_JSON.pm"]
+  args => [@run, "$dist_root/Base/CLI_JSON.pm"]
     , status => 255
     , stderr => qr/^Usage: /
 };
@@ -23,7 +26,7 @@ SKIP: {
     if $] <= 5.018;
 
   command {
-    args => ["$dist_root/Base/CLI_JSON.pm", qw(cli_xargs_json cli_array)]
+    args => [@run, "$dist_root/Base/CLI_JSON.pm", qw(cli_xargs_json cli_array)]
       , stdin => qq{{}},
       , stdout => qq{[{}]\n}
     };

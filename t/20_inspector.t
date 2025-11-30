@@ -115,8 +115,10 @@ SKIP: {
 }
 
 {
+  my $distLib = dirname(dirname($FindBin::Bin));
+
   stderr_like sub {
-    system $^X ($^X, "$testDir/t_Case1.pm")
+    system $^X ($^X, "-I$distLib", "$testDir/t_Case1.pm")
   }, qr{\A\QUsage: t_Case1.pm [--opt=value].. <Command> ARGS...
 
 Commands
