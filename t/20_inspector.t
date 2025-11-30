@@ -21,9 +21,21 @@ my $testDir = "$FindBin::Bin/examples";
 {
   my $modulinoFn = $INC{"MOP4Import/Util/Inspector.pm"};
   ok -x $modulinoFn, "Inspector.pm is executable";
+
+  is_deeply decode_json(capture_stdout {
+    system $^X ($^X, $modulinoFn, list_module_version => 'MOP4Import::Declare')
+  }), {
+    'MOP4Import::Declare' => $MOP4Import::Declare::VERSION,
+  }, "Inspector.pm's MOP4Import::Declare version sanity check($MOP4Import::Declare::VERSION)";
+
+  is_deeply decode_json(capture_stdout {
+    system $^X ($^X, $modulinoFn, "--lib=$testDir"
+                , qw(list_module_path t_Case1))
+  }), +{t_Case1 => "$testDir/t_Case1.pm"}, "sanity check for t_Case1 path";
+
   stdout_is sub {
     system $^X ($^X, $modulinoFn, "--lib=$testDir", list_commands_of => "t_Case1")
-  }, "foo\nhelp\n", "Inspector.pm as a modulino";
+  }, "foo\nhelp\n", "Inspector.pm list_commands_of t_Case1";
 
   is_deeply decode_json(capture_stdout {
     system $^X ($^X, $modulinoFn, "--lib=$testDir"
