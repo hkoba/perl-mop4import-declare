@@ -13,6 +13,10 @@ use Test2::Tools::Command;
 my $dist_root = dirname($FindBin::Bin);
 my $dist_lib  = dirname($dist_root);
 
+unless (basename($dist_root) eq 'MOP4Import') {
+  plan skip_all => 'Project root is not MOP4Import';
+}
+
 my @run = ($^X, "-I$dist_lib");
 
 command {

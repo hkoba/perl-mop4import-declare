@@ -18,7 +18,10 @@ use_ok("MOP4Import::Util::Inspector");
 
 my $testDir = "$FindBin::Bin/examples";
 
-{
+SKIP: {
+  skip "Not in MOP4Import", 5,
+    unless basename(dirname($FindBin::Bin)) eq 'MOP4Import';
+  
   local $ENV{PERL5LIB} = "";
 
   my $modulinoFn = $INC{"MOP4Import/Util/Inspector.pm"};
@@ -114,7 +117,10 @@ SKIP: {
     , "info_code_attributes_of(wo_m4i_method_att1 => bar)";
 }
 
-{
+SKIP: {
+  skip "Not in MOP4Import", 1,
+    unless basename(dirname($FindBin::Bin)) eq 'MOP4Import';
+
   my $distLib = dirname(dirname($FindBin::Bin));
 
   stderr_like sub {

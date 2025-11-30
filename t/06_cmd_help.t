@@ -13,10 +13,14 @@ use Test::More;
 use Test::Differences;
 use Capture::Tiny qw(capture_stderr);
 
-use_ok("MOP4Import::Util::Inspector");
-
 my $distLib = dirname(dirname($FindBin::Bin));
 my $testDir = "$FindBin::Bin/examples";
+
+unless (basename(dirname($FindBin::Bin)) eq 'MOP4Import') {
+  plan skip_all => 'Project root is not MOP4Import';
+}
+
+use_ok("MOP4Import::Util::Inspector");
 
 my @run = ($^X, "-I$distLib");
 
