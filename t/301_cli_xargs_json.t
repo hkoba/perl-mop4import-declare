@@ -10,17 +10,16 @@ use File::Basename qw(dirname);
 use Test::More;
 use Test2::Tools::Command;
 
-my $dist_root = dirname($FindBin::Bin);
-my $dist_lib  = dirname($dist_root);
+use_ok("MOP4Import::Base::CLI_JSON");
 
-unless (basename($dist_root) eq 'MOP4Import') {
-  plan skip_all => 'Project root is not MOP4Import';
-}
+my $modulinoFn = $INC{"MOP4Import/Base/CLI_JSON.pm"};
+
+my $dist_lib = dirname(dirname(dirname($modulinoFn)));
 
 my @run = ($^X, "-I$dist_lib");
 
 command {
-  args => [@run, "$dist_root/Base/CLI_JSON.pm"]
+  args => [@run, $modulinoFn]
     , status => 255
     , stderr => qr/^Usage: /
 };
@@ -30,7 +29,7 @@ SKIP: {
     if $] <= 5.018;
 
   command {
-    args => [@run, "$dist_root/Base/CLI_JSON.pm", qw(cli_xargs_json cli_array)]
+    args => [@run, $modulinoFn, qw(cli_xargs_json cli_array)]
       , stdin => qq{{}},
       , stdout => qq{[{}]\n}
     };

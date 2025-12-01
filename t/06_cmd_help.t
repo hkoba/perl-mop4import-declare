@@ -13,14 +13,12 @@ use Test::More;
 use Test::Differences;
 use Capture::Tiny qw(capture_stderr);
 
-my $distLib = dirname(dirname($FindBin::Bin));
 my $testDir = "$FindBin::Bin/examples";
 
-unless (basename(dirname($FindBin::Bin)) eq 'MOP4Import') {
-  plan skip_all => 'Project root is not MOP4Import';
-}
-
 use_ok("MOP4Import::Util::Inspector");
+
+my $inspectorFn = $INC{"MOP4Import/Util/Inspector.pm"};
+my $distLib = dirname(dirname(dirname(File::Spec->rel2abs($inspectorFn))));
 
 my @run = ($^X, "-I$distLib");
 
@@ -50,8 +48,11 @@ END
 }
 
 {
+  my $clijsonFn = $INC{"MOP4Import/Base/CLI_JSON.pm"};
+  my $distLib = dirname(dirname(dirname(File::Spec->rel2abs($clijsonFn))));
+
   eq_or_diff(scalar(capture_stderr {
-    system $^X (@run, "$testDir/../../Base/CLI_JSON.pm", "unknown_method")
+    system $^X (@run, $clijsonFn, "unknown_method")
   }), <<'END', "cmd_help unknown_method");
 Error: No such subcommand 'unknown_method'
 
