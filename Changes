@@ -1,6 +1,6 @@
 Revision history for Perl extension MOP4Import::Declare
 
-0.071_001 2025-11-30
+0.071_002 2025-12-01
     Mainly for test robustness
     * GH-100 - Inspector.pm - add list_module_path, list_module_version for sanity check
 
