@@ -1,7 +1,8 @@
 Revision history for Perl extension MOP4Import::Declare
 
-0.071_002 2025-12-01
+0.071_003 2025-12-03
     Mainly for test robustness
+    * GH-101 - FindMethods - Add workaround for perl 5.43.5 \%symtab:: entry ambiguity (GLOB vs CODE)
     * GH-100 - Inspector.pm - add list_module_path, list_module_version for sanity check
 
 0.071 2025-11-12
