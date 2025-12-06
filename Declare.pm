@@ -503,8 +503,9 @@ sub declare___field :MetaOnly {
 
   # Create accessor for all public fields.
   if ($name =~ /^[a-z]/i and not $fs->{no_getter}) {
-    if (my $sym = MOP4Import::Util::symtab($opts->{objpkg})->{$name}) {
-      if (*{$sym}{CODE}) {
+    if (my $entry = MOP4Import::Util::symtab($opts->{objpkg})->{$name}) {
+      if (ref $entry eq 'CODE'
+          or ref \$entry eq 'GLOB' and *{$entry}{CODE}) {
         croak "Accessor $opts->{objpkg}::$name is redefined!\nIf you really want to define the accessor by hand, please specify fields spec like: [$name => no_getter => 1, ...].";
       }
     }
