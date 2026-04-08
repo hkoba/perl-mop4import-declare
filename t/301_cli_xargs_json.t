@@ -14,6 +14,14 @@ use_ok("MOP4Import::Base::CLI_JSON");
 
 my $modulinoFn = $INC{"MOP4Import/Base/CLI_JSON.pm"};
 
+unless ($modulinoFn) {
+  bail_out("CLI_JSON.pm is not loaded");
+}
+
+unless (-r $modulinoFn) {
+  bail_out("CLI_JSON.pm is not readable($modulinoFn)");
+}
+
 my $dist_lib = dirname(dirname(dirname($modulinoFn)));
 
 my @run = ($^X, "-I$dist_lib");
