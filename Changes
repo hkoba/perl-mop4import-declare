@@ -1,6 +1,7 @@
 Revision history for Perl extension MOP4Import::Declare
 
-0.072_001 2026-05-06
+0.073 2026-09-10
+    * GH-104 - Add new hook: `$myPack->declare___accessor($opts, $name)`
     * GH-103 - Add MOP4Import::Base::IOHandle (experimental)
 
 0.072 2026-04-15
